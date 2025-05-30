@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>パスワード生成ツール（完全一致版・モバイル対応）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      max-width: 400px;
+      margin: 2em auto;
+      font-size: 1.1em;
+      font-family: sans-serif;
+      padding: 0 1em;
+      background: #f8f9fa;
+    }
+    h2 {
+      font-size: 1.2em;
+      margin-bottom: 1.5em;
+      text-align: center;
+    }
+    label, input, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.8em;
+    }
+    input[type="text"] {
+      padding: 0.5em;
+      font-size: 1.1em;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+    }
+    button {
+      padding: 0.7em 0;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: #fff;
+      margin-bottom: 1em;
+    }
+    button:active {
+      background: #0056b3;
+    }
+    #error {
+      color: #e74c3c;
+      font-weight: bold;
+      margin-bottom: 1em;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        max-width: 98vw;
+        font-size: 1em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>MACアドレス → パスワード</h2>
+  <label for="macInput">MACアドレス：</label>
+  <input type="text" id="macInput" size="20" autocomplete="off">
+  <button onclick="generate()">生成</button>
+  <p id="error"></p>
+  <label for="password">パスワード：</label>
+  <input type="text" id="password" size="20" readonly>
+  <button onclick="copyToClipboard()">コピー</button>
+  <script>
+    function strcat(clsmac) {
+      return clsmac.slice(2) + clsmac.slice(6);
+    }
+    function generate() {
+      const macRaw = document.getElementById("macInput").value;
+      let mac = macRaw.replace(/[-:\.\s]/g, '').toUpperCase();
+      const errorElem = document.getElementById("error");
+      if (mac.length !== 12) {
+        errorElem.textContent = "MACアドレス長が不正です。";
+        document.getElementById("password").value = '';
+        return;
+      }
+      if (!/^[0-9A-F]{12}$/.test(mac)) {
+        errorElem.textContent = "MACアドレスが16進数ではありません。";
+        document.getElementById("password").value = '';
+        return;
+      }
+      let mac16enc = strcat(mac);
+      const key = "VoIPGateway48231";
+      let password = '';
+      for (let i = 0; i < 16; i++) {
+        let m = mac16enc.charCodeAt(i);
+        let k = key.charCodeAt(i % key.length);
+        let p = String.fromCharCode(m | k);
+        if (!/^[0-9a-zA-Z/_-]$/.test(p) || p.charCodeAt(0) < 0x21 || p.charCodeAt(0) > 0x7E) p = '_';
+        password += p;
+      }
+      errorElem.textContent = "";
+      document.getElementById("password").value = password;
+    }
+    function copyToClipboard() {
+      const pwd = document.getElementById("password");
+      navigator.clipboard.writeText(pwd.value).then(() => {
+        alert("クリップボードにコピーしました");
+      });
+    }
+  </script>
+</body>
+</html>
