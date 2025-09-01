@@ -320,6 +320,17 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div class="wrap"><div id="board" class="board" style="display:none"></div></div>
   <div id="diag" class="diag"></div>
+/* カード化時はセル内の視覚非表示ラベルを完全に消す（重複見出し防止） */
+.board[data-cols="1"] td > label.sr-only,
+.board.force-cards td > label.sr-only{
+  display: none !important;
+}
+
+/* 擬似ラベルが二行に割れないようにする */
+.board[data-cols="1"] tbody td::before,
+.board.force-cards tbody td::before{
+  white-space: nowrap;       /* ←「戻り時間」が改行しない */
+}
 
 <script>
 /* ===== 接続設定 ===== */
