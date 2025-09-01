@@ -319,16 +319,18 @@
   </div>
 
 <script>
-/* ===== 接続設定（Cloudflare Worker にPOST） ===== */
-const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev"; // ★あなたのWorker URL
+// ===== 接続設定（Cloudflare Worker にPOST） =====
+const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev";
 const REMOTE_POLL_MS  = 2000;
 const CONFIG_POLL_MS  = 120000;
 const SESSION_KEY     = "presence-session-token";
 const TOKEN_DEFAULT_TTL = 3600000;
 
-const PANEL_MIN_PX = 760;
+// ★ここを小さくする（760→520）: これで一般的なノートPC幅でも2〜3列になります
+const PANEL_MIN_PX = 520;
 const GAP_PX = 20;
 const MAX_COLS = 3;
+
 
 /* 名簿とUI要素 */
 let GROUPS = [];
