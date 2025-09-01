@@ -1,5 +1,4 @@
-<!-- 【ここに貼る：フロントエンド index.html（POST版／Cloudflare Worker 経由・フルコード）】
-     ※レイアウトは v1.42 の数値を踏襲。1列になったら必ずカード化するように修正済。 -->
+<!-- 【ここに貼る：フロントエンド index.html（POST版／Cloudflare Worker 経由・フルコード）】 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -150,7 +149,7 @@
 
   @media print{header,.toast,.login,.admin-modal{display:none} body{margin:0}.board{gap:10px} th,td{font-size:12px;padding:4px}}
 
-  /* ===== スマホ用カード表示（従来通り 720px 以下は必ずカード化） ===== */
+  /* ===== スマホ用カード表示（720px 以下は必ずカード化） ===== */
   @media (max-width: 720px){
     colgroup, thead{ display:none; }
     table{ table-layout:auto; }
@@ -227,7 +226,7 @@
     <ul id="groupMenuList"></ul>
   </div>
 
-  <!-- 管理モーダル（省略なし） -->
+  <!-- 管理モーダル -->
   <div id="adminModal" class="admin-modal">
     <div class="admin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -335,7 +334,6 @@
     <div id="board" class="board" style="display:none"></div>
   </div>
 
-<!-- 【フロント / index.html の <script> 全差し替え】管理ボタンがF5で消えないようにrole等をsessionStorageに保存 + Workerのrenew強化を利用 -->
 <script>
 /* ====== 接続設定 ====== */
 const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev"; // ←あなたのWorker
@@ -473,12 +471,12 @@ function updateCols(){
   let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
   if(!Number.isFinite(n) || n < 1) n = 1; if(n > MAX_COLS) n = MAX_COLS;
   board.style.setProperty('--cols', n);
-  // 1列になったら必ずカード化（1.42の挙動）
+  board.setAttribute('data-cols', String(n));  /* ★追加：1列時カード化を強制 */
   if(n === 1){ document.body.classList.add('single-col'); } else { document.body.classList.remove('single-col'); }
 }
 function startGridObserver(){ if(ro) ro.disconnect(); ro = new ResizeObserver(updateCols); ro.observe(board.parentElement || document.body); window.addEventListener('resize', updateCols, {passive:true}); updateCols(); }
 
-/* ====== 名簿加工/描画（前版のまま） ====== */
+/* ====== 名簿加工/描画 ====== */
 function makeLocalId(s){ const seed=(s||"").normalize('NFKC').replace(/\s+/g,''); let h=0; for(let i=0;i<seed.length;i++){ h=(h*31+seed.charCodeAt(i))>>>0;} return "P"+(h.toString(16)+"00000000").slice(0,8); }
 function normalizeConfigClient(cfg){
   const groups = Array.isArray(cfg?.groups)? cfg.groups : [];
@@ -507,6 +505,8 @@ function setupMenus(m){
   requiresTimeSet = new Set(STATUSES.filter(s=>s.requiresTime).map(s=>s.value));
   clearOnSet      = new Set(STATUSES.filter(s=>s.clearOn).map(s=>s.value));
   statusClassMap.clear();
+  STATUSES.forEach(s => statusClassMap.set(s.value, 'st-'+shortHash(s.value))); /* ★追加：値→CSSクラス対応表 */
+
   let styleEl = document.getElementById('dyn-status-styles'); if(!styleEl){ styleEl = el('style',{id:'dyn-status-styles'}); document.head.appendChild(styleEl); }
   styleEl.textContent = STATUSES.map(s=>`.st-${shortHash(s.value)}{background:${s.color};}`).join('\n');
 }
@@ -642,7 +642,6 @@ async function renewToken(){
   if(!SESSION_TOKEN) return;
   const res = await apiPost({ action:'renew', token: SESSION_TOKEN });
   if(res && res.ok){
-    // Worker堅牢化: renew応答に role/office/officeName が入ってくる
     if(res.role)       CURRENT_ROLE = res.role;
     if(res.office)     CURRENT_OFFICE_ID = res.office;
     if(res.officeName) CURRENT_OFFICE_NAME = res.officeName;
@@ -651,7 +650,7 @@ async function renewToken(){
   }else{ logout(); }
 }
 
-/* ====== Admin API（前版のまま） ====== */
+/* ====== Admin API ====== */
 function selectedOfficeId(){ return isSuper() ? adminOfficeSel.value : CURRENT_OFFICE_ID; }
 async function adminListOffices(){ return await apiPost({ action:'listOffices', token: SESSION_TOKEN }); }
 async function adminGetFor(office){ return await apiPost({ action:'getFor', token: SESSION_TOKEN, office, nocache:'1' }); }
@@ -672,7 +671,7 @@ async function adminAddOffice(id, name, pw, apw){ return await apiPost({ action:
 async function adminDeleteOffice(office, superProof){ const obj={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(superProof){ obj.superHmac=superProof.hmac; obj.nonce=superProof.nonce; } return await apiPost(obj); }
 async function adminSetOfficePassword(office, pw, apw, superProof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
 
-/* ====== CSVユーティリティ（前版のまま） ====== */
+/* ====== CSVユーティリティ ====== */
 function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); if(/^[=\+\-@\t]/.test(v)) return "'"+v; return v; }
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"'; return s; }).join(','); }
 function makeNormalizedCSV(cfg, data){
@@ -703,7 +702,18 @@ async function hmacSha256(keyBytes, messageStr){ const key=await crypto.subtle.i
 async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗', false); return null; }}
 
 /* ====== 管理UIイベント ====== */
-btnExport.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const cfg=await adminGetConfigFor(office); const dat=await adminGetFor(office); if(!(cfg&&cfg.groups)&&(dat&&typeof dat.data==='object')){ toast('エクスポート失敗', false); return; } const csv=makeNormalizedCSV(cfg, dat.data); const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`presence_${office}.csv`; a.click(); URL.revokeObjectURL(a.href); });
+btnExport.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const cfg=await adminGetConfigFor(office);
+  const dat=await adminGetFor(office);
+  if(!(cfg && cfg.groups) || !(dat && typeof dat.data === 'object')){  /* ★修正：OR 判定 */
+    toast('エクスポート失敗', false); return;
+  }
+  const csv=makeNormalizedCSV(cfg, dat.data);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`presence_${office}.csv`; a.click(); URL.revokeObjectURL(a.href);
+});
+
 btnImport.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); const file=csvFile.files&&csvFile.files[0]; if(!file){ toast('CSVを選択してください', false); return; }
   let superProof=null; if(isSuper()){ superProof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください"); if(!superProof) return; }
@@ -770,8 +780,7 @@ async function logout(){
   await refreshPublicOfficeSelect(); loginEl.style.display='flex';
 }
 
-/* ====== 認証UI ====== */
-function ensureAuthUI(){ const showAdmin = (SESSION_TOKEN && (isSuper() || isOfficeAdmin())); adminBtn.style.display = showAdmin ? 'inline-block' : 'none'; logoutBtn.style.display = SESSION_TOKEN ? 'inline-block' : 'none'; }
+/* ====== 認証UI・起動 ====== */
 async function refreshPublicOfficeSelect(selectedId){
   officeSel.innerHTML = `<option value="" disabled selected>読込中…</option>`;
   const res = await apiPost({ action:'publicListOffices' });
@@ -781,7 +790,6 @@ async function refreshPublicOfficeSelect(selectedId){
   if(selectedId && offices.some(o=>o.id===selectedId)) officeSel.value = selectedId; else officeSel.selectedIndex = 0;
 }
 
-/* ====== 起動 ====== */
 document.addEventListener('DOMContentLoaded', async ()=>{
   await refreshPublicOfficeSelect();
 
@@ -812,7 +820,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   async function afterLogin(res){
     SESSION_TOKEN = res.token; sessionStorage.setItem(SESSION_KEY, SESSION_TOKEN);
     CURRENT_OFFICE_NAME = res.officeName || ""; CURRENT_OFFICE_ID = res.office || ""; CURRENT_ROLE = res.role || "user";
-    saveSessionMeta(); // ← ここが重要（F5でも役割維持）
+    saveSessionMeta(); /* ★F5でも役割維持 */
     titleBtn.textContent = (CURRENT_OFFICE_NAME? `${CURRENT_OFFICE_NAME}　在席確認表【開発用】` : '在席確認表【開発用】');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI();
 
@@ -835,7 +843,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const existing = sessionStorage.getItem(SESSION_KEY);
   if(existing){
     SESSION_TOKEN = existing; loginEl.style.display='none';
-    // いったんローカルに保持している役割を反映（UIが消えないように）
     loadSessionMeta();
     titleBtn.textContent = (CURRENT_OFFICE_NAME? `${CURRENT_OFFICE_NAME}　在席確認表【開発用】` : '在席確認表【開発用】');
     ensureAuthUI();
@@ -865,7 +872,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
 window.addEventListener('error', e=>{ toastEl.style.background='#c53030'; toastEl.textContent='エラー: '+e.message; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'), 1800); });
 </script>
-
 
 <datalist id="noteOptions"></datalist>
 </body>
