@@ -1,4 +1,5 @@
-<!-- 【ここに貼る：フロントエンド index.html（POST版／Cloudflare Worker 経由・フルコード）】 -->
+<!-- 【ここに貼る：フロントエンド index.html（POST版／Cloudflare Worker 経由・フルコード）】
+     ※レイアウトは v1.42 の数値を踏襲。1列になったら必ずカード化するように修正済。 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -6,7 +7,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>在席確認表【開発用】</title>
 
-<!-- ★CSP：JSONPを卒業し、POST(fetch)のみ許可。Worker への接続を許可 -->
+<!-- ★CSP：POST(fetch)のみ許可。Worker への接続を許可 -->
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'self';
                script-src 'self' 'unsafe-inline';
@@ -17,17 +18,17 @@
 
 <style>
   :root{
-    /* レイアウト基準（絶対値指定はここだけ） */
+    /* ===== v1.42 と同じ列幅パラメータ ===== */
     --base-name:   120px;
     --base-ext:     70px;
     --base-status: 170px;
     --base-time:    65px;
     --base-note:   210px;
 
-    --scale-name:   0.50; /* 50% */
-    --scale-ext:    0.33; /* 33% */
-    --scale-status: 0.75; /* 75% */
-    --scale-time:   0.45; /* 45% */
+    --scale-name:   0.50;
+    --scale-ext:    0.33;
+    --scale-status: 0.75;
+    --scale-time:   0.45;
 
     --min-name:    85px;
     --min-ext:     35px;
@@ -149,59 +150,65 @@
 
   @media print{header,.toast,.login,.admin-modal{display:none} body{margin:0}.board{gap:10px} th,td{font-size:12px;padding:4px}}
 
-  /* スマホカード表示 */
+  /* ===== スマホ用カード表示（従来通り 720px 以下は必ずカード化） ===== */
   @media (max-width: 720px){
     colgroup, thead{ display:none; }
     table{ table-layout:auto; }
     tbody{ display:block; }
-
     tbody tr{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px 12px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px;
-      margin:10px 0;
+      display:flex; flex-wrap:wrap; gap:8px 12px;
+      border:1px solid var(--line); border-radius:10px;
+      padding:10px; margin:10px 0;
     }
-
     tbody td{
-      border:none;
-      padding:0;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex:1 1 48%;
-      min-width:160px;
-      background:transparent;
+      border:none; padding:0; display:flex; align-items:center; gap:8px;
+      flex:1 1 48%; min-width:160px; background:transparent;
     }
-
     tbody td::before{
       content: attr(data-label);
-      font-weight:600;
-      color:#6B7280;
-      min-width:5.5em;
-      flex:0 0 auto;
+      font-weight:600; color:#6B7280; min-width:5.5em; flex:0 0 auto;
     }
-
     tbody td.name{
-      order:0;
-      flex:1 1 100%;
-      font-weight:800;
-      font-size:15px;
-      line-height:1.2;
-      padding-bottom:2px;
+      order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px;
     }
     tbody td.name::before{ content:""; display:none; }
-
     tbody td.ext    { order:1; }
     tbody td.time   { order:2; }
     tbody td.status { order:3; }
     tbody td.note   { order:4; flex:1 1 100%; }
-
     select, input[type="text"]{ width:100%; }
     td.status select{ padding-right:2.0em; }
   }
+
+  /* ===== 追加：1列グリッドになったら強制カード化（幅が720pxを超えていても適用） ===== */
+  .board[data-cols="1"] colgroup,
+  .board[data-cols="1"] thead{ display:none; }
+  .board[data-cols="1"] table{ table-layout:auto; }
+  .board[data-cols="1"] tbody{ display:block; }
+  .board[data-cols="1"] tbody tr{
+    display:flex; flex-wrap:wrap; gap:8px 12px;
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px; margin:10px 0;
+  }
+  .board[data-cols="1"] tbody td{
+    border:none; padding:0; display:flex; align-items:center; gap:8px;
+    flex:1 1 48%; min-width:160px; background:transparent;
+  }
+  .board[data-cols="1"] tbody td::before{
+    content: attr(data-label);
+    font-weight:600; color:#6B7280; min-width:5.5em; flex:0 0 auto;
+  }
+  .board[data-cols="1"] tbody td.name{
+    order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px;
+  }
+  .board[data-cols="1"] tbody td.name::before{ content:""; display:none; }
+  .board[data-cols="1"] tbody td.ext    { order:1; }
+  .board[data-cols="1"] tbody td.time   { order:2; }
+  .board[data-cols="1"] tbody td.status { order:3; }
+  .board[data-cols="1"] tbody td.note   { order:4; flex:1 1 100%; }
+  .board[data-cols="1"] select,
+  .board[data-cols="1"] input[type="text"]{ width:100%; }
+  .board[data-cols="1"] td.status select{ padding-right:2.0em; }
 </style>
 </head>
 
@@ -220,7 +227,7 @@
     <ul id="groupMenuList"></ul>
   </div>
 
-  <!-- 管理モーダル -->
+  <!-- 管理モーダル（省略なし） -->
   <div id="adminModal" class="admin-modal">
     <div class="admin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -330,14 +337,16 @@
 
 <script>
 /* ===== 接続設定（Cloudflare Worker にPOST） ===== */
-const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev"; // ★あなたのWorker URL
+const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev";
 const REMOTE_POLL_MS  = 2000;
 const CONFIG_POLL_MS  = 120000;
 const SESSION_KEY     = "presence-session-token";
 const TOKEN_DEFAULT_TTL = 3600000;
 
-/* レイアウト（★最小幅を緩めて2〜3列になりやすく） */
-const PANEL_MIN_PX = 520; // 旧:760
+/* ===== v1.42 の見え方を優先（列が詰まらない最小幅） =====
+   760px は v1.42 相当。これより狭いと 2→1列になり、
+   1列になった場合は常にカード化（下の data-cols=1 のCSSが発動）。 */
+const PANEL_MIN_PX = 760;
 const GAP_PX = 20;
 const MAX_COLS = 3;
 
@@ -472,7 +481,14 @@ function sanitizeText(s){ s = (s==null)?'':String(s); return s.replace(/[\u0000-
 
 /* ===== レイアウト ===== */
 function getContainerWidth(){ const elc = board.parentElement || document.body; const r = elc.getBoundingClientRect(); return Math.max(0, Math.round(r.width)); }
-function updateCols(){ const w = getContainerWidth(); let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX)); if(!Number.isFinite(n) || n < 1) n = 1; if(n > MAX_COLS) n = MAX_COLS; board.style.setProperty('--cols', n); }
+function updateCols(){
+  const w = getContainerWidth();
+  let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
+  if(!Number.isFinite(n) || n < 1) n = 1;
+  if(n > MAX_COLS) n = MAX_COLS;
+  board.style.setProperty('--cols', n);
+  board.dataset.cols = String(n);   // ★1列なら CSS でカード化
+}
 function startGridObserver(){ if(ro) ro.disconnect(); ro = new ResizeObserver(updateCols); ro.observe(board.parentElement || document.body); window.addEventListener('resize', updateCols, {passive:true}); updateCols(); }
 
 /* ===== 名簿整形 ===== */
@@ -511,12 +527,8 @@ function defaultMenus(){
   };
 }
 function setupMenus(m){
-  // 受信メニューが不正/空ならデフォルトを使う
   MENUS = (m && typeof m === 'object') ? m : defaultMenus();
-  const stsSource = Array.isArray(MENUS.statuses) && MENUS.statuses.length > 0
-    ? MENUS.statuses
-    : defaultMenus().statuses;
-
+  const stsSource = Array.isArray(MENUS.statuses) && MENUS.statuses.length > 0 ? MENUS.statuses : defaultMenus().statuses;
   STATUSES = stsSource.map(s=>({
     value: sanitizeText(s?.value || ""),
     color: /^#[0-9A-Fa-f]{6}$/.test(String(s?.color||"")) ? s.color : "#ffffff",
@@ -527,12 +539,10 @@ function setupMenus(m){
   requiresTimeSet = new Set(STATUSES.filter(s=>s.requiresTime).map(s=>s.value));
   clearOnSet      = new Set(STATUSES.filter(s=>s.clearOn).map(s=>s.value));
 
-  // ノート候補
   const noteOpts = Array.isArray(MENUS.noteOptions) ? MENUS.noteOptions.map(sanitizeText) : defaultMenus().noteOptions;
   const dl = document.getElementById('noteOptions');
   if(dl){ dl.innerHTML = ""; noteOpts.forEach(v=> dl.appendChild(el('option', { value: v }))); }
 
-  // ステータス配色（動的クラス）
   statusClassMap.clear();
   const styleId = 'dyn-status-styles';
   let styleEl = document.getElementById(styleId);
@@ -582,7 +592,6 @@ function buildRow(member){
   const tdStatus = el('td', { class:'status', 'data-label':'ステータス' });
   const selStatus = el('select', { id:`status-${key}`, name:'status' });
   tdStatus.appendChild(el('label', { class:'sr-only', for:`status-${key}`, text:'ステータス' }));
-  // ★セレクト本体を必ず追加（抜けていると表示されない）
   tdStatus.appendChild(selStatus);
   STATUSES.forEach(s=> selStatus.appendChild(el('option', { value:s.value, text:s.value })));
 
@@ -591,7 +600,6 @@ function buildRow(member){
   const selTime = el('select', { id:`time-${key}`, name:'time' });
   tdTime.appendChild(el('label', { class:'sr-only', for:`time-${key}`, text:'戻り時間' }));
   selTime.appendChild(buildTimeOptions(MENUS?.timeStepMinutes));
-  // ★セレクト本体を必ず追加
   tdTime.appendChild(selTime);
 
   // note
@@ -599,11 +607,8 @@ function buildRow(member){
   const inpNote = el('input', { id:`note-${key}`, name:'note', type:'text', list:'noteOptions', placeholder:'備考' });
   tdNote.appendChild(inpNote);
 
-  // ★初期値の保証 & 戻り時間の有効化切り替え
+  // 初期値・有効化
   const initialStatus = STATUSES[0]?.value || "在席";
-  if (selStatus.options.length === 0) {
-    ["在席","外出","休み"].forEach(v=> selStatus.appendChild(el('option',{value:v,text:v})));
-  }
   if (!selStatus.value) selStatus.value = initialStatus;
   toggleTimeEnable(selStatus, selTime);
 
@@ -1236,9 +1241,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         await afterLogin(resSup);
         return;
       }
-    }catch(_){ /* 無視して通常PWへフォールバック */ }
+    }catch(_){ /* 通常PWへフォールバック */ }
 
-    // 通常（officeAdmin / user）
     const res = await apiPost({ action:'login', office, password: pw });
     if(res === null){ loginMsg.textContent = "通信エラー"; return; }
     if(res && res.error === 'unauthorized'){ loginMsg.textContent = "拠点またはパスワードが違います"; return; }
