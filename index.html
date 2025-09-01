@@ -135,16 +135,91 @@
     tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
   }
 
-  /* 1列になったら強制カード化（幅が広くても） */
-  .board[data-cols="1"] colgroup,
-  .board[data-cols="1"] thead{ display:none; }
-  .board[data-cols="1"] tbody{ display:block; }
-  .board[data-cols="1"] tbody tr{ display:flex; flex-wrap:wrap; gap:8px 12px; border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
-  .board[data-cols="1"] tbody td{ border:none; padding:0; display:flex; align-items:center; gap:8px; flex:1 1 48%; min-width:160px; background:transparent; }
-  .board[data-cols="1"] tbody td::before{ content: attr(data-label); font-weight:600; color:#6B7280; min-width:5.5em; flex:0 0 auto; }
-  .board[data-cols="1"] tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
-  .board[data-cols="1"] tbody td.name::before{ content:""; display:none; }
-  .board[data-cols="1"] tbody td.ext{ order:1; } .board[data-cols="1"] tbody td.time{ order:2; } .board[data-cols="1"] tbody td.status{ order:3; } .board[data-cols="1"] tbody td.note{ order:4; flex:1 1 100%; }
+ /* === 1列になったら強制カード化（幅が広くても） ===
+   table を block にして、tr/td を flex 化できるようにする。 */
+.board[data-cols="1"] table,
+.board.force-cards table{
+  display:block;            /* ←これが肝 */
+  width:100%;
+  table-layout:auto;
+  border-collapse:separate; /* カード境界の角丸を保つ */
+}
+
+.board[data-cols="1"] colgroup,
+.board.force-cards colgroup,
+.board[data-cols="1"] thead,
+.board.force-cards thead{
+  display:none;
+}
+
+.board[data-cols="1"] tbody,
+.board.force-cards tbody{
+  display:block;
+}
+
+.board[data-cols="1"] tbody tr,
+.board.force-cards tbody tr{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  margin:10px 0;
+}
+
+.board[data-cols="1"] tbody td,
+.board.force-cards tbody td{
+  border:none;
+  padding:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:1 1 48%;
+  min-width:160px;
+  background:transparent;
+}
+
+.board[data-cols="1"] tbody td::before,
+.board.force-cards tbody td::before{
+  content: attr(data-label);
+  font-weight:600;
+  color:#6B7280;
+  min-width:5.5em;
+  flex:0 0 auto;
+}
+
+.board[data-cols="1"] tbody td.name,
+.board.force-cards tbody td.name{
+  order:0; flex:1 1 100%;
+  font-weight:800; font-size:15px; line-height:1.2;
+  padding-bottom:2px;
+}
+.board[data-cols="1"] tbody td.name::before,
+.board.force-cards tbody td.name::before{
+  content:""; display:none;
+}
+
+/* 並び順 */
+.board[data-cols="1"] tbody td.ext,
+.board.force-cards tbody td.ext{ order:1; }
+.board[data-cols="1"] tbody td.time,
+.board.force-cards tbody td.time{ order:2; }
+.board[data-cols="1"] tbody td.status,
+.board.force-cards tbody td.status{ order:3; }
+.board[data-cols="1"] tbody td.note,
+.board.force-cards tbody td.note{ order:4; flex:1 1 100%; }
+
+/* 入力幅 */
+.board[data-cols="1"] select,
+.board[data-cols="1"] input[type="text"],
+.board.force-cards select,
+.board.force-cards input[type="text"]{
+  width:100%;
+}
+.board[data-cols="1"] td.status select,
+.board.force-cards   td.status select{ padding-right:2.0em; }
+
 
   /* 診断用バナー（何かを補修した時だけ出る） */
   .diag{ position:fixed; left:8px; bottom:8px; background:#fffbdd; border:1px solid #e6cf00; color:#614a00;
