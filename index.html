@@ -1,10 +1,4 @@
-<!-- 【ここに貼る】GitHub Pages のフロント: index.html（全置換）
-     変更点：
-     - 1列化の閾値を CSS 変数から動的算出（v1.42の列幅を厳密反映）
-     - menus.statuses が空でもデフォルトへフォールバック
-     - 1列は常にカード化（data-cols="1"）
-     - role 欠落時の後方互換（userRole / isAdmin を見る）
--->
+<!-- 【ここに貼る：GitHub Pages のフロント index.html（全置換）】 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -152,7 +146,7 @@
   .toast{position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:8px 12px;border-radius:4px;font-size:12px;opacity:0;transition:.25s;z-index:2000}
   .toast.show{opacity:1}
 
-  /* ログイン（拠点選択＋パスワード） */
+  /* ログイン */
   .login{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:2200}
   .login .card{background:#fff;border-radius:8px;padding:20px;min-width:300px;max-width:90vw;text-align:center}
   .login .card h2{margin:.2rem 0 1rem}
@@ -160,7 +154,7 @@
 
   @media print{header,.toast,.login,.admin-modal{display:none} body{margin:0}.board{gap:10px} th,td{font-size:12px;padding:4px}}
 
-  /* ===== スマホ用カード表示（720px 以下は必ずカード化） ===== */
+  /* 720px 以下は必ずカード化 */
   @media (max-width: 720px){
     colgroup, thead{ display:none; }
     table{ table-layout:auto; }
@@ -190,7 +184,7 @@
     td.status select{ padding-right:2.0em; }
   }
 
-  /* ===== 1列グリッド時は強制カード化（幅が720px超でも適用） ===== */
+  /* 1列グリッド時の強制カード化（幅が720px超でも適用） */
   .board[data-cols="1"] colgroup,
   .board[data-cols="1"] thead{ display:none; }
   .board[data-cols="1"] table{ table-layout:auto; }
@@ -237,7 +231,7 @@
     <ul id="groupMenuList"></ul>
   </div>
 
-  <!-- 管理モーダル（省略なし） -->
+  <!-- 管理モーダル -->
   <div id="adminModal" class="admin-modal">
     <div class="admin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -472,21 +466,18 @@ function loadSessionMeta(){
 
 /* ====== レイアウト（v1.42準拠・動的計算） ====== */
 const GAP_PX = 20, MAX_COLS = 3;
-/* CSS の px 値を数値に */
 function cssPx(varName){
   const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   if(!v) return 0; const m = v.match(/([\d.]+)px/); return m ? parseFloat(m[1]) : 0;
 }
-/* テーブルが崩れない最小幅を CSS 変数から算出（v1.42の列幅を反映） */
 function calcPanelMinPx(){
   const wName   = cssPx('--w-name');
   const wExt    = cssPx('--w-ext');
   const wStatus = cssPx('--status-effective') || cssPx('--w-status');
   const wTime   = cssPx('--w-time');
   const wNote   = cssPx('--w-note');
-  // セルの内側や枠分を少し足す（経験値）
-  const extra = 56; // タイトル + スクロールバー等
-  const borders = 5 * 2; // 5列×左右ボーダ
+  const extra = 56;
+  const borders = 10;
   return Math.round(wName + wExt + wStatus + wTime + wNote + extra + borders);
 }
 function getContainerWidth(){
@@ -496,10 +487,11 @@ function getContainerWidth(){
 }
 function updateCols(){
   const w = getContainerWidth();
-  const panelMin = Math.max(520, calcPanelMinPx()); // 下限 520 は保険（v1.42相当）
+  const panelMin = Math.max(520, calcPanelMinPx());
   let n = Math.floor((w + GAP_PX) / (panelMin + GAP_PX));
   if(!Number.isFinite(n) || n < 1) n = 1; if(n > MAX_COLS) n = MAX_COLS;
-  board.style.setProperty('--cols', n);
+  /* ★重要：CSS変数は “文字列” でセット */
+  board.style.setProperty('--cols', String(n));
   board.setAttribute('data-cols', String(n));  // 1列時はカード化
 }
 function startGridObserver(){
@@ -526,21 +518,16 @@ function defaultMenus(){ return { statuses:[
   { value:"休み", color:"#f7e8ee", requiresTime:false, clearOn:true },
   { value:"帰宅", color:"#ffe8f0", requiresTime:false, clearOn:true },
   { value:"在宅勤務", color:"#e8f0ff", requiresTime:false, clearOn:true },
-  { value:"出張", color:"#fff3e6", requiresTime:true, clearOn:false },
-  { value:"研修", color:"#fff3e6", requiresTime:true, clearOn:false },
+  { value:"出張", color:"#fff3e6", requiresTime:true,  clearOn:false },
+  { value:"研修", color:"#fff3e6", requiresTime:true,  clearOn:false },
   { value:"健康診断", color:"#f7e8ee", requiresTime:false, clearOn:false },
   { value:"コアドック", color:"#f7e8ee", requiresTime:false, clearOn:false }
 ], noteOptions:["", "直出", "直帰", "直出/直帰"], timeStepMinutes:30}; }
 function shortHash(str){ let h=2166136261>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0).toString(36); }
 function setupMenus(m){
-  // ★statuses が未設定 or 空配列ならデフォルトへフォールバック
   const base = (m && typeof m==='object') ? m : {};
   const rawStatuses = (Array.isArray(base.statuses) && base.statuses.length>0) ? base.statuses : defaultMenus().statuses;
-  MENUS = {
-    ...defaultMenus(),
-    ...base,
-    statuses: rawStatuses
-  };
+  MENUS = { ...defaultMenus(), ...base, statuses: rawStatuses };
   const sts = MENUS.statuses;
   STATUSES = sts.map(s=>({
     value: sanitizeText(s?.value||""),
@@ -548,12 +535,10 @@ function setupMenus(m){
     requiresTime: !!s?.requiresTime,
     clearOn: !!s?.clearOn
   })).filter(s=>s.value);
-
   requiresTimeSet = new Set(STATUSES.filter(s=>s.requiresTime).map(s=>s.value));
   clearOnSet      = new Set(STATUSES.filter(s=>s.clearOn).map(s=>s.value));
   statusClassMap.clear();
   STATUSES.forEach(s => statusClassMap.set(s.value, 'st-'+shortHash(s.value)));
-
   let styleEl = document.getElementById('dyn-status-styles');
   if(!styleEl){ styleEl = el('style',{id:'dyn-status-styles'}); document.head.appendChild(styleEl); }
   styleEl.textContent = STATUSES.map(s=>`.st-${shortHash(s.value)}{background:${s.color};}`).join('\n');
@@ -586,7 +571,6 @@ function buildRow(member){
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
   const selStatus=el('select',{id:`status-${key}`,name:'status'});
   tdStatus.appendChild(el('label',{class:'sr-only',for:`status-${key}`,text:'ステータス'}));
-  // ★STATUSES が空になることを防いだので必ず選択肢が入る
   STATUSES.forEach(s=> selStatus.appendChild(el('option',{value:s.value,text:s.value})));
 
   const tdTime=el('td',{class:'time','data-label':'戻り時間'});
@@ -995,12 +979,13 @@ logoutBtn.addEventListener('click', ()=> logout());
 function parseCSV(text){
   const out=[]; let i=0, s=text; let row=[], field='', inq=false;
   function pushField(){ row.push(field); field=''; }
-  function pushRow(){ out.push(row); row=[]; }
+  function pushRow(){ out.push(row); }
   while(i<s.length){
     const c=s[i++]; if(inq){ if(c==='"'&&s[i]==='"'){ field+='"'; i++; } else if(c==='"'){ inq=false; } else field+=c; }
-    else { if(c===','){ pushField(); } else if(c==='"'){ inq=true; } else if(c==='\n'){ pushField(); pushRow(); } else if(c==='\r'){ } else field+=c; }
+    else { if(c===','){ pushField(); } else if(c==='"'){ inq=true; } else if(c==='\n'){ pushField(); pushRow(); row=[]; } else if(c==='\r'){ } else field+=c; }
   }
-  if(field!=='') pushField(); if(row.length) pushRow(); return out;
+  if(field!=='' || row.length) { pushField(); if(row.length) pushRow(); }
+  return out;
 }
 
 /* ====== ログアウト ====== */
@@ -1039,7 +1024,7 @@ async function refreshPublicOfficeSelect(selectedId){
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
-  // Service Worker を登録（?v=不要化）
+  // Service Worker 登録（?v=不要化）
   if ('serviceWorker' in navigator) {
     try{
       await navigator.serviceWorker.register('./sw.js', { scope: './' });
@@ -1055,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(!pw || !pw.trim()){ loginMsg.textContent="パスワードを入力してください"; return; }
     loginMsg.textContent="認証中…";
 
-    // まずスーパー管理者（HMAC）を試行
+    // スーパー管理者（HMAC）を先に試行
     try{
       const {nonce, salt} = await apiPost({ action:'getNonce' }) || {};
       if(nonce && salt){
@@ -1065,18 +1050,17 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         const hmac = btoa(String.fromCharCode(...new Uint8Array(sig)));
         const resSup = await apiPost({ action:'login', office, hmac, nonce });
         if(resSup && resSup.token){
-          CURRENT_ROLE = resSup.role || resSup.userRole || (resSup.isAdmin===true?'officeAdmin':'user');
+          resSup.role = resSup.role || resSup.userRole || (resSup.isAdmin===true?'officeAdmin':'user');
           await afterLogin(resSup); return;
         }
       }
-    }catch{/* フォールバック */ }
+    }catch{/* フォールバック */}
 
     // 通常ログイン
     const res = await apiPost({ action:'login', office, password: pw });
     if(res === null){ loginMsg.textContent="通信エラー"; return; }
     if(res && res.error === 'unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
     if(!(res && res.token)){ loginMsg.textContent="サーバ応答が不正です"; return; }
-    // ★role が欠落しても後方互換で判定
     res.role = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
     await afterLogin(res);
   });
