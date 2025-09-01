@@ -1,10 +1,20 @@
-<!-- 【ここに貼る：フロントエンド index.html（POST版／Cloudflare Worker 経由・フルコード）】 -->
+<!-- 【ここに貼る】GitHub Pages のフロント: index.html（全置換）
+     ・レイアウト: v1.42 の幅を踏襲。グリッド列数は自動（最大3列）、1列時は必ずカード化
+     ・管理ボタンがF5で消えない: ロール/拠点情報を sessionStorage に保存＋renew応答でも更新
+     ・API呼び出しは Cloudflare Worker に POST（no-store）
+     ・キャッシュ対策: meta no-cache + Service Worker を登録（?v=不要化）
+-->
 <!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>在席確認表【開発用】</title>
+
+<!-- ★キャッシュ抑止（HTML自体の再取得を強める） -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
 <!-- ★CSP：POST(fetch)のみ許可。Worker への接続を許可 -->
 <meta http-equiv="Content-Security-Policy"
@@ -179,7 +189,7 @@
     td.status select{ padding-right:2.0em; }
   }
 
-  /* ===== 追加：1列グリッドになったら強制カード化（幅が720pxを超えていても適用） ===== */
+  /* ===== 1列グリッド時は強制カード化（幅が720px超でも適用） ===== */
   .board[data-cols="1"] colgroup,
   .board[data-cols="1"] thead{ display:none; }
   .board[data-cols="1"] table{ table-layout:auto; }
@@ -336,13 +346,13 @@
 
 <script>
 /* ====== 接続設定 ====== */
-const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev"; // ←あなたのWorker
+const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev";
 const REMOTE_POLL_MS  = 2000;
 const CONFIG_POLL_MS  = 120000;
 const SESSION_KEY     = "presence-session-token";
 const TOKEN_DEFAULT_TTL = 3600000;
 
-/* ====== リロード時の権限保持に使うキー ====== */
+/* ====== リロード時の権限保持 ====== */
 const SESSION_ROLE_KEY         = "presence-role";
 const SESSION_OFFICE_KEY       = "presence-office";
 const SESSION_OFFICE_NAME_KEY  = "presence-office-name";
@@ -463,7 +473,7 @@ function loadSessionMeta(){
   }catch(_){}
 }
 
-/* ====== レイアウト（1.42の幅パラメータそのまま利用） ====== */
+/* ====== レイアウト（v1.42準拠） ====== */
 const PANEL_MIN_PX = 760, GAP_PX = 20, MAX_COLS = 3;
 function getContainerWidth(){ const elc = board.parentElement || document.body; const r = elc.getBoundingClientRect(); return Math.max(0, Math.round(r.width)); }
 function updateCols(){
@@ -471,8 +481,7 @@ function updateCols(){
   let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
   if(!Number.isFinite(n) || n < 1) n = 1; if(n > MAX_COLS) n = MAX_COLS;
   board.style.setProperty('--cols', n);
-  board.setAttribute('data-cols', String(n));  /* ★追加：1列時カード化を強制 */
-  if(n === 1){ document.body.classList.add('single-col'); } else { document.body.classList.remove('single-col'); }
+  board.setAttribute('data-cols', String(n));  // 1列時カード化
 }
 function startGridObserver(){ if(ro) ro.disconnect(); ro = new ResizeObserver(updateCols); ro.observe(board.parentElement || document.body); window.addEventListener('resize', updateCols, {passive:true}); updateCols(); }
 
@@ -505,8 +514,7 @@ function setupMenus(m){
   requiresTimeSet = new Set(STATUSES.filter(s=>s.requiresTime).map(s=>s.value));
   clearOnSet      = new Set(STATUSES.filter(s=>s.clearOn).map(s=>s.value));
   statusClassMap.clear();
-  STATUSES.forEach(s => statusClassMap.set(s.value, 'st-'+shortHash(s.value))); /* ★追加：値→CSSクラス対応表 */
-
+  STATUSES.forEach(s => statusClassMap.set(s.value, 'st-'+shortHash(s.value)));
   let styleEl = document.getElementById('dyn-status-styles'); if(!styleEl){ styleEl = el('style',{id:'dyn-status-styles'}); document.head.appendChild(styleEl); }
   styleEl.textContent = STATUSES.map(s=>`.st-${shortHash(s.value)}{background:${s.color};}`).join('\n');
 }
@@ -533,8 +541,10 @@ function render(){ board.replaceChildren(); GROUPS.forEach((g,i)=> board.appendC
 
 /* ====== グループメニュー ====== */
 function buildGroupMenu(){
-  if(!Array.isArray(GROUPS)) return; const total=GROUPS.reduce((s,g)=> s+((g.members&&g.members.length)||0),0);
-  if(menuTitle) menuTitle.textContent='グループにジャンプ'; menuList.replaceChildren();
+  if(!Array.isArray(GROUPS)) return;
+  const total=GROUPS.reduce((s,g)=> s+((g.members&&g.members.length)||0),0);
+  if(menuTitle) menuTitle.textContent='グループにジャンプ';
+  menuList.replaceChildren();
   menuList.appendChild(el('li',{},[el('button',{class:'grp-item','role':'menuitem','data-target':'top',text:`全体（合計：${total}名）`})]));
   GROUPS.forEach((g,i)=>{ const title=fallbackGroupTitle(g,i); const sub=(g&&g.members&&g.members.length)?`（${g.members.length}名）`:'（0名）'; menuList.appendChild(el('li',{},[el('button',{class:'grp-item','role':'menuitem','data-target':`grp-${i}`},[title,el('span',{class:'muted',text:` ${sub}`})])]))});
   menuList.querySelectorAll('button.grp-item').forEach(btn=> btn.addEventListener('click',()=>{ const id=btn.getAttribute('data-target'); closeMenu(); if(id==='top'){ window.scrollTo({top:0,behavior:'smooth'}); return; } const sec=document.getElementById(id); if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'}); }));
@@ -647,6 +657,7 @@ async function renewToken(){
     if(res.officeName) CURRENT_OFFICE_NAME = res.officeName;
     saveSessionMeta();
     const next = Number(res.exp) || TOKEN_DEFAULT_TTL; scheduleRenew(next);
+    ensureAuthUI();
   }else{ logout(); }
 }
 
@@ -694,7 +705,7 @@ async function populateAdminOffices(selected){
   }
 }
 
-/* ====== 重要操作の再認証(HMAC+Nonce) ====== */
+/* ====== HMAC 追加認証 ====== */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
 function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
 async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', enc.encode(str)); }
@@ -706,7 +717,7 @@ btnExport.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const cfg=await adminGetConfigFor(office);
   const dat=await adminGetFor(office);
-  if(!(cfg && cfg.groups) || !(dat && typeof dat.data === 'object')){  /* ★修正：OR 判定 */
+  if(!(cfg && cfg.groups) || !(dat && typeof dat.data === 'object')){
     toast('エクスポート失敗', false); return;
   }
   const csv=makeNormalizedCSV(cfg, dat.data);
@@ -791,6 +802,15 @@ async function refreshPublicOfficeSelect(selectedId){
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
+  // ★Service Worker を登録（?v= をやめられるように）
+  if ('serviceWorker' in navigator) {
+    try{
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      // 新しいSWに切り替わったら自動リロード
+      navigator.serviceWorker.addEventListener('controllerchange', ()=> location.reload());
+    }catch(_){}
+  }
+
   await refreshPublicOfficeSelect();
 
   document.getElementById('btnLogin').addEventListener('click', async ()=>{
@@ -801,12 +821,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // まずスーパー管理者（HMAC）を試行
     try{
-      const {nonce, salt} = await getNonce();
-      const kBytes = await sha256Bytes(salt + pw);
-      const sig = await hmacSha256(kBytes, nonce);
-      const hmac = toBase64(sig);
-      const resSup = await apiPost({ action:'login', office, hmac, nonce });
-      if(resSup && resSup.token && resSup.role === 'superAdmin'){ await afterLogin(resSup); return; }
+      const {nonce, salt} = await apiPost({ action:'getNonce' }) || {};
+      if(nonce && salt){
+        const key = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + pw));
+        const hmacKey = await crypto.subtle.importKey('raw', key, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+        const sig = await crypto.subtle.sign('HMAC', hmacKey, new TextEncoder().encode(nonce));
+        const hmac = btoa(String.fromCharCode(...new Uint8Array(sig)));
+        const resSup = await apiPost({ action:'login', office, hmac, nonce });
+        if(resSup && resSup.token && resSup.role === 'superAdmin'){ await afterLogin(resSup); return; }
+      }
     }catch{/* フォールバック */ }
 
     // 通常ログイン
@@ -820,15 +843,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   async function afterLogin(res){
     SESSION_TOKEN = res.token; sessionStorage.setItem(SESSION_KEY, SESSION_TOKEN);
     CURRENT_OFFICE_NAME = res.officeName || ""; CURRENT_OFFICE_ID = res.office || ""; CURRENT_ROLE = res.role || "user";
-    saveSessionMeta(); /* ★F5でも役割維持 */
+    saveSessionMeta();
     titleBtn.textContent = (CURRENT_OFFICE_NAME? `${CURRENT_OFFICE_NAME}　在席確認表【開発用】` : '在席確認表【開発用】');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI();
-
-    try{
-      const old=localStorage.getItem("presence-board-v3");
-      if(old && !localStorage.getItem(localKey())){ localStorage.setItem(localKey(), old); }
-      localStorage.removeItem("presence-board-v3");
-    }catch{}
 
     const cfgP = (async()=>{ const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' }); if(cfg && !cfg.error){ GROUPS = normalizeConfigClient(cfg); CONFIG_UPDATED = (typeof cfg.updated==='number')? cfg.updated : 0; setupMenus(cfg.menus||null); } })();
     const dataP = fastFetchDataOnce().catch(()=>null);
