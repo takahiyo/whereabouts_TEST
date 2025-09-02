@@ -141,7 +141,12 @@
     tbody{ display:block; }
     tbody tr{ display:flex; flex-wrap:wrap; gap:8px 12px; border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
     tbody td{ border:none; padding:0; display:flex; align-items:center; gap:8px; flex:1 1 48%; min-width:140px; background:transparent; }
-    tbody td::before{ content: attr(data-label); font-weight:600; color:#6B7280; min-width:5.5em; flex:0 0 auto; }
+    #board tbody td::before{
+  content: attr(data-label) !important;
+  font-weight:600; color:#6B7280;
+  min-width:5.5em; flex:0 0 auto;
+}
+
     tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
     tbody td.name::before{ content:""; display:none; }
     tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
