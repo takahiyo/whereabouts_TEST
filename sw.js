@@ -1,5 +1,5 @@
 // 【ここに貼る】GitHub Pages ルートの sw.js（Service Worker：?v=不要化 & 毎回新鮮なHTMLを取得）
-const CACHE_NAME = 'presence-pages-cache-v1';
+const CACHE_NAME = 'presence-pages-cache-test-v1';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
