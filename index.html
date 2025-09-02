@@ -14,7 +14,7 @@
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'self';
                script-src 'self' 'unsafe-inline';
-               connect-src 'self' https://presence-proxy.taka-hiyo.workers.dev;
+               connect-src 'self' https://presence-proxy-prod.taka-hiyo.workers.dev;
                style-src 'self' 'unsafe-inline';
                img-src 'self' data:;
                object-src 'none'">
@@ -379,7 +379,7 @@
   <div id="diag" class="diag"></div>
 <script>
 /* ===== 接続設定 ===== */
-const REMOTE_ENDPOINT = "https://presence-proxy.taka-hiyo.workers.dev";
+const REMOTE_ENDPOINT = "https://presence-proxy-prod.taka-hiyo.workers.dev";
 const REMOTE_POLL_MS = 2000;
 const CONFIG_POLL_MS = 120000;
 const TOKEN_DEFAULT_TTL = 3600000;
