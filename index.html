@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<!-- CSP：Worker への POST を許可 -->
+<!-- CSP：GAS Webアプリへの POST を許可（必要に応じて調整） -->
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'self';
                script-src 'self' 'unsafe-inline';
@@ -22,6 +22,9 @@
                frame-ancestors 'none'">
 
 <style>
+  /* すべての要素を border-box にして、1px のはみ出しを抑止 */
+  *, *::before, *::after { box-sizing: border-box; }
+
   :root{
     --cols: 3;
     --gap: 20px;
@@ -37,39 +40,64 @@
     --status-fixed: initial;
     --status-effective: var(--status-fixed, var(--w-status));
 
-    --gap: 20px;
     --line:#d9d9d9; --head:#f1ece6; --bg:#fafafa;
-    --header-height: 56px;
+    --header-height: 56px; /* JSで実高さに更新 */
   }
 
-  body{font-family:"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#fff;margin:16px}
+  html, body { height:100%; }
+  body{
+    font-family:"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    background:#fff; margin:16px;
+    color:#111827;
+  }
 
-  /* ヘッダ */
+  /* ヘッダ（ログインUI） */
   header{
     position: sticky; top: 0; z-index: 1500;
-    display:flex; gap:8px; align-items:center; justify-content:center;
-    margin-bottom:12px; flex-wrap:wrap; background:#fff; padding:8px 8px 0 8px;
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    margin-bottom:12px; background:#fff; padding:8px 8px 0 8px;
+    max-width:100vw; overflow: clip; /* 横スクロール抑止 */
   }
-  header .title{ font-weight:800; font-size:18px; margin-right:auto }
-  header .row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+  header .title{ font-weight:800; font-size:18px; margin-right:auto; line-height:1.2; }
+  header .row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  header .row.right{ margin-left:auto; }
 
+  /* 入力UI */
   select, input[type="text"], input[type="password"], button, textarea{
-    font:inherit; padding:.45rem .6rem; border:1px solid var(--line); border-radius:8px; background:#fff
+    font:inherit;
+    font-size:16px; /* iOS 自動ズーム対策（16px以上） */
+    padding:.45rem .6rem; border:1px solid var(--line); border-radius:8px; background:#fff
   }
-  button{ cursor:pointer }
+  button{ cursor:pointer; touch-action: manipulation; }
   button.primary{ background:#111827; color:#fff; border-color:#111827 }
   button.ghost{ background:#fff }
   .muted{ color:#6b7280 }
   .danger{ color:#dc2626 }
   .kbd{ font-family:ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; padding:2px 6px; font-size:12px }
 
-  .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:12px }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 8px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:12px
+  }
   .pill b{ font-weight:800 }
 
   .flex{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
   .grow{ flex:1 1 auto }
   .right{ margin-left:auto }
   .w-100{ width:100% }
+
+  /* ヘッダ内のフォーム群：極狭幅で縦積み＆100%幅に */
+  @media (max-width: 640px){
+    header .row { flex: 1 1 100%; }
+    header .row.right{ margin-left:0; }
+    .pill{ width:100%; }
+    .pill > input,
+    .pill > select{
+      min-width:0; width:100%; flex:1 1 auto;
+    }
+    /* ボタンも自然に折り返し */
+    header .row.right > button{ flex:1 1 100%; }
+  }
 
   .dialog{
     position:fixed; inset:0; background:rgba(0,0,0,.5);
@@ -81,14 +109,11 @@
   .dialog .head{ display:flex; align-items:center; gap:8px; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line); background:#f7f6f3; border-radius:10px 10px 0 0 }
   .dialog .body{ padding:14px; max-height:80vh; overflow:auto }
   .dialog .foot{ padding:12px 14px; border-top:1px solid var(--line); display:flex; align-items:center; gap:8px; justify-content:flex-end; background:#faf9f7; border-radius:0 0 10px 10px }
-
   .admin-grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .admin-row{ display:flex; gap:8px; align-items:center; }
   .admin-row label{ width:8em; color:#6b7280; font-size:13px }
   .admin-row .note{ font-size:12px; color:#6b7280 }
-
   .section-title{ font-weight:800; color:#374151; font-size:14px; margin:16px 0 8px 0 }
-
   textarea{ padding:.35rem .45rem; border:1px solid var(--line); border-radius:6px; min-width:120px; }
   .admin-note{ font-size:12px; color:#6b7280; }
 
@@ -96,17 +121,19 @@
   .wrap{width:100%; margin:0 auto;}
   .board{
     display:grid; gap:var(--gap);
-    /* JS が--colsを入れ損ねても自動で3→2→1に落ちる保険 */
+    /* JS が --cols を入れ損ねても… 3→2→1 に落とす保険 */
     grid-template-columns: repeat(var(--cols, auto-fit), minmax(min(100%, 760px), 1fr));
   }
-  /* 1列モードとカード強制時は画面幅にフィットさせる */
+  /* 1列モード / カード強制時 は画面幅にフィット */
   .board[data-cols="1"],
   .board.force-cards{
     grid-template-columns: 1fr;
   }
 
-  .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
-    scroll-margin-top: calc(var(--header-height) + 12px); }
+  .panel{
+    border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
+    scroll-margin-top: calc(var(--header-height) + 12px); /* stickyヘッダ分の余白 */
+  }
   .panel .title{ font-weight:700; color:#6B7280; background:#f7f6f3; border:1px solid var(--line); border-radius:4px; padding:6px 8px; margin:0 0 6px 0; min-height:1.8em }
 
   table{width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed}
@@ -179,11 +206,7 @@
 
   .note-input{ width:100%; min-width:160px }
 
-  /* ヘルパー */
-  .center{ text-align:center }
-  .small{ font-size:12px; color:#6b7280 }
-
-  /* 極端に狭い画面のはみ出し防止 */
+  /* 極端に狭い画面のはみ出し防止（カード内の列を縦に） */
   @media (max-width: 360px){
     .board[data-cols="1"] tbody td,
     .board.force-cards tbody td{
@@ -196,7 +219,7 @@
 
 <body>
 <header>
-  <div class="title">在席確認表【開発用】</div>
+  <div class="title" title="クリックで管理設定を開く">在席確認表【開発用】</div>
 
   <div class="row">
     <label class="pill">拠点
@@ -204,11 +227,11 @@
     </label>
 
     <label class="pill">ログイン名
-      <input type="text" id="loginId" placeholder="user/admin">
+      <input type="text" id="loginId" placeholder="user/admin" autocomplete="username">
     </label>
 
     <label class="pill">パスワード
-      <input type="password" id="loginPw" placeholder="••••••••">
+      <input type="password" id="loginPw" placeholder="••••••••" autocomplete="current-password">
     </label>
 
     <button id="btnLogin" class="primary">ログイン</button>
@@ -232,28 +255,28 @@
   <div class="box">
     <div class="head">
       <div id="adminTitle" class="section-title">管理設定</div>
-      <button id="btnCloseAdmin">×</button>
+      <button id="btnCloseAdmin" aria-label="閉じる">×</button>
     </div>
     <div class="body">
       <div class="admin-grid">
         <div class="admin-row">
-          <label>氏名の幅</label>
+          <label for="wName">氏名の幅</label>
           <input type="text" id="wName" placeholder="例: 50%">
         </div>
         <div class="admin-row">
-          <label>内線の幅</label>
+          <label for="wExt">内線の幅</label>
           <input type="text" id="wExt" placeholder="例: 33%">
         </div>
         <div class="admin-row">
-          <label>ステータスの幅</label>
+          <label for="wStatus">ステータスの幅</label>
           <input type="text" id="wStatus" placeholder="例: 75%">
         </div>
         <div class="admin-row">
-          <label>戻り時間の幅</label>
+          <label for="wTime">戻り時間の幅</label>
           <input type="text" id="wTime" placeholder="例: 45%">
         </div>
         <div class="admin-row">
-          <label>備考の幅</label>
+          <label for="wNote">備考の幅</label>
           <input type="text" id="wNote" placeholder="例: 1fr">
         </div>
       </div>
@@ -271,6 +294,7 @@
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbxpEU6kGE5x8MlMkPy5GHeWGQwNn8b5czQh4JH3oYiHNSyqI5hlHGlTnkXe2CwtatBW/exec";
 
 /* ====== DOM 取得 ====== */
+const headerEl = document.querySelector('header');
 const board = document.getElementById('board');
 const officeSelect = document.getElementById('officeSelect');
 const loginId = document.getElementById('loginId');
@@ -286,11 +310,17 @@ const btnCloseAdmin = document.getElementById('btnCloseAdmin');
 const btnAdminCancel = document.getElementById('btnAdminCancel');
 const btnAdminSave = document.getElementById('btnAdminSave');
 
-const iW = (id)=>document.getElementById(id).value.trim();
+const val = (id)=>document.getElementById(id).value.trim();
+
+/* ====== ヘッダ実高さ → CSS変数へ反映 ====== */
+function updateHeaderHeight(){
+  const rect = headerEl.getBoundingClientRect();
+  const h = Math.ceil(rect.height);
+  document.documentElement.style.setProperty('--header-height', h + 'px');
+}
 
 /* ====== レイアウト（列数自動） ====== */
 let ro = null; // ResizeObserver
-
 const PANEL_MIN_PX = 760;  // 1パネルの最小幅（CSSと連動）
 const GAP_PX = 20;         // グリッドのギャップ（CSSと連動）
 const MAX_COLS = 3;
@@ -300,7 +330,6 @@ function getContainerWidth(){
   const r = elc.getBoundingClientRect();
   return Math.max(0, Math.round(r.width));
 }
-
 function calcCols(w){
   // gapは (cols-1)*GAP_PX
   for(let c=MAX_COLS; c>=1; c--){
@@ -309,21 +338,23 @@ function calcCols(w){
   }
   return 1;
 }
-
 function updateCols(){
   const w = getContainerWidth();
-  let n = calcCols(w);
-  // data-cols 属性に反映（CSSで1列時は強制1frに）
+  const n = calcCols(w);
   board.dataset.cols = String(n);
   board.classList.toggle('force-cards', n === 1);
 }
-
 function startGridObserver(){
   if(ro) ro.disconnect();
-  ro = new ResizeObserver(updateCols);
+  ro = new ResizeObserver(()=>{
+    updateCols();
+    updateHeaderHeight();
+  });
   ro.observe(board.parentElement || document.body);
-  window.addEventListener('resize', updateCols, {passive:true});
+  window.addEventListener('resize', ()=>{ updateCols(); updateHeaderHeight(); }, {passive:true});
+  window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ updateCols(); updateHeaderHeight(); }, 50); });
   updateCols();
+  updateHeaderHeight();
 }
 
 /* ====== 名簿正規化 ====== */
@@ -341,9 +372,12 @@ function normalizeConfigClient(cfg){
       let name = (m?.name??"").trim();
       let ext  = (m?.ext ??"").trim();
       let id   = (m?.id  ??"").trim();
+      let status = (m?.status ?? 'IN');
+      let time = (m?.time ?? '');
+      let note = (m?.note ?? '');
       if(!name) name = `未設定${idx+1}-${Math.random().toString(16).slice(2,6)}`;
       if(!id) id = makeLocalId(name+ext);
-      return {name,ext,id};
+      return {id, name, ext, status, time, note};
     })
   }));
 }
@@ -440,7 +474,7 @@ async function post(action, payload={}){
 }
 
 async function listOffices(){
-  const r = await post('publicListOffices');
+  const r = await post('publicListOffices').catch(()=>({}));
   const items = r?.offices || r?.data || [];
   officeSelect.innerHTML='';
   for(const o of items){
@@ -453,9 +487,9 @@ async function listOffices(){
 
 async function loadBoard(){
   const office = officeSelect.value || '';
-  const r = await post('publicGetConfig', {office});
+  const r = await post('publicGetConfig', {office}).catch(()=>({}));
   const cfg = r?.config || r?.data || r;
-  drawBoard(cfg);
+  drawBoard(cfg || {groups:[]});
 }
 
 /* ====== 認証（ダミーUI：稼働用はGAS側で検証） ====== */
@@ -473,21 +507,22 @@ function doLogout(){
 
 /* ====== 管理UI（列幅など CSS 変数に反映） ====== */
 function openAdmin(){
-  document.getElementById('wName').value = getComputedStyle(document.documentElement).getPropertyValue('--w-name').trim();
-  document.getElementById('wExt').value = getComputedStyle(document.documentElement).getPropertyValue('--w-ext').trim();
-  document.getElementById('wStatus').value = getComputedStyle(document.documentElement).getPropertyValue('--w-status').trim();
-  document.getElementById('wTime').value = getComputedStyle(document.documentElement).getPropertyValue('--w-time').trim();
-  document.getElementById('wNote').value = getComputedStyle(document.documentElement).getPropertyValue('--w-note').trim();
+  const cs = getComputedStyle(document.documentElement);
+  document.getElementById('wName').value   = cs.getPropertyValue('--w-name').trim();
+  document.getElementById('wExt').value    = cs.getPropertyValue('--w-ext').trim();
+  document.getElementById('wStatus').value = cs.getPropertyValue('--w-status').trim();
+  document.getElementById('wTime').value   = cs.getPropertyValue('--w-time').trim();
+  document.getElementById('wNote').value   = cs.getPropertyValue('--w-note').trim();
   dlgAdmin.classList.add('show');
 }
 function closeAdmin(){ dlgAdmin.classList.remove('show'); }
 function saveAdmin(){
   const r = document.documentElement.style;
-  if(iW('wName'))   r.setProperty('--w-name',   iW('wName'));
-  if(iW('wExt'))    r.setProperty('--w-ext',    iW('wExt'));
-  if(iW('wStatus')) r.setProperty('--w-status', iW('wStatus'));
-  if(iW('wTime'))   r.setProperty('--w-time',   iW('wTime'));
-  if(iW('wNote'))   r.setProperty('--w-note',   iW('wNote'));
+  if(val('wName'))   r.setProperty('--w-name',   val('wName'));
+  if(val('wExt'))    r.setProperty('--w-ext',    val('wExt'));
+  if(val('wStatus')) r.setProperty('--w-status', val('wStatus'));
+  if(val('wTime'))   r.setProperty('--w-time',   val('wTime'));
+  if(val('wNote'))   r.setProperty('--w-note',   val('wNote'));
   closeAdmin();
   updateCols();
 }
@@ -503,7 +538,7 @@ btnForceCards.addEventListener('click', ()=>{
   updateCols();
 });
 
-// 管理ダイアログ（簡易：タイトルクリックで開く例）
+// 管理ダイアログ（簡易：タイトルクリックで開く）
 document.querySelector('header .title').addEventListener('click', openAdmin);
 btnCloseAdmin.addEventListener('click', closeAdmin);
 btnAdminCancel.addEventListener('click', closeAdmin);
@@ -513,7 +548,7 @@ btnAdminSave.addEventListener('click', saveAdmin);
 (async function init(){
   await listOffices().catch(console.warn);
   await loadBoard().catch(console.warn);
-  startGridObserver();
+  startGridObserver();     // 列数とヘッダ高さの自動反映
 })();
 </script>
 </body>
