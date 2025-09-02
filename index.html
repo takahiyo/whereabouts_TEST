@@ -448,8 +448,165 @@ function unmarkEditing(el){ if(!el) return; delete el.dataset.editing; }
 function markComposing(el){ if(!el) return; el.dataset.composing='1'; }
 function unmarkComposing(el){ if(!el) return; delete el.dataset.composing; }
 
-/* サーバ連携（略：元のまま） */
-/* ...（この間の通信処理・描画補助・メニュー構築・認証/更新・管理APIなどは元コードのままです）... */
+/* ===== 追補：通信・同期・正規化／イベント配線 ===== */
+
+/* デフォルトメニュー */
+function defaultMenus(){
+  return {
+    timeStepMinutes: 30,
+    statuses: [
+      { value: "在席",         class: "st-here" },
+      { value: "外出",         requireTime: true,  class: "st-out" },
+      { value: "会議",         requireTime: true,  class: "st-meeting" },
+      { value: "テレワーク",   class: "st-remote" },
+      { value: "休み",         clearOnSet: true,   class: "st-off" }
+    ],
+    noteOptions: []
+  };
+}
+
+/* メニュー適用（クラスや時間必須のセットなどを構築） */
+function setupMenus(m){
+  MENUS = m || defaultMenus();
+  const sts = Array.isArray(MENUS.statuses) ? MENUS.statuses : defaultMenus().statuses;
+
+  STATUSES = sts.map(s => ({ value: String(s.value) }));
+  requiresTimeSet = new Set(sts.filter(s => s.requireTime).map(s => String(s.value)));
+  clearOnSet       = new Set(sts.filter(s => s.clearOnSet).map(s => String(s.value)));
+  statusClassMap   = new Map(sts.map(s => [String(s.value), String(s.class || "")].filter(Boolean)));
+
+  // 備考用 datalist（なければ生成）
+  let dl = document.getElementById('noteOptions');
+  if(!dl){
+    dl = document.createElement('datalist');
+    dl.id = 'noteOptions';
+    document.body.appendChild(dl);
+  }
+  dl.replaceChildren();
+  (MENUS.noteOptions || []).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = String(t);
+    dl.appendChild(opt);
+  });
+}
+
+/* グループ名のフォールバック */
+function fallbackGroupTitle(g, idx){
+  const t = (g && g.title != null) ? String(g.title).trim() : "";
+  return t || `グループ${idx + 1}`;
+}
+
+/* サーバからの設定をクライアント表示用に正規化 */
+function normalizeConfigClient(cfg){
+  const groups = (cfg && Array.isArray(cfg.groups)) ? cfg.groups : [];
+  return groups.map(g => {
+    const members = Array.isArray(g.members) ? g.members : [];
+    return {
+      title: g.title || "",
+      members: members.map(m => ({
+        id:    String(m.id ?? "").trim(),   // サーバ付与IDを優先
+        name:  String(m.name ?? ""),
+        ext:   String(m.ext  ?? "")
+      })).filter(m => m.id || m.name)       // どちらかあれば表示
+    };
+  });
+}
+
+/* 1回だけ現在の在席データを取得 */
+async function fastFetchDataOnce(){
+  // 通常ユーザ向けの汎用API（トークンに紐づく拠点のデータ）
+  return await apiPost({ action: 'get', token: SESSION_TOKEN, nocache: '1' });
+}
+
+/* 定期ポーリング（在席データ） */
+function startRemoteSync(immediate){
+  if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer = null; }
+  if(immediate){
+    fastFetchDataOnce().then(r => { if(r && r.data) applyState(r.data); }).catch(()=>{});
+  }
+  remotePullTimer = setInterval(async ()=>{
+    const r = await apiPost({ action:'get', token: SESSION_TOKEN });
+    if(r && r.data) applyState(r.data);
+  }, REMOTE_POLL_MS);
+}
+
+/* 設定の定期ウォッチ（メニューや名簿の更新検知） */
+function startConfigWatch(){
+  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
+  configWatchTimer = setInterval(async ()=>{
+    const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
+    if(cfg && !cfg.error){
+      const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
+      if(updated && updated !== CONFIG_UPDATED){
+        GROUPS = normalizeConfigClient(cfg);
+        CONFIG_UPDATED = updated;
+        setupMenus(cfg.menus || null);
+        render(); // 名簿変更があれば再描画
+      }
+    }
+  }, CONFIG_POLL_MS);
+}
+
+/* トークン更新スケジューラ（有効期限の少し前に更新） */
+function scheduleRenew(ttlMs){
+  if(tokenRenewTimer) { clearTimeout(tokenRenewTimer); tokenRenewTimer = null; }
+  const delay = Math.max(10_000, Number(ttlMs||TOKEN_DEFAULT_TTL) - 60_000);
+  tokenRenewTimer = setTimeout(async ()=>{
+    const me = await apiPost({ action:'renew', token: SESSION_TOKEN });
+    if(me && me.ok){
+      CURRENT_ROLE = me.role || CURRENT_ROLE;
+      saveSessionMeta();
+      scheduleRenew(Number(me.exp) || TOKEN_DEFAULT_TTL);
+    }
+  }, delay);
+}
+
+/* 1行分の差分をサーバへ送信 */
+async function pushRowDelta(key){
+  const st = getRowState(key);
+  const payload = { updated: Date.now(), data: { [key]: st } };
+  await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload) });
+}
+
+/* 入力イベントの配線（行の更新 → デバウンス送信） */
+function wireEvents(){
+  // 編集中マーク（IME対策）
+  board.addEventListener('compositionstart', e => { const t=e.target; if(t && t.dataset) t.dataset.composing='1'; });
+  board.addEventListener('compositionend',   e => { const t=e.target; if(t && t.dataset) delete t.dataset.composing; });
+
+  board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
+  board.addEventListener('focusout', e => { const t=e.target; if(t && t.dataset) delete t.dataset.editing; });
+
+  // 入力（ext / note は input、status / time は change）
+  board.addEventListener('input', (e)=>{
+    const t = e.target;
+    if(!(t && t.name)) return;
+    const tr = t.closest('tr'); if(!tr) return;
+    const key = tr.dataset.key;
+    if(t.name === 'ext' || t.name === 'note'){
+      debounceRowPush(key);
+    }
+  });
+
+  board.addEventListener('change', (e)=>{
+    const t = e.target;
+    if(!(t && t.name)) return;
+    const tr = t.closest('tr'); if(!tr) return;
+    const key = tr.dataset.key;
+
+    if(t.name === 'status'){
+      const timeSel = tr.querySelector('select[name="time"]');
+      toggleTimeEnable(t, timeSel);
+      if(clearOnSet.has(t.value)){
+        const n = tr.querySelector('input[name="note"]'); if(n) n.value = '';
+        if(timeSel) timeSel.value = '';
+      }
+      recolor();
+    }
+    debounceRowPush(key);
+  });
+}
+
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
