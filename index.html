@@ -98,6 +98,13 @@
     /* JS が--colsを入れ損ねても自動で3→2→1に落ちる保険 */
     grid-template-columns: repeat(var(--cols, auto-fit), minmax(760px, 1fr));
   }
+
+  /* ★ 1列 or 強制カード時は最小幅を撤廃：横スクロール防止（ログイン画面には影響なし） */
+  .board[data-cols="1"],
+  .board.force-cards{
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
   .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
     scroll-margin-top: calc(var(--header-height) + 12px); }
   .panel .title{ font-weight:700; color:#6B7280; background:#f7f7f7; border:1px solid var(--line); border-radius:4px; padding:6px 8px; margin:0 0 6px 0; min-height:1.8em }
@@ -176,8 +183,18 @@
   align-items:center;
   gap:8px;
   flex:1 1 48%;
-  min-width:160px;
+  min-width:140px; /* 元:160px → ゆるめて折り返し余裕 */
   background:transparent;
+}
+
+/* ★ 極狭幅での折返し安定化：数値系は幅制約を撤廃 */
+.board[data-cols="1"] tbody td.ext,
+.board[data-cols="1"] tbody td.time,
+.board[data-cols="1"] tbody td.status,
+.board.force-cards tbody td.ext,
+.board.force-cards tbody td.time,
+.board.force-cards tbody td.status{
+  min-width:0;
 }
 
 .board[data-cols="1"] tbody td::before,
@@ -388,7 +405,7 @@ function loadSessionMeta(){ try{ CURRENT_ROLE=sessionStorage.getItem(SESSION_ROL
 /* レイアウト（JS + CSS両方で冗長に制御） */
 const PANEL_MIN_PX=760,GAP_PX=20,MAX_COLS=3;
 function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
-function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n);board.classList.toggle('force-cards', n === 1);
+function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n); board.classList.toggle('force-cards', n === 1);
  }
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
@@ -401,7 +418,7 @@ function fallbackGroupTitle(g,idx){ const t=(g&&typeof g.title==='string'?g.titl
 function defaultMenus(){ return {statuses:[
   {value:"在席",color:"#e8f6e8",requiresTime:false,clearOn:true},
   {value:"外出",color:"#fff3e6",requiresTime:true, clearOn:false},
-  {value:"休み",color:"#f7e8ee",requiresTime:false,clearOn:true},
+  {value:"休み",color:"#f7e8ee",requiresTime:false,clearOn>true},
   {value:"帰宅",color:"#ffe8f0",requiresTime:false,clearOn:true},
   {value:"在宅勤務",color:"#e8f0ff",requiresTime:false,clearOn:true},
   {value:"出張",color:"#fff3e6",requiresTime:true, clearOn:false},
@@ -432,7 +449,7 @@ function buildRow(member){
   const tdName=el('td',{class:'name','data-label':'氏名'},[name]);
 
   const tdExt=el('td',{class:'ext','data-label':'内線'});
-  const inpExt=el('input',{id:`ext-${key}`,name:'ext',type:'text',maxlength:'4',inputmode:'numeric',pattern:'^[0-9]{0,4}$',placeholder:'内線',value:ext});
+  const inpExt=el('input',{id:`ext-${key}`,name:'ext',type:'text',maxlength:'4',inputmode:'numeric',pattern:'^[0-9]{0,4}$',placeholder:'内線',value:ext,list:'noteOptions'/* list属性は備考のみで使用 */});
   tdExt.appendChild(el('label',{class:'sr-only',for:`ext-${key}`,text:'内線'})); tdExt.appendChild(inpExt);
 
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
