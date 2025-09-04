@@ -215,6 +215,7 @@
       <label for="filterName">氏名</label>
       <input id="filterName" type="text" placeholder="例：田中" aria-label="氏名で絞り込み">
       <label for="filterStatus">ステータス</label>
+      <!-- オプションは初期表示だけ。初回レンダー後、人数つきで動的に差し替えます -->
       <select id="filterStatus" aria-label="ステータスで絞り込み">
         <option value="">全て</option>
         <option>在席</option>
@@ -301,7 +302,7 @@
     </div>
   </div>
 
-  <!-- マニュアルモーダル（差し替え済み） -->
+  <!-- マニュアルモーダル -->
   <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
     <div class="manual-card" role="document">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -333,6 +334,7 @@
                 <ul>
                   <li>氏名フィルタ：入力と同時に部分一致で絞り込みます。空にすると全件表示へ戻ります。</li>
                   <li>ステータスフィルタ：プルダウンで「全て / 在席 / 外出 / 会議 / テレワーク / 休み」から絞り込みます。</li>
+                  <li><strong>ステータスの人数表示</strong>：ステータスメニューには現在の人数が併記されます（例：外出（3））。氏名フィルタが入力されている場合は、その条件下での人数が表示されます。</li>
                   <li>両方の条件を同時にかけられます。</li>
                 </ul>
               </li>
@@ -493,7 +495,7 @@ const filterName=document.getElementById('filterName'), filterStatus=document.ge
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set();
 let statusClassMap=new Map();
 let NOTE_PRESETS=new Set();        // 「直出」「直帰」「直出・直帰」
-let CLEAR_TIME_ON_SET=new Set(['在席','テレワーク','休み']); // これらを選んだら time を空に
+let CLEAR_TIME_ON_SET=new Set(['在席','テレワーク','休み']); // 選択時に time を空に
 
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let storeKeyBase="presence-board-v4";
@@ -611,6 +613,7 @@ function render(){
 
   board.querySelectorAll('tbody tr').forEach(ensureRowControls);
   wireEvents(); loadLocal(); recolor(); startGridObserver(); buildGroupMenu();
+  updateStatusFilterCounts(); // 初期人数併記
   applyFilters(); // 初期フィルタ
 }
 
@@ -668,14 +671,50 @@ function recolor(){
     if(cls) tr.classList.add(cls);
     tr.dataset.status=st;
   });
+  updateStatusFilterCounts(); // ステータス変更や同期で人数更新
 }
 function toggleTimeEnable(statusEl,timeEl){ const needsTime=requiresTimeSet.has(statusEl.value); if(timeEl) timeEl.disabled=!needsTime; }
+
+/* ===== ステータス人数をメニューに併記 ===== */
+function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function computeStatusCounts(nameRe){
+  const counts=new Map(STATUSES.map(s=>[s.value,0]));
+  let total=0;
+  board.querySelectorAll('tbody tr').forEach(tr=>{
+    const nameText = tr.querySelector('td.name')?.textContent || "";
+    if(nameRe && !nameRe.test(nameText)) return; // 氏名フィルタ条件下の人数をカウント
+    const st = tr.querySelector('select[name="status"]')?.value || "";
+    if(counts.has(st)) counts.set(st, (counts.get(st)||0)+1);
+    total++;
+  });
+  return {counts,total};
+}
+function updateStatusFilterCounts(){
+  if(!filterStatus) return;
+  const nameQ=(filterName.value||"").trim();
+  const nameRe = nameQ ? new RegExp(escReg(nameQ)) : null;
+
+  const {counts,total}=computeStatusCounts(nameRe);
+  const current = filterStatus.value;
+
+  // 再構成
+  filterStatus.replaceChildren();
+  filterStatus.appendChild(new Option(`全て（${total}）`, ''));
+  STATUSES.forEach(s=>{
+    const c=counts.get(s.value)||0;
+    filterStatus.appendChild(new Option(`${s.value}（${c}）`, s.value));
+  });
+
+  // 既存の選択値を維持（無ければ全てに戻す）
+  const hasCurrent=[...filterStatus.options].some(o=>o.value===current);
+  filterStatus.value = hasCurrent ? current : '';
+}
 
 /* フィルタ処理 */
 function applyFilters(){
   const nameQ = (filterName.value||"").trim();
   const statQ = (filterStatus.value||"").trim();
-  const nameRe = nameQ ? new RegExp(nameQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')) : null;
+  const nameRe = nameQ ? new RegExp(escReg(nameQ)) : null;
 
   board.querySelectorAll('tbody tr').forEach(tr=>{
     const nameText = tr.querySelector('td.name')?.textContent || "";
@@ -684,6 +723,9 @@ function applyFilters(){
     const statOk = statQ ? (st===statQ) : true;
     tr.style.display = (nameOk && statOk) ? '' : 'none';
   });
+
+  // 表示後も最新人数を表示（氏名条件を反映）
+  updateStatusFilterCounts();
 }
 
 /* ローカル保存 */
@@ -694,8 +736,6 @@ function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) a
 /* 同期 */
 const noteTimers=new Map();
 function debounceRowPush(key,delay=900){ if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
-function markEditing(el){ if(!el) return; el.dataset.editing='1'; }
-function unmarkEditing(el){ if(!el) return; delete el.dataset.editing; }
 
 /* ===== メニュー・正規化・通信・同期 ===== */
 function defaultMenus(){
@@ -766,7 +806,7 @@ function startRemoteSync(immediate){
   }, REMOTE_POLL_MS);
 }
 function startConfigWatch(){
-  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
+  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
   configWatchTimer = setInterval(async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
     if(cfg && !cfg.error){
@@ -826,7 +866,7 @@ function wireEvents(){
       const noteInp = tr.querySelector('input[name="note"]');
       toggleTimeEnable(t, timeSel);
 
-      // ステータスでクリア：time は 在席/テレワーク/休み で必ず空に
+      // time は 在席/テレワーク/休み で空に
       if(CLEAR_TIME_ON_SET.has(t.value) && timeSel){ timeSel.value = ''; }
 
       // 備考は「候補から選んでいた場合のみ」空に（自由入力は保持）
@@ -835,14 +875,14 @@ function wireEvents(){
         if(val==='' || NOTE_PRESETS.has(val)){ noteInp.value=''; }
       }
 
-      recolor();
+      recolor(); // ここで人数更新も走る
     }
     debounceRowPush(key);
   });
 
   // フィルタイベント
-  filterName.addEventListener('input', applyFilters);
-  filterStatus.addEventListener('change', applyFilters);
+  filterName.addEventListener('input', ()=>{ applyFilters(); });   // 入力都度
+  filterStatus.addEventListener('change', ()=>{ applyFilters(); }); // 変更時
 }
 
 /* 重要操作の再認証（HMAC+Nonce） */
