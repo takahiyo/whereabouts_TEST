@@ -61,13 +61,14 @@
     margin-bottom:12px; flex-wrap:wrap; background:#fff;
     padding:6px 0; box-shadow: 0 1px 0 rgba(0,0,0,.06);
   }
-  header .title-btn, header .admin-btn, header .logout-btn{
+  header .title-btn, header .admin-btn, header .logout-btn, header .manual-btn{
     font-size:14px; font-weight:600; color:#1f2937;
     padding:.35rem .9rem; border-radius:999px; line-height:1.2; border:1px solid transparent; cursor:pointer;
   }
   header .title-btn{ background:#dff1ff; border-color:#bfe4ff; }
   header .admin-btn{ background:#e7f8e7; border-color:#b7e6b7; display:none; }
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
+  header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
 
   /* グループメニュー */
   .grp-menu{ position: fixed; top: calc(var(--header-height) + 8px); left: 50%; transform: translateX(-50%);
@@ -174,6 +175,18 @@
     content: attr(data-label) !important;
     white-space:nowrap;
   }
+
+  /* === マニュアルモーダル === */
+  .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
+  .manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
+  .manual-card{
+    background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px;
+    width:min(960px, 94vw); max-height:80vh; overflow:auto;
+  }
+  .manual-section{ margin-bottom:16px; }
+  .manual-section h4{ margin:8px 0; }
+  .manual-section table{ width:100%; border-collapse:collapse; font-size:14px; }
+  .manual-section table th, .manual-section table td{ border:1px solid #ddd; padding:6px; }
 </style>
 </head>
 <body>
@@ -181,6 +194,7 @@
     <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表【開発用】</button>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
+    <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
 
   <!-- グループメニュー -->
@@ -203,16 +217,14 @@
         <span class="admin-note">（スーパー管理者は拠点選択可／拠点管理者は自拠点固定）</span>
       </div>
 
-<div class="admin-grid">
-  <div class="admin-box">
-    <h4>CSVエクスポート</h4>
-    <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-    <div class="admin-note">
-      形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）
-    </div>
-  </div>
+      <div class="admin-grid">
+        <div class="admin-box">
+          <h4>CSVエクスポート</h4>
+          <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
+          <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）</div>
+        </div>
 
-      <div class="admin-box">
+        <div class="admin-box">
           <h4>CSVインポート</h4>
           <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
         </div>
@@ -256,6 +268,101 @@
     </div>
   </div>
 
+  <!-- マニュアルモーダル -->
+  <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
+    <div class="manual-card" role="document">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 id="manualTitle">マニュアル</h3>
+        <button id="manualClose" aria-label="閉じる">閉じる</button>
+      </div>
+
+      <!-- ユーザーマニュアル -->
+      <section id="manualUser" class="manual-section">
+        <h4>ユーザーマニュアル</h4>
+        <ol>
+          <li><strong>ログイン</strong>
+            <ul>
+              <li>営業所を選び、パスワードを入力してください（例）
+                <ul>
+                  <li>名古屋中央営業所</li>
+                  <li>NagoChu6261</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><strong>在席確認表</strong>
+            <ul>
+              <li>パネルはチーム（グループ）ごとです。</li>
+              <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
+              <li>縦スクロールが長い場合、タイトルをクリックでジャンプメニューから目的のグループへ移動できます。</li>
+              <li><strong>更新速度</strong>：およそ2秒で他端末に反映。備考を手入力中は反映を一時保留します。同じ箇所を複数人が同時編集した場合は<strong>最後に確定した内容が残ります</strong>。</li>
+              <li><strong>戻り時間</strong>：ステータスが「外出」「会議」のときだけ（30分単位）選択できます。</li>
+            </ul>
+          </li>
+          <li><strong>ログオフ</strong>
+            <ul>
+              <li>開発上のために用意していますが、通常はログオフ操作は不要です。</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <!-- 管理者マニュアル（管理者のみ表示） -->
+      <section id="manualAdmin" class="manual-section">
+        <h4>管理者マニュアル</h4>
+        <ol>
+          <li><strong>ログイン</strong>
+            <ul>
+              <li>営業所を選び、<strong>管理者パスワード</strong>を入力してください（例）
+                <ul>
+                  <li>名古屋中央営業所</li>
+                  <li>NagoChuAdmin116</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><strong>在席確認表</strong>
+            <ul>
+              <li>ユーザーと同じ操作はすべて可能です。</li>
+              <li>画面上部に<strong>「管理」</strong>ボタンが表示されます。</li>
+            </ul>
+          </li>
+          <li><strong>管理</strong>
+            <ol>
+              <li><strong>CSVエクスポート・インポート</strong>
+                <ul>
+                  <li>現在の名簿をCSVで出力／取り込みできます。</li>
+                  <li>列内容（日本語ヘッダ・固定順）</li>
+                </ul>
+                <div style="overflow:auto;">
+                  <table>
+                    <thead>
+                      <tr><th>項目</th><th>説明</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>グループ番号</td><td>表示されるパネル（グループ）を指定</td></tr>
+                      <tr><td>グループ名</td><td>パネルの見出し名（同グループ全員で同じ値を推奨）</td></tr>
+                      <tr><td>表示順</td><td>パネル内の並び順（数値昇順で表示）</td></tr>
+                      <tr><td>id</td><td>一意のID。空欄は取り込み後に採番されます</td></tr>
+                      <tr><td>氏名</td><td></td></tr>
+                      <tr><td>内線</td><td></td></tr>
+                      <tr><td>ステータス</td><td>取り込み時に指定可能</td></tr>
+                      <tr><td>戻り時間</td><td>30分単位（ステータスにより有効化）</td></tr>
+                      <tr><td>備考</td><td>自由入力／取り込み可</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </li>
+              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表」が付きます）。</li>
+              <li><strong>拠点パスワードの変更</strong>：ユーザー／管理者パスワードを更新。片方のみ変更も可。</li>
+              <li><strong>メニュー設定</strong>：ステータスや備考候補などのJSON設定を変更できます。</li>
+            </ol>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </div>
+
   <!-- ログイン -->
   <div id="login" class="login" style="display:none">
     <div class="card">
@@ -296,6 +403,7 @@ const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOff
 const addOfficeId=document.getElementById('addOfficeId'), addOfficeName=document.getElementById('addOfficeName'), addOfficePw=document.getElementById('addOfficePw'), addOfficeAdminPw=document.getElementById('addOfficeAdminPw'), btnAddOffice=document.getElementById('btnAddOffice');
 const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
+const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
@@ -327,16 +435,27 @@ function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
 /* UI生成 */
-function buildTimeOptions(stepMin){ const frag=document.createDocumentFragment(); frag.appendChild(el('option',{value:"",text:""})); const step=Math.max(5,Math.min(60,Number(stepMin||30))); for(let h=0;h<24;h++){ for(let m=0;m<60;m+=step){ const t=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; frag.appendChild(el('option',{value:t,text:t})); } } return frag; }
+function buildTimeOptions(stepMin){
+  const frag=document.createDocumentFragment();
+  frag.appendChild(el('option',{value:"",text:""}));
+  const step=Math.max(5,Math.min(60,Number(stepMin||30)));
+  for(let h=0;h<24;h++){
+    for(let m=0;m<60;m+=step){
+      const t=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      frag.appendChild(el('option',{value:t,text:t}));
+    }
+  }
+  return frag;
+}
 function buildRow(member){
-  const name=sanitizeText(member.name||""); const ext=(member.ext&&/^[0-9]{1,4}$/.test(String(member.ext)))?String(member.ext):""; const key=member.id;
+  const name=sanitizeText(member.name||"");
+  const ext=(member.ext&&/^[0-9]{1,4}$/.test(String(member.ext)))?String(member.ext):"";
+  const key=member.id;
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key;
 
   const tdName=el('td',{class:'name','data-label':'氏名'},[name]);
 
-  const tdExt=el('td',{class:'ext','data-label':'内線'});
-  const inpExt=el('input',{id:`ext-${key}`,name:'ext',type:'text',maxlength:'4',inputmode:'numeric',pattern:'^[0-9]{0,4}$',placeholder:'内線',value:ext});
-  tdExt.appendChild(el('label',{class:'sr-only',for:`ext-${key}`,text:'内線'})); tdExt.appendChild(inpExt);
+  const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
   const selStatus=el('select',{id:`status-${key}`,name:'status'});
@@ -360,8 +479,22 @@ function buildRow(member){
 function ensureRowControls(tr){
   if(!tr) return;
   const key=tr.dataset.key;
-  let s=tr.querySelector('td.status select'); if(!s){ const td=tr.querySelector('td.status'); s=el('select',{id:`status-${key}`,name:'status'}); STATUSES.forEach(x=>s.appendChild(el('option',{value:x.value,text:x.value}))); td && td.appendChild(s); diagAdd('fix: status select injected'); }
-  let t=tr.querySelector('td.time select'); if(!t){ const td=tr.querySelector('td.time'); t=el('select',{id:`time-${key}`,name:'time'}); t.appendChild(buildTimeOptions(MENUS?.timeStepMinutes)); td && td.appendChild(t); diagAdd('fix: time select injected'); }
+  let s=tr.querySelector('td.status select');
+  if(!s){
+    const td=tr.querySelector('td.status');
+    s=el('select',{id:`status-${key}`,name:'status'});
+    STATUSES.forEach(x=>s.appendChild(el('option',{value:x.value,text:x.value})));
+    td && td.appendChild(s);
+    diagAdd('fix: status select injected');
+  }
+  let t=tr.querySelector('td.time select');
+  if(!t){
+    const td=tr.querySelector('td.time');
+    t=el('select',{id:`time-${key}`,name:'time'});
+    t.appendChild(buildTimeOptions(MENUS?.timeStepMinutes));
+    td && td.appendChild(t);
+    diagAdd('fix: time select injected');
+  }
 }
 
 /* 描画 */
@@ -369,7 +502,13 @@ function buildPanel(group, idx){
   const gid=`grp-${idx}`; const sec=el('section',{class:'panel',id:gid}); sec.dataset.groupIndex=String(idx);
   const title=fallbackGroupTitle(group, idx); sec.appendChild(el('h3',{class:'title',text:title}));
   const table=el('table',{'aria-label':`在席表（${title}）`});
-  table.appendChild(el('colgroup',{},[el('col',{class:'col-name'}),el('col',{class:'col-ext'}),el('col',{class:'col-status'}),el('col',{class:'col-time'}),el('col',{class:'col-note'})]));
+  table.appendChild(el('colgroup',{},[
+    el('col',{class:'col-name'}),
+    el('col',{class:'col-ext'}),
+    el('col',{class:'col-status'}),
+    el('col',{class:'col-time'}),
+    el('col',{class:'col-note'})
+  ]));
   const thead=el('thead'); const thr=el('tr'); ['氏名','内線','ステータス','戻り時間','備考'].forEach(h=>thr.appendChild(el('th',{text:h}))); thead.appendChild(thr); table.appendChild(thead);
   const tbody=el('tbody'); group.members.forEach(m=>{ const r=buildRow(m); tbody.appendChild(r); }); table.appendChild(tbody);
   sec.appendChild(table); return sec;
@@ -401,7 +540,15 @@ document.addEventListener('click',(e)=>{ if(menuEl.classList.contains('show')){ 
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeMenu(); });
 
 /* 行状態 */
-function getRowStateByTr(tr){ if(!tr) return {ext:"",status:STATUSES[0]?.value||"在席",time:"",note:""}; return { ext:tr.querySelector('input[name="ext"]').value.trim(), status:tr.querySelector('select[name="status"]').value, time:tr.querySelector('select[name="time"]').value, note:tr.querySelector('input[name="note"]').value }; }
+function getRowStateByTr(tr){
+  if(!tr) return {ext:"",status:STATUSES[0]?.value||"在席",time:"",note:""};
+  return {
+    ext: tr.querySelector('td.ext')?.textContent.trim() || "",
+    status: tr.querySelector('select[name="status"]').value,
+    time: tr.querySelector('select[name="time"]').value,
+    note: tr.querySelector('input[name="note"]').value
+  };
+}
 function getRowState(id){ return getRowStateByTr(document.getElementById(`row-${id}`)); }
 function getState(){ const data={}; board.querySelectorAll("tbody tr").forEach(tr=>{ data[tr.dataset.key]=getRowStateByTr(tr); }); return data; }
 
@@ -411,9 +558,8 @@ function setIfNeeded(el,v){ if(!el) return; if(isEditingField(el)) return; if(el
 function applyState(data){
   if(!data) return;
   Object.entries(data).forEach(([k,v])=>{
-    const e=document.getElementById(`ext-${k}`), s=document.getElementById(`status-${k}`), t=document.getElementById(`time-${k}`), n=document.getElementById(`note-${k}`);
+    const s=document.getElementById(`status-${k}`), t=document.getElementById(`time-${k}`), n=document.getElementById(`note-${k}`);
     if(!s||!t){ ensureRowControls(document.getElementById(`row-${k}`)); }   // 自己修復
-    if(typeof v.ext==="string") setIfNeeded(e,v.ext);
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");
     if(s&&t) toggleTimeEnable(s,t);
@@ -548,9 +694,7 @@ function wireEvents(){
     if(!(t && t.name)) return;
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
-    if(t.name === 'ext' || t.name === 'note'){
-      debounceRowPush(key);
-    }
+    if(t.name === 'note'){ debounceRowPush(key); } /* extは表示専用 */
   });
 
   board.addEventListener('change', (e)=>{
@@ -609,16 +753,12 @@ btnImport.addEventListener('click', async ()=>{
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());
-// 英語/日本語どちらのヘッダでも受け入れ（列順は固定）
-const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
-const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
-const okEn = mustEn.every((h,i)=>hdr[i]===h);
-const okJa = mustJa.every((h,i)=>hdr[i]===h);
-if(!okEn && !okJa){
-  toast('CSVヘッダが不正です',false);
-  return;
-}
-
+  // 英語/日本語どちらのヘッダでも受け入れ（列順は固定）
+  const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
+  const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
+  const okEn = mustEn.every((h,i)=>hdr[i]===h);
+  const okJa = mustJa.every((h,i)=>hdr[i]===h);
+  if(!okEn && !okJa){ toast('CSVヘッダが不正です',false); return; }
 
   const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
     const [gi,gt,mi,id,name,ext,status,time,note]=r;
@@ -754,25 +894,30 @@ async function logout(){
     if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
     if(ro){ try{ ro.disconnect(); }catch{} }
   }catch{}
-  closeMenu(); showAdminModal(false);
+  closeMenu(); showAdminModal(false); showManualModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
   window.scrollTo(0,0);
   SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY);
   sessionStorage.removeItem(SESSION_OFFICE_KEY); sessionStorage.removeItem(SESSION_OFFICE_NAME_KEY);
   CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user";
   titleBtn.textContent='在席確認表【開発用】';
-ensureAuthUI();
-try{
-  await refreshPublicOfficeSelect();
-}catch{
-  ensureAuthUIPublicError(); // 取得失敗時の文言を出す
-}finally{
-  loginEl.style.display='flex'; // ここは必ず実行
-}
+  ensureAuthUI();
+  try{
+    await refreshPublicOfficeSelect();
+  }catch{
+    ensureAuthUIPublicError();
+  }finally{
+    loginEl.style.display='flex';
+  }
 }
 
-/* 認証UI + 管理UI */
-function ensureAuthUI(){ const showAdmin=(SESSION_TOKEN&&(isSuper()||isOfficeAdmin())); adminBtn.style.display=showAdmin?'inline-block':'none'; logoutBtn.style.display=SESSION_TOKEN?'inline-block':'none'; }
+/* 認証UI + 管理UI + マニュアルUI */
+function ensureAuthUI(){
+  const showAdmin = (SESSION_TOKEN && (isSuper() || isOfficeAdmin()));
+  adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
+  logoutBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
+  manualBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
+}
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
 function applyRoleToAdminPanel(){
   adminOfficeRow.style.display = isSuper() ? '' : 'none';
@@ -788,13 +933,26 @@ async function populateAdminOffices(selected){
     adminOfficeSel.innerHTML=`<option value="${CURRENT_OFFICE_ID}">${sanitizeText(CURRENT_OFFICE_NAME)}（${CURRENT_OFFICE_ID}）</option>`;
   }
 }
+function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
+function applyRoleToManual(){
+  const isAdmin = (isSuper() || isOfficeAdmin());
+  manualUser.style.display = '';
+  manualAdmin.style.display = isAdmin ? '' : 'none';
+}
+
+/* 管理/マニュアルUIイベント */
 adminBtn.addEventListener('click', async ()=>{
   applyRoleToAdminPanel();
   await populateAdminOffices();
   showAdminModal(true);
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
-refreshOfficesBtn.addEventListener('click', ()=> populateAdminOffices());logoutBtn.addEventListener('click', logout);
+refreshOfficesBtn.addEventListener('click', ()=> populateAdminOffices());
+logoutBtn.addEventListener('click', logout);
+
+manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
+manualClose.addEventListener('click', ()=> showManualModal(false));
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal(false); showManualModal(false); closeMenu(); }});
 
 /* Admin API */
 function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFICE_ID; }
@@ -830,7 +988,7 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
-// 日本語ヘッダ（列順は従来どおり）
+  // 日本語ヘッダ（列順は従来どおり）
   rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{
@@ -884,12 +1042,22 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
     saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
-    loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI();
+    loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
 
-    // 役割確定（管理ボタンが消えないように先に表示済みだが、renewで上書き）
-    try{ const me=await apiPost({ action:'renew', token:SESSION_TOKEN }); if(me&&me.ok){ CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=me.office||CURRENT_OFFICE_ID; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME; saveSessionMeta(); ensureAuthUI(); } }catch{}
+    // 役割確定（renewで上書き）
+    try{
+      const me=await apiPost({ action:'renew', token:SESSION_TOKEN });
+      if(me&&me.ok){
+        CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=me.office||CURRENT_OFFICE_ID; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME;
+        saveSessionMeta(); ensureAuthUI(); applyRoleToManual();
+      }
+    }catch{}
 
-    const cfgP=(async()=>{ const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' }); if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); } else { setupMenus(null); } })();
+    const cfgP=(async()=>{
+      const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
+      if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); }
+      else { setupMenus(null); }
+    })();
     const dataP=fastFetchDataOnce().catch(()=>null);
 
     await cfgP; render(); loadLocal();
@@ -904,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(existing){
     SESSION_TOKEN=existing; loginEl.style.display='none';
     loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
-    ensureAuthUI();
+    ensureAuthUI(); applyRoleToManual();
     // 初期データ取得
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
