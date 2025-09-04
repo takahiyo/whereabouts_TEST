@@ -158,7 +158,25 @@
   col.col-time{width:var(--w-time)}
   col.col-note{width:var(--w-note)}
 
-  select,input[type="text"],input[type="search"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}
+  select,input[type="text"],input[type="search"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}/* === Filter boxes width fix === */
+/* ヘッダ内の検索ボックスだけ幅を固定し、フレックスで伸びないようにする */
+header #nameFilter,
+header .name-filter{
+  display: inline-block;
+  width: clamp(220px, 32vw, 360px) !important;
+  min-width: 220px;
+  max-width: 50vw;
+  flex: 0 0 auto;
+}
+
+header #statusFilter,
+header .status-filter{
+  display: inline-block;
+  width: clamp(170px, 22vw, 240px) !important;
+  min-width: 170px;
+  flex: 0 0 auto;
+}
+
   td.status select{padding-right:2.6em}
   td.time   select{text-align-last:center; font-variant-numeric:tabular-nums}
 
