@@ -207,8 +207,10 @@
         <div class="admin-box">
           <h4>CSVエクスポート</h4>
           <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-          <div class="admin-note">形式：group_index,group_title,member_order,id,name,ext,status,time,note</div>
-        </div>
+          <div class="admin-note">
+  形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）
+</div>
+
 
         <div class="admin-box">
           <h4>CSVインポート</h4>
@@ -607,8 +609,16 @@ btnImport.addEventListener('click', async ()=>{
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());
-  const must=['group_index','group_title','member_order','id','name','ext','status','time','note'];
-  if(must.some((h,i)=>hdr[i]!==h)){ toast('CSVヘッダが不正です',false); return; }
+// 英語/日本語どちらのヘッダでも受け入れ（列順は固定）
+const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
+const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
+const okEn = mustEn.every((h,i)=>hdr[i]===h);
+const okJa = mustJa.every((h,i)=>hdr[i]===h);
+if(!okEn && !okJa){
+  toast('CSVヘッダが不正です',false);
+  return;
+}
+
 
   const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
     const [gi,gt,mi,id,name,ext,status,time,note]=r;
@@ -813,7 +823,8 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
-  rows.push(toCsvRow(['group_index','group_title','member_order','id','name','ext','status','time','note']));
+// 日本語ヘッダ（列順は従来どおり）
+  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{
       const id=m.id||''; const rec=(data&&data[id])||{};
