@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<!-- CSP：Worker への POST を許可 -->
+<!-- CSP：Worker への POST を許可（開発＝-test を指す） -->
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'self';
                script-src 'self' 'unsafe-inline';
@@ -94,16 +94,13 @@
   /* 盤面 */
   .wrap{width:100%; margin:0 auto;}
   .board{
-  display:grid; gap:var(--gap);
-  /* 盤面: 端末幅に応じて最小幅を 100% 以下に制御 */
-  grid-template-columns: repeat(var(--cols, auto-fit), minmax(min(100%, 760px), 1fr));
-}
-/* 1列時は最小幅ゼロで 1fr に固定（横スクロール抑止） */
-.board[data-cols="1"]{
-  grid-template-columns: 1fr;
-}
-
+    display:grid; gap:var(--gap);
+    /* 盤面: 端末幅に応じて最小幅を 100% 以下に制御 */
+    grid-template-columns: repeat(var(--cols, auto-fit), minmax(min(100%, 760px), 1fr));
   }
+  /* 1列時は最小幅ゼロで 1fr に固定（横スクロール抑止） */
+  .board[data-cols="1"]{ grid-template-columns: 1fr; }
+
   .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
   scroll-margin-top: calc(var(--header-height) + 12px); }
 
@@ -135,25 +132,24 @@
     tbody tr{ display:flex; flex-wrap:wrap; gap:8px 12px; border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
     tbody td{ border:none; padding:0; display:flex; align-items:center; gap:8px; flex:1 1 48%; min-width:140px; background:transparent; }
     #board tbody td::before{
-  content: attr(data-label) !important;
-  font-weight:600; color:#6B7280;
-  min-width:5.5em; flex:0 0 auto;
-}
+      content: attr(data-label) !important;
+      font-weight:600; color:#6B7280;
+      min-width:5.5em; flex:0 0 auto;
+    }
 
     tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
     tbody td.name::before{ content:""; display:none; }
     tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
   }
 
- /* === 1列になったら強制カード化（幅が広くても） ===
-   table を block にして、tr/td を flex 化できるようにする。 */
-.board[data-cols="1"] table,
-.board.force-cards table{
-  display:block;            /* ←これが肝 */
-  width:100%;
-  table-layout:auto;
-  border-collapse:separate; /* カード境界の角丸を保つ */
-}
+  /* === 1列になったら強制カード化 === */
+  .board[data-cols="1"] table,
+  .board.force-cards table{
+    display:block;
+    width:100%;
+    table-layout:auto;
+    border-collapse:separate;
+  }
 
   /* 診断用バナー（何かを補修した時だけ出る） */
   .diag{ position:fixed; left:8px; bottom:8px; background:#fffbdd; border:1px solid #e6cf00; color:#614a00;
@@ -168,26 +164,16 @@
     overflow:hidden; clip:rect(0,0,0,0);
     white-space:nowrap; border:0;
   }
-
-  /* 非カード時のみ疑似ラベルを隠す（モバイル/@mediaや強制カード化では隠さない） */
   @media (min-width: 721px){
-    #board:not([data-cols="1"]):not(.force-cards) tbody td::before{
-      content: "" !important;
-    }
+    #board:not([data-cols="1"]):not(.force-cards) tbody td::before{ content: "" !important; }
   }
-
-  /* カード化時は疑似ラベルを表示、実ラベル(.sr-only)は隠す */
   #board[data-cols="1"] td > label.sr-only,
-  #board.force-cards  td > label.sr-only{
-    display:none !important;
-  }
+  #board.force-cards  td > label.sr-only{ display:none !important; }
   #board[data-cols="1"] tbody td::before,
   #board.force-cards  tbody td::before{
     content: attr(data-label) !important;
     white-space:nowrap;
   }
-  /* end v1.431 */
-
 </style>
 </head>
 <body>
@@ -203,8 +189,8 @@
     <ul id="groupMenuList"></ul>
   </div>
 
-  <!-- 管理モーダル（省略なし） -->
-  <div id="adminModal" class="admin-modal">
+  <!-- 管理モーダル -->
+  <div id="adminModal" class="admin-modal" aria-modal="true" role="dialog">
     <div class="admin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <h3>管理パネル</h3><button id="adminClose">閉じる</button>
@@ -221,9 +207,7 @@
         <div class="admin-box">
           <h4>CSVエクスポート</h4>
           <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-          <div class="admin-note">
-            形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）
-          </div>
+          <div class="admin-note">形式：group_index,group_title,member_order,id,name,ext,status,time,note</div>
         </div>
 
         <div class="admin-box">
@@ -285,6 +269,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div class="wrap"><div id="board" class="board" style="display:none"></div></div>
   <div id="diag" class="diag"></div>
+
 <script>
 /* ===== 接続設定 ===== */
 const REMOTE_ENDPOINT = "https://presence-proxy-test.taka-hiyo.workers.dev";
@@ -336,8 +321,7 @@ function loadSessionMeta(){ try{ CURRENT_ROLE=sessionStorage.getItem(SESSION_ROL
 /* レイアウト（JS + CSS両方で冗長に制御） */
 const PANEL_MIN_PX=760,GAP_PX=20,MAX_COLS=3;
 function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
-function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n);board.classList.toggle('force-cards', n === 1);
- }
+function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n); board.classList.toggle('force-cards', n === 1); }
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
 /* UI生成 */
@@ -450,8 +434,141 @@ function unmarkEditing(el){ if(!el) return; delete el.dataset.editing; }
 function markComposing(el){ if(!el) return; el.dataset.composing='1'; }
 function unmarkComposing(el){ if(!el) return; delete el.dataset.composing; }
 
-/* サーバ連携（略：元のまま） */
-/* ...（この間の通信処理・描画補助・メニュー構築・認証/更新・管理APIなどは元コードのままです）... */
+/* ===== メニュー・正規化・通信・同期 ===== */
+function defaultMenus(){
+  return {
+    timeStepMinutes: 30,
+    statuses: [
+      { value: "在席",         class: "st-here" },
+      { value: "外出",         requireTime: true,  class: "st-out" },
+      { value: "会議",         requireTime: true,  class: "st-meeting" },
+      { value: "テレワーク",   class: "st-remote" },
+      { value: "休み",         clearOnSet: true,   class: "st-off" }
+    ],
+    noteOptions: []
+  };
+}
+function setupMenus(m){
+  MENUS = m || defaultMenus();
+  const sts = Array.isArray(MENUS.statuses) ? MENUS.statuses : defaultMenus().statuses;
+
+  STATUSES = sts.map(s => ({ value: String(s.value) }));
+  requiresTimeSet = new Set(sts.filter(s => s.requireTime).map(s => String(s.value)));
+  clearOnSet       = new Set(sts.filter(s => s.clearOnSet).map(s => String(s.value)));
+  statusClassMap   = new Map(sts.map(s => [String(s.value), String(s.class || "")]));
+
+  let dl = document.getElementById('noteOptions');
+  if(!dl){
+    dl = document.createElement('datalist');
+    dl.id = 'noteOptions';
+    document.body.appendChild(dl);
+  }
+  dl.replaceChildren();
+  (MENUS.noteOptions || []).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = String(t);
+    dl.appendChild(opt);
+  });
+}
+function fallbackGroupTitle(g, idx){
+  const t = (g && g.title != null) ? String(g.title).trim() : "";
+  return t || `グループ${idx + 1}`;
+}
+function normalizeConfigClient(cfg){
+  const groups = (cfg && Array.isArray(cfg.groups)) ? cfg.groups : [];
+  return groups.map(g => {
+    const members = Array.isArray(g.members) ? g.members : [];
+    return {
+      title: g.title || "",
+      members: members.map(m => ({
+        id:    String(m.id ?? "").trim(),
+        name:  String(m.name ?? ""),
+        ext:   String(m.ext  ?? "")
+      })).filter(m => m.id || m.name)
+    };
+  });
+}
+async function fastFetchDataOnce(){
+  return await apiPost({ action: 'get', token: SESSION_TOKEN, nocache: '1' });
+}
+function startRemoteSync(immediate){
+  if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer = null; }
+  if(immediate){
+    fastFetchDataOnce().then(r => { if(r && r.data) applyState(r.data); }).catch(()=>{});
+  }
+  remotePullTimer = setInterval(async ()=>{
+    const r = await apiPost({ action:'get', token: SESSION_TOKEN });
+    if(r && r.data) applyState(r.data);
+  }, REMOTE_POLL_MS);
+}
+function startConfigWatch(){
+  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
+  configWatchTimer = setInterval(async ()=>{
+    const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
+    if(cfg && !cfg.error){
+      const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
+      if(updated && updated !== CONFIG_UPDATED){
+        GROUPS = normalizeConfigClient(cfg);
+        CONFIG_UPDATED = updated;
+        setupMenus(cfg.menus || null);
+        render();
+      }
+    }
+  }, CONFIG_POLL_MS);
+}
+function scheduleRenew(ttlMs){
+  if(tokenRenewTimer) { clearTimeout(tokenRenewTimer); tokenRenewTimer = null; }
+  const delay = Math.max(10_000, Number(ttlMs||TOKEN_DEFAULT_TTL) - 60_000);
+  tokenRenewTimer = setTimeout(async ()=>{
+    const me = await apiPost({ action:'renew', token: SESSION_TOKEN });
+    if(me && me.ok){
+      CURRENT_ROLE = me.role || CURRENT_ROLE;
+      saveSessionMeta();
+      scheduleRenew(Number(me.exp) || TOKEN_DEFAULT_TTL);
+    }
+  }, delay);
+}
+async function pushRowDelta(key){
+  const st = getRowState(key);
+  const payload = { updated: Date.now(), data: { [key]: st } };
+  await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload) });
+}
+function wireEvents(){
+  // IME対策
+  board.addEventListener('compositionstart', e => { const t=e.target; if(t && t.dataset) t.dataset.composing='1'; });
+  board.addEventListener('compositionend',   e => { const t=e.target; if(t && t.dataset) delete t.dataset.composing; });
+
+  board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
+  board.addEventListener('focusout', e => { const t=e.target; if(t && t.dataset) delete t.dataset.editing; });
+
+  board.addEventListener('input', (e)=>{
+    const t = e.target;
+    if(!(t && t.name)) return;
+    const tr = t.closest('tr'); if(!tr) return;
+    const key = tr.dataset.key;
+    if(t.name === 'ext' || t.name === 'note'){
+      debounceRowPush(key);
+    }
+  });
+
+  board.addEventListener('change', (e)=>{
+    const t = e.target;
+    if(!(t && t.name)) return;
+    const tr = t.closest('tr'); if(!tr) return;
+    const key = tr.dataset.key;
+
+    if(t.name === 'status'){
+      const timeSel = tr.querySelector('select[name="time"]');
+      toggleTimeEnable(t, timeSel);
+      if(clearOnSet.has(t.value)){
+        const n = tr.querySelector('input[name="note"]'); if(n) n.value = '';
+        if(timeSel) timeSel.value = '';
+      }
+      recolor();
+    }
+    debounceRowPush(key);
+  });
+}
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
@@ -460,35 +577,262 @@ async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', en
 async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,enc.encode(messageStr)); return sig; }
 async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
 
-/* 管理UIイベント（省略なし） */
-btnExport.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const cfg=await adminGetConfigFor(office); const dat=await adminGetFor(office); if(!(cfg&&cfg.groups) || !(dat&&typeof dat.data==='object')){ toast('エクスポート失敗',false); return; } const csv=makeNormalizedCSV(cfg,dat.data); const BOM=new Uint8Array([0xEF,0xBB,0xBF]); const bytes=enc.encode(csv); const blob=new Blob([BOM,bytes],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`presence_${office}.csv`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0); });
-btnImport.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const file=csvFile.files&&csvFile.files[0]; if(!file){ toast('CSVを選択してください',false); return; } let superProof=null; if(isSuper()){ superProof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください"); if(!superProof) return; } const text=await file.text(); const rows=parseCSV(text); if(!rows.length){ toast('CSVが空です',false); return; } const hdr=rows[0].map(s=>s.trim()); 
-// 英語/日本語どちらのヘッダでも受け入れ（列順は固定）
-const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
-const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
-const okEn = mustEn.every((h,i)=>hdr[i]===h);
-const okJa = mustJa.every((h,i)=>hdr[i]===h);
-if(!okEn && !okJa){ toast('CSVヘッダが不正です',false); return; }
-const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{ const [gi,gt,mi,id,name,ext,status,time,note]=r; return {gi:Number(gi)||0,gt:(gt||''),mi:Number(mi)||0,id:(id||''),name:(name||''),ext:(ext||''),status:(status||(STATUSES[0]?.value||'在席')),time:(time||''),note:(note||'')}; }); const groupsMap=new Map(); for(const r of recs){ if(!r.gi||!r.mi||!r.name) continue; if(!groupsMap.has(r.gi)) groupsMap.set(r.gi,{title:r.gt||'',members:[]}); const g=groupsMap.get(r.gi); g.title=r.gt||''; g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined}); } const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; }); const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined}; const r1=await adminSetConfigFor(office,cfgToSet,superProof); if(!(r1&&r1.ok)){ toast('名簿の設定に失敗',false); return; } const newCfg=await adminGetConfigFor(office); if(!(newCfg&&newCfg.groups)){ toast('名簿再取得に失敗',false); return; } const keyOf=(gi,gt,mi,name,ext)=>[String(gi),String(gt||''),String(mi),String(name||''),String(ext||'')].join('|'); const idIndex=new Map(); (newCfg.groups||[]).forEach((g,gi0)=>{ (g.members||[]).forEach((m,mi0)=>{ idIndex.set(keyOf(gi0+1,g.title||'',mi0+1,m.name||'',m.ext||''),m.id); }); }); const dataObj={}; for(const r of recs){ const id=r.id || idIndex.get(keyOf(r.gi,r.gt,r.mi,r.name,r.ext||'')) || null; if(!id) continue; dataObj[id]={ ext:r.ext||'', status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' }; } const r2=await adminSetForChunked(office,dataObj,superProof); if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; } toast('インポート完了',true); });
-btnRenameOffice.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const name=(renameOfficeName.value||'').trim(); if(!name){ toast('新しい拠点名を入力',false); return; } const r=await adminRenameOffice(office,name); if(r&&r.ok){ toast('拠点名を変更しました'); await populateAdminOffices(office); } else toast('変更に失敗',false); });
-btnAddOffice.addEventListener('click', async ()=>{ const id=(addOfficeId.value||'').trim(); const name=(addOfficeName.value||'').trim(); const pw=(addOfficePw.value||'').trim(); const apw=(addOfficeAdminPw.value||'').trim(); if(!id||!name||!pw||!apw){ toast('すべて入力してください',false); return; } const r=await adminAddOffice(id,name,pw,apw); if(r&&r.ok){ toast('拠点を追加しました'); addOfficeId.value=''; addOfficeName.value=''; addOfficePw.value=''; addOfficeAdminPw.value=''; await populateAdminOffices(id); } else toast('追加に失敗',false); });
-btnDeleteOffice.addEventListener('click', async ()=>{ if(!isSuper()){ toast('権限がありません',false); return; } const office=adminOfficeSel.value; const officeLabel=adminOfficeSel.options[adminOfficeSel.selectedIndex]?.text||office; const proof=await superHmacFlow(`拠点を削除します。\n対象：${officeLabel}\nスーパー管理者パスワードを入力してください`); if(!proof) return; const r=await adminDeleteOffice(office,proof); if(r&&r.ok){ toast('拠点を削除しました',true); await populateAdminOffices(); } else toast('削除に失敗',false); });
-btnSetPw.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const pw=(setPw.value||'').trim(); const apw=(setAdminPw.value||'').trim(); if(!pw&&!apw){ toast('更新する項目を入力',false); return; } let proof=null; if(isSuper()){ proof=await superHmacFlow("拠点パスワードを変更します。スーパー管理者パスワードを入力してください"); if(!proof) return; } const r=await adminSetOfficePassword(office,pw,apw,proof); if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; } else toast('更新に失敗',false); });
-btnLoadMenus.addEventListener('click', async ()=>{ const office=selectedOfficeId(); const cfg=await adminGetConfigFor(office); menusJson.value=JSON.stringify((cfg&&cfg.menus)||defaultMenus(),null,2); });
-btnSaveMenus.addEventListener('click', async ()=>{ let obj; try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; } const office=selectedOfficeId(); const cfg=await adminGetConfigFor(office); if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; } let proof=null; if(isSuper()){ proof=await superHmacFlow("メニュー設定を保存します。スーパー管理者パスワードを入力してください"); if(!proof) return; } cfg.menus=obj; const r=await adminSetConfigFor(office,cfg,proof); if(r&&r.ok){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); } else toast('保存に失敗',false); });
+/* 管理UIイベント */
+btnExport.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const cfg=await adminGetConfigFor(office);
+  const dat=await adminGetFor(office);
+  if(!(cfg&&cfg.groups) || !(dat&&typeof dat.data==='object')){ toast('エクスポート失敗',false); return; }
+  const csv=makeNormalizedCSV(cfg,dat.data);
+  // Excel対策：UTF-8 BOM 付与
+  const BOM=new Uint8Array([0xEF,0xBB,0xBF]);
+  const bytes=enc.encode(csv);
+  const blob=new Blob([BOM,bytes],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`presence_${office}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
+});
+btnImport.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const file=csvFile.files&&csvFile.files[0];
+  if(!file){ toast('CSVを選択してください',false); return; }
+  let superProof=null;
+  if(isSuper()){
+    superProof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください");
+    if(!superProof) return;
+  }
+  const text=await file.text();
+  const rows=parseCSV(text);
+  if(!rows.length){ toast('CSVが空です',false); return; }
+  const hdr=rows[0].map(s=>s.trim());
+  const must=['group_index','group_title','member_order','id','name','ext','status','time','note'];
+  if(must.some((h,i)=>hdr[i]!==h)){ toast('CSVヘッダが不正です',false); return; }
 
-// ログオフのクリック紐づけ（以前の指摘どおり）
-logoutBtn.addEventListener('click', logout);
+  const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
+    const [gi,gt,mi,id,name,ext,status,time,note]=r;
+    return {gi:Number(gi)||0,gt:(gt||''),mi:Number(mi)||0,id:(id||''),name:(name||''),ext:(ext||''),status:(status||(STATUSES[0]?.value||'在席')),time:(time||''),note:(note||'')};
+  });
+
+  const groupsMap=new Map();
+  for(const r of recs){
+    if(!r.gi||!r.mi||!r.name) continue;
+    if(!groupsMap.has(r.gi)) groupsMap.set(r.gi,{title:r.gt||'',members:[]});
+    const g=groupsMap.get(r.gi);
+    g.title=r.gt||'';
+    g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined});
+  }
+  const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{
+    g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g;
+  });
+  const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
+  const r1=await adminSetConfigFor(office,cfgToSet,superProof);
+  if(!(r1&&r1.ok)){ toast('名簿の設定に失敗',false); return; }
+
+  const newCfg=await adminGetConfigFor(office);
+  if(!(newCfg&&newCfg.groups)){ toast('名簿再取得に失敗',false); return; }
+
+  const keyOf=(gi,gt,mi,name,ext)=>[String(gi),String(gt||''),String(mi),String(name||''),String(ext||'')].join('|');
+  const idIndex=new Map();
+  (newCfg.groups||[]).forEach((g,gi0)=>{ (g.members||[]).forEach((m,mi0)=>{ idIndex.set(keyOf(gi0+1,g.title||'',mi0+1,m.name||'',m.ext||''),m.id); }); });
+
+  const dataObj={};
+  for(const r of recs){
+    const id=r.id || idIndex.get(keyOf(r.gi,r.gt,r.mi,r.name,r.ext||'')) || null;
+    if(!id) continue;
+    dataObj[id]={ ext:r.ext||'', status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
+  }
+  const r2=await adminSetForChunked(office,dataObj,superProof);
+  if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
+  toast('インポート完了',true);
+});
+btnRenameOffice.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const name=(renameOfficeName.value||'').trim();
+  if(!name){ toast('新しい拠点名を入力',false); return; }
+  const r=await adminRenameOffice(office,name);
+  if(r&&r.ok){ toast('拠点名を変更しました'); await populateAdminOffices(office); }
+  else toast('変更に失敗',false);
+});
+btnAddOffice.addEventListener('click', async ()=>{
+  const id=(addOfficeId.value||'').trim();
+  const name=(addOfficeName.value||'').trim();
+  const pw=(addOfficePw.value||'').trim();
+  const apw=(addOfficeAdminPw.value||'').trim();
+  if(!id||!name||!pw||!apw){ toast('すべて入力してください',false); return; }
+  const r=await adminAddOffice(id,name,pw,apw);
+  if(r&&r.ok){ toast('拠点を追加しました'); addOfficeId.value=''; addOfficeName.value=''; addOfficePw.value=''; addOfficeAdminPw.value=''; await populateAdminOffices(id); }
+  else toast('追加に失敗',false);
+});
+btnDeleteOffice.addEventListener('click', async ()=>{
+  if(!isSuper()){ toast('権限がありません',false); return; }
+  const office=adminOfficeSel.value;
+  const officeLabel=adminOfficeSel.options[adminOfficeSel.selectedIndex]?.text||office;
+  const proof=await superHmacFlow(`拠点を削除します。\n対象：${officeLabel}\nスーパー管理者パスワードを入力してください`);
+  if(!proof) return;
+  const r=await adminDeleteOffice(office,proof);
+  if(r&&r.ok){ toast('拠点を削除しました',true); await populateAdminOffices(); }
+  else toast('削除に失敗',false);
+});
+btnSetPw.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const pw=(setPw.value||'').trim();
+  const apw=(setAdminPw.value||'').trim();
+  if(!pw&&!apw){ toast('更新する項目を入力',false); return; }
+  let proof=null;
+  if(isSuper()){
+    proof=await superHmacFlow("拠点パスワードを変更します。スーパー管理者パスワードを入力してください");
+    if(!proof) return;
+  }
+  const r=await adminSetOfficePassword(office,pw,apw,proof);
+  if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; }
+  else toast('更新に失敗',false);
+});
+btnLoadMenus.addEventListener('click', async ()=>{
+  const office=selectedOfficeId();
+  const cfg=await adminGetConfigFor(office);
+  menusJson.value=JSON.stringify((cfg&&cfg.menus)||defaultMenus(),null,2);
+});
+btnSaveMenus.addEventListener('click', async ()=>{
+  let obj;
+  try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; }
+  const office=selectedOfficeId();
+  const cfg=await adminGetConfigFor(office);
+  if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
+  let proof=null;
+  if(isSuper()){
+    proof=await superHmacFlow("メニュー設定を保存します。スーパー管理者パスワードを入力してください");
+    if(!proof) return;
+  }
+  cfg.menus=obj;
+  const r=await adminSetConfigFor(office,cfg,proof);
+  if(r&&r.ok){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
+  else toast('保存に失敗',false);
+});
 
 /* CSVパーサ */
-function parseCSV(text){ const out=[]; let i=0,row=[],field='',inq=false; function pushField(){ row.push(field); field=''; } function pushRow(){ out.push(row); row=[]; } while(i<text.length){ const c=text[i++]; if(inq){ if(c=='"'&&text[i]=='"'){ field+='"'; i++; } else if(c=='"'){ inq=false; } else field+=c; } else { if(c===','){ pushField(); } else if(c=='"'){ inq=true; } else if(c=='\n'){ pushField(); pushRow(); } else if(c=='\r'){ } else field+=c; } } if(field!=='') pushField(); if(row.length) pushRow(); return out; }
+function parseCSV(text){
+  const out=[]; let i=0,row=[],field='',inq=false;
+  function pushField(){ row.push(field); field=''; }
+  function pushRow(){ out.push(row); row=[]; }
+  while(i<text.length){
+    const c=text[i++];
+    if(inq){
+      if(c=='"'&&text[i]=='"'){ field+='"'; i++; }
+      else if(c=='"'){ inq=false; }
+      else field+=c;
+    } else {
+      if(c===','){ pushField(); }
+      else if(c=='"'){ inq=true; }
+      else if(c=='\n'){ pushField(); pushRow(); }
+      else if(c=='\r'){ }
+      else field+=c;
+    }
+  }
+  if(field!=='') pushField();
+  if(row.length) pushRow();
+  return out;
+}
 
 /* ログアウト */
-async function logout(){ try{ if(tokenRenewTimer){ clearTimeout(tokenRenewTimer); tokenRenewTimer=null; } if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; } if(remoteStartTimer){ clearTimeout(remoteStartTimer); remoteStartTimer=null; } if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; } if(ro){ try{ ro.disconnect(); }catch{} } }catch{} closeMenu(); showAdminModal(false); board.style.display='none'; board.replaceChildren(); menuList.replaceChildren(); window.scrollTo(0,0); SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY); sessionStorage.removeItem(SESSION_OFFICE_KEY); sessionStorage.removeItem(SESSION_OFFICE_NAME_KEY); CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user"; titleBtn.textContent='在席確認表【開発用】'; ensureAuthUI(); await refreshPublicOfficeSelect(); loginEl.style.display='flex'; }
+async function logout(){
+  try{
+    if(tokenRenewTimer){ clearTimeout(tokenRenewTimer); tokenRenewTimer=null; }
+    if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
+    if(remoteStartTimer){ clearTimeout(remoteStartTimer); remoteStartTimer=null; }
+    if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+    if(ro){ try{ ro.disconnect(); }catch{} }
+  }catch{}
+  closeMenu(); showAdminModal(false);
+  board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
+  window.scrollTo(0,0);
+  SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY);
+  sessionStorage.removeItem(SESSION_OFFICE_KEY); sessionStorage.removeItem(SESSION_OFFICE_NAME_KEY);
+  CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user";
+  titleBtn.textContent='在席確認表【開発用】';
+  ensureAuthUI(); await refreshPublicOfficeSelect(); loginEl.style.display='flex';
+}
 
-/* 認証UI */
+/* 認証UI + 管理UI */
 function ensureAuthUI(){ const showAdmin=(SESSION_TOKEN&&(isSuper()||isOfficeAdmin())); adminBtn.style.display=showAdmin?'inline-block':'none'; logoutBtn.style.display=SESSION_TOKEN?'inline-block':'none'; }
-async function refreshPublicOfficeSelect(selectedId){ officeSel.innerHTML=`<option value="" disabled selected>読込中…</option>`; const res=await apiPost({ action:'publicListOffices' }); const offices=(res&&Array.isArray(res.offices))?res.offices:[]; if(offices.length===0){ officeSel.innerHTML=`<option value="" disabled selected>取得できませんでした。再読込してください</option>`; return; } officeSel.innerHTML=offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}</option>`).join(''); if(selectedId && offices.some(o=>o.id===selectedId)) officeSel.value=selectedId; else officeSel.selectedIndex=0; }
+function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
+function applyRoleToAdminPanel(){
+  adminOfficeRow.style.display = isSuper() ? '' : 'none';
+  document.querySelectorAll('.admin-box[data-super-only="1"]').forEach(el=>{ el.style.display = isSuper() ? '' : 'none'; });
+}
+async function populateAdminOffices(selected){
+  if(isSuper()){
+    const res=await adminListOffices();
+    if(!(res&&res.offices)){ toast('拠点一覧の取得に失敗',false); return; }
+    adminOfficeSel.innerHTML=res.offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}（${o.id}）</option>`).join('');
+    if(selected) adminOfficeSel.value=selected;
+  } else {
+    adminOfficeSel.innerHTML=`<option value="${CURRENT_OFFICE_ID}">${sanitizeText(CURRENT_OFFICE_NAME)}（${CURRENT_OFFICE_ID}）</option>`;
+  }
+}
+adminBtn.addEventListener('click', async ()=>{
+  applyRoleToAdminPanel();
+  await populateAdminOffices();
+  showAdminModal(true);
+});
+adminClose.addEventListener('click', ()=> showAdminModal(false));
+refreshOfficesBtn.addEventListener('click', ()=> populateAdminOffices());logoutBtn.addEventListener('click', logout);
+
+/* Admin API */
+function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFICE_ID; }
+async function adminListOffices(){ return await apiPost({ action:'listOffices', token:SESSION_TOKEN }); }
+async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
+async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
+async function adminSetConfigFor(office,cfgObj,superProof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
+async function adminSetForChunked(office,dataObjFull,superProof){
+  const entries=Object.entries(dataObjFull||{});
+  if(entries.length===0){
+    const base={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify({updated:Date.now(),data:{},full:true}) };
+    if(superProof){ base.superHmac=superProof.hmac; base.nonce=superProof.nonce; }
+    return await apiPost(base);
+  }
+  const chunkSize=100; let first=true, ok=true;
+  for(let i=0;i<entries.length;i+=chunkSize){
+    const chunk=Object.fromEntries(entries.slice(i,i+chunkSize));
+    const obj={updated:Date.now(),data:chunk,full:first};
+    const q={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify(obj) };
+    if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; }
+    const r=await apiPost(q);
+    if(!(r&&r.ok)) ok=false; first=false;
+  }
+  return ok?{ok:true}:{error:'chunk_failed'};
+}
+async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
+async function adminAddOffice(id,name,pw,apw){ return await apiPost({ action:'addOffice', id, name, password:pw, adminPassword:apw, token:SESSION_TOKEN }); }
+async function adminDeleteOffice(office,superProof){ const q={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
+async function adminSetOfficePassword(office,pw,apw,superProof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
+
+/* CSV（共通） */
+function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
+function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
+function makeNormalizedCSV(cfg,data){
+  const rows=[];
+  rows.push(toCsvRow(['group_index','group_title','member_order','id','name','ext','status','time','note']));
+  (cfg.groups||[]).forEach((g,gi)=>{
+    (g.members||[]).forEach((m,mi)=>{
+      const id=m.id||''; const rec=(data&&data[id])||{};
+      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
+    });
+  });
+  return rows.join('\n');
+}
+
+/* 認証UI（公開オフィス一覧） */
+function ensureAuthUIPublicError(){ officeSel.innerHTML=`<option value="" disabled selected>取得できませんでした。再読込してください</option>`; }
+async function refreshPublicOfficeSelect(selectedId){
+  officeSel.innerHTML=`<option value="" disabled selected>読込中…</option>`;
+  const res=await apiPost({ action:'publicListOffices' });
+  const offices=(res&&Array.isArray(res.offices))?res.offices:[];
+  if(offices.length===0){ ensureAuthUIPublicError(); return; }
+  officeSel.innerHTML=offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}</option>`).join('');
+  if(selectedId && offices.some(o=>o.id===selectedId)) officeSel.value=selectedId; else officeSel.selectedIndex=0;
+}
 
 /* 起動 */
 document.addEventListener('DOMContentLoaded', async ()=>{
@@ -554,65 +898,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     loginEl.style.display='flex';
   }
 });
-
-/* 以下、normalizeConfigClient / setupMenus / fastFetchDataOnce / startRemoteSync / startConfigWatch / pushRowDelta などは
-   すべて元のコードから変更していません（CSV 以外は無改変）。 */
-
-/* CSV */
-function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
-function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
-function makeNormalizedCSV(cfg,data){
-  const rows=[];
-  // 日本語ヘッダ（列順は従来どおり）
-  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
-  (cfg.groups||[]).forEach((g,gi)=>{
-    (g.members||[]).forEach((m,mi)=>{
-      const id=m.id||'';
-      const rec=(data&&data[id])||{};
-      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
-    });
-  });
-  return rows.join('\n');
-}
-
-/* 権限UI */
-function ensureAuthUI(){ const showAdmin = (SESSION_TOKEN && (isSuper()||isOfficeAdmin())); adminBtn.style.display=showAdmin?'inline-block':'none'; logoutBtn.style.display=SESSION_TOKEN?'inline-block':'none'; }
-function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
-function applyRoleToAdminPanel(){ adminOfficeRow.style.display = isSuper() ? '' : 'none'; document.querySelectorAll('.admin-box[data-super-only="1"]').forEach(el=>{ el.style.display = isSuper() ? '' : 'none'; }); }
-async function populateAdminOffices(selected){ if(isSuper()){ const res=await adminListOffices(); if(!(res&&res.offices)){ toast('拠点一覧の取得に失敗',false); return; } adminOfficeSel.innerHTML=res.offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}（${o.id}）</option>`).join(''); if(selected) adminOfficeSel.value=selected; } else { adminOfficeSel.innerHTML=`<option value="${CURRENT_OFFICE_ID}">${sanitizeText(CURRENT_OFFICE_NAME)}（${CURRENT_OFFICE_ID}）</option>`; } }
-
-/* Admin API */
-function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFICE_ID; }
-async function adminListOffices(){ return await apiPost({ action:'listOffices', token:SESSION_TOKEN }); }
-async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminSetConfigFor(office,cfgObj,superProof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
-async function adminSetForChunked(office,dataObjFull,superProof){ const entries=Object.entries(dataObjFull||{}); if(entries.length===0){ const base={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify({updated:Date.now(),data:{},full:true}) }; if(superProof){ base.superHmac=superProof.hmac; base.nonce=superProof.nonce; } return await apiPost(base); } const chunkSize=100; let first=true, ok=true; for(let i=0;i<entries.length;i+=chunkSize){ const chunk=Object.fromEntries(entries.slice(i,i+chunkSize)); const obj={updated:Date.now(),data:chunk,full:first}; const q={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify(obj) }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } const r=await apiPost(q); if(!(r&&r.ok)) ok=false; first=false; } return ok?{ok:true}:{error:'chunk_failed'}; }
-async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
-async function adminAddOffice(id,name,pw,apw){ return await apiPost({ action:'addOffice', id, name, password:pw, adminPassword:apw, token:SESSION_TOKEN }); }
-async function adminDeleteOffice(office,superProof){ const q={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
-async function adminSetOfficePassword(office,pw,apw,superProof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
-
-/* CSV（重複定義あり：互換のため両方を日本語ヘッダに統一） */
-function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
-function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
-function makeNormalizedCSV(cfg,data){
-  const rows=[];
-  // 日本語ヘッダ（列順は従来どおり）
-  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
-  (cfg.groups||[]).forEach((g,gi)=>{
-    (g.members||[]).forEach((m,mi)=>{
-      const id=m.id||'';
-      const rec=(data&&data[id])||{};
-      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
-    });
-  });
-  return rows.join('\n');
-}
-
-/* 権限UI（再掲） */
-function ensureAuthUI(){ const showAdmin = (SESSION_TOKEN && (isSuper()||isOfficeAdmin())); adminBtn.style.display=showAdmin?'inline-block':'none'; logoutBtn.style.display=SESSION_TOKEN?'inline-block':'none'; }
-
 </script>
 </body>
 </html>
