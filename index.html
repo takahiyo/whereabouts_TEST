@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>在席確認表</title>
+<title>在席確認表【開発用】</title>
 
 <!-- 強めのキャッシュ抑止（HTMLに効く） -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -233,7 +233,7 @@
 </head>
 <body>
   <header>
-    <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表</button>
+    <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表【開発用】</button>
     <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
     <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
@@ -334,7 +334,7 @@
               </li>
             </ul>
           </li>
-          <li><strong>在席確認表</strong>
+          <li><strong>在席確認表【開発用】</strong>
             <ul>
               <li>パネルはチーム（グループ）ごとです。</li>
               <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
@@ -374,7 +374,7 @@
               </li>
             </ul>
           </li>
-          <li><strong>在席確認表</strong>
+          <li><strong>在席確認表【開発用】</strong>
             <ul>
               <li>ユーザーと同じ操作はすべて可能です。</li>
               <li>画面上部に<strong>「管理」</strong>ボタンが表示されます。</li>
@@ -409,7 +409,7 @@
                   <li>英語ヘッダ（<code>group_index,group_title,member_order,id,name,ext,status,time,note</code>）でも取り込み可能です。</li>
                 </ul>
               </li>
-              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表」が付きます）。</li>
+              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表【開発用】」が付きます）。</li>
               <li><strong>拠点パスワードの変更</strong>：ユーザー／管理者パスワードを更新。片方のみ変更も可。</li>
               <li><strong>メニュー設定</strong>：ステータスや備考候補などのJSON設定を変更できます（<code>timeStepMinutes</code>は刻みのみ変更、時間帯は固定 07:00〜22:00）。</li>
             </ol>
@@ -422,7 +422,7 @@
   <!-- ログイン -->
   <div id="login" class="login" style="display:none">
     <div class="card">
-      <h2>在席確認表</h2>
+      <h2>在席確認表【開発用】</h2>
       <p>拠点を選び、パスワードを入力してください</p>
       <select id="officeSel" aria-label="拠点"></select>
       <input type="password" id="pw" placeholder="Password" autocomplete="current-password" />
@@ -1032,7 +1032,7 @@ async function logout(){
   SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY);
   sessionStorage.removeItem(SESSION_OFFICE_KEY); sessionStorage.removeItem(SESSION_OFFICE_NAME_KEY);
   CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user";
-  titleBtn.textContent='在席確認表';
+  titleBtn.textContent='在席確認表【開発用】';
   ensureAuthUI();
   try{
     await refreshPublicOfficeSelect();
@@ -1175,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     SESSION_TOKEN=res.token; sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN);
     CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
-    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
+    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
 
     // 役割確定（renewで上書き）
@@ -1206,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const existing=sessionStorage.getItem(SESSION_KEY);
   if(existing){
     SESSION_TOKEN=existing; loginEl.style.display='none';
-    loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
+    loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
     ensureAuthUI(); applyRoleToManual();
     // 初期データ取得
     (async()=>{
