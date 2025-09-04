@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>在席確認表【開発用】</title>
+<title>在席確認表</title>
 
 <!-- 強めのキャッシュ抑止（HTMLに効く） -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -52,41 +52,6 @@
     --header-height: 56px;
   }
 
-  /* ===== ステータス別の行色（在席はデフォルト） ===== */
-  #board tbody tr{ transition: background-color .15s ease; }
-
-  /* 在席（デフォルト見た目：色付けなし） */
-  #board tbody tr.st-here{ background: transparent; }
-
-  /* 外出：淡いオレンジ + 左端アクセント */
-  #board tbody tr.st-out{
-    background:#fff7ed;                  /* orange-50 */
-    box-shadow: inset 4px 0 0 #f59e0b;   /* orange-500 */
-  }
-
-  /* 会議：淡いブルー + 左端アクセント */
-  #board tbody tr.st-meeting{
-    background:#eff6ff;                  /* blue-50 */
-    box-shadow: inset 4px 0 0 #3b82f6;   /* blue-500 */
-  }
-
-  /* テレワーク：淡いパープル + 左端アクセント */
-  #board tbody tr.st-remote{
-    background:#f5f3ff;                  /* violet-50 */
-    box-shadow: inset 4px 0 0 #8b5cf6;   /* violet-500 */
-  }
-
-  /* 休み：淡いレッド + 左端アクセント */
-  #board tbody tr.st-off{
-    background:#fef2f2;                  /* red-50 */
-    box-shadow: inset 4px 0 0 #ef4444;   /* red-500 */
-    color:#374151;                       /* gray-700 */
-  }
-  #board tbody tr.st-off input,
-  #board tbody tr.st-off select{
-    color:#374151;
-  }
-
   body{font-family:"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#fff;margin:16px}
 
   /* ヘッダ */
@@ -105,14 +70,16 @@
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
   header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
 
-  /* フィルタUI */
-  .name-filter, .status-filter{
-    display:none; /* ログイン後に表示 */
-    padding:.35rem .6rem; border:1px solid var(--line); border-radius:999px;
-    font-size:14px;
+  /* フィルタ（氏名/ステータス）のレイアウト＆幅上限 */
+  .filters{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .filters label{ font-size:12px; color:#6b7280; }
+  .filters input[type="text"], .filters select{
+    width: min(42vw, 220px);
+    max-width: 220px;
+    box-sizing: border-box;
+    padding:.3rem .45rem; border:1px solid var(--line); border-radius:6px;
+    font-size:14px; background:#fff; -webkit-appearance:auto;
   }
-  .name-filter{ min-width:220px; max-width:50vw; }
-  .status-filter{ min-width:170px; }
 
   /* グループメニュー */
   .grp-menu{ position: fixed; top: calc(var(--header-height) + 8px); left: 50%; transform: translateX(-50%);
@@ -145,7 +112,7 @@
   .board[data-cols="1"]{ grid-template-columns: 1fr; }
 
   .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
-  scroll-margin-top: calc(var(--header-height) + 12px); }
+    scroll-margin-top: calc(var(--header-height) + 12px); }
 
   table{width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed}
   thead th{position:sticky; top:0; background:#f2efe9; font-weight:700}
@@ -158,27 +125,18 @@
   col.col-time{width:var(--w-time)}
   col.col-note{width:var(--w-note)}
 
-  select,input[type="text"],input[type="search"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}/* === Filter boxes width fix === */
-/* ヘッダ内の検索ボックスだけ幅を固定し、フレックスで伸びないようにする */
-header #nameFilter,
-header .name-filter{
-  display: inline-block;
-  width: clamp(220px, 32vw, 360px) !important;
-  min-width: 220px;
-  max-width: 50vw;
-  flex: 0 0 auto;
-}
-
-header #statusFilter,
-header .status-filter{
-  display: inline-block;
-  width: clamp(170px, 22vw, 240px) !important;
-  min-width: 170px;
-  flex: 0 0 auto;
-}
-
+  select,input[type="text"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}
   td.status select{padding-right:2.6em}
   td.time   select{text-align-last:center; font-variant-numeric:tabular-nums}
+
+  /* ===== ステータス別の行色（在席はデフォルト） ===== */
+  #board tbody tr{ transition: background-color .15s ease; }
+  #board tbody tr.st-here{ background: transparent; }
+  #board tbody tr.st-out{ background:#fff7ed; box-shadow: inset 4px 0 0 #f59e0b; }
+  #board tbody tr.st-meeting{ background:#eff6ff; box-shadow: inset 4px 0 0 #3b82f6; }
+  #board tbody tr.st-remote{ background:#f5f3ff; box-shadow: inset 4px 0 0 #8b5cf6; }
+  #board tbody tr.st-off{ background:#fef2f2; box-shadow: inset 4px 0 0 #ef4444; color:#374151; }
+  #board tbody tr.st-off input, #board tbody tr.st-off select{ color:#374151; }
 
   .login{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:2200}
   .login .card{background:#fff; border-radius:8px; padding:20px; min-width:300px; max-width:90vw; text-align:center}
@@ -197,7 +155,6 @@ header .status-filter{
       font-weight:600; color:#6B7280;
       min-width:5.5em; flex:0 0 auto;
     }
-
     tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
     tbody td.name::before{ content:""; display:none; }
     tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
@@ -251,9 +208,23 @@ header .status-filter{
 </head>
 <body>
   <header>
-    <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表【開発用】</button>
-    <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
-    <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
+    <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表</button>
+
+    <!-- フィルタ -->
+    <div class="filters" role="region" aria-label="絞り込み">
+      <label for="filterName">氏名</label>
+      <input id="filterName" type="text" placeholder="例：田中" aria-label="氏名で絞り込み">
+      <label for="filterStatus">ステータス</label>
+      <select id="filterStatus" aria-label="ステータスで絞り込み">
+        <option value="">全て</option>
+        <option>在席</option>
+        <option>外出</option>
+        <option>会議</option>
+        <option>テレワーク</option>
+        <option>休み</option>
+      </select>
+    </div>
+
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
@@ -330,7 +301,7 @@ header .status-filter{
     </div>
   </div>
 
-  <!-- マニュアルモーダル -->
+  <!-- マニュアルモーダル（差し替え済み） -->
   <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
     <div class="manual-card" role="document">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -352,28 +323,65 @@ header .status-filter{
               </li>
             </ul>
           </li>
-          <li><strong>在席確認表【開発用】</strong>
+          <li><strong>在席確認表</strong>
             <ul>
               <li>パネルはチーム（グループ）ごとです。</li>
               <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
               <li>縦スクロールが長い場合、タイトルをクリックでジャンプメニューから目的のグループへ移動できます。</li>
-              <li><strong>氏名検索</strong>：ヘッダの検索欄に入力すると即時に絞り込みます（ボタン不要）。空欄にすると全件表示に戻ります。</li>
-              <li><strong>ステータス絞り込み</strong>：ヘッダのプルダウンでステータス別に表示を絞れます（「全て」→解除）。氏名検索と併用できます。</li>
-              <li><strong>ステータスの色分け</strong>：在席（無色）、外出（淡いオレンジ）、会議（淡いブルー）、テレワーク（淡いパープル）、休み（淡いレッド）で行全体の色が変わります。</li>
-              <li><strong>戻り時間</strong>：ステータスが「外出」「会議」のときだけ選択できます。<u>07:00〜22:00</u>の範囲で、30分単位です（メニュー設定で刻みは変更可）。</li>
-              <li><strong>備考</strong>：1つのテキストボックスです。自由入力できます。<br>
-                  入力補助としてプルダウン候補（「（空白）」「直出」「直帰」「直出・直帰」）が表示されます。</li>
-              <li><strong>入力中の同期</strong>：備考を入力している間、そのボックスは一時的に自動更新を止めます（他の人の入力で上書きされにくくなります）。</li>
-              <li><strong>ステータス変更時の自動クリア</strong>：「在席」「テレワーク」「休み」を選ぶと戻り時間は空白になります。<br>
-                  備考は候補から選んだ（または候補と同じ）場合のみ空白にリセットされ、自由入力の文字列は維持されます。</li>
-              <li><strong>内線</strong>は表示のみ（編集不可）です。</li>
-              <li><strong>反映速度</strong>：およそ2秒で他端末に反映。備考を手入力中は反映を一時保留します。<br>同じ箇所を複数人が同時編集した場合は<strong>最後に確定した内容が残ります</strong>。</li>
+
+              <li><strong>検索/絞り込み（ヘッダ）</strong>
+                <ul>
+                  <li>氏名フィルタ：入力と同時に部分一致で絞り込みます。空にすると全件表示へ戻ります。</li>
+                  <li>ステータスフィルタ：プルダウンで「全て / 在席 / 外出 / 会議 / テレワーク / 休み」から絞り込みます。</li>
+                  <li>両方の条件を同時にかけられます。</li>
+                </ul>
+              </li>
+
+              <li><strong>行の色分け（ステータスが一目でわかります）</strong>
+                <ul>
+                  <li>在席：標準（背景なし）</li>
+                  <li>外出：淡いオレンジ（左端にオレンジの帯）</li>
+                  <li>会議：淡いブルー（左端にブルーの帯）</li>
+                  <li>テレワーク：淡いパープル（左端にパープルの帯）</li>
+                  <li>休み：淡いレッド（左端にレッドの帯）</li>
+                </ul>
+              </li>
+
+              <li><strong>更新の反映</strong>
+                <ul>
+                  <li>およそ2秒ごとに、変更が他の端末へ反映されます。</li>
+                  <li>備考欄を手入力している間は、その人の「備考」だけ反映を一時保留します（確定後に反映）。</li>
+                  <li>同じ箇所を複数人で同時編集した場合は、最後に確定した内容が残ります。</li>
+                </ul>
+              </li>
+
+              <li><strong>戻り時間</strong>
+                <ul>
+                  <li>ステータスが「外出」「会議」のときだけ選べます。</li>
+                  <li>07:00〜22:00の範囲で30分刻み（07:00, 07:30, …, 21:30, 22:00）。</li>
+                </ul>
+              </li>
+
+              <li><strong>備考欄（プルダウン＋自由入力・新仕様）</strong>
+                <ul>
+                  <li>1つのテキストボックスです。プルダウン候補から選択することも、自由に文字入力もできます。</li>
+                  <li>候補：空白（未設定）、直出、直帰、直出・直帰</li>
+                  <li>入力中は、その備考だけ更新が止まります（確定後に反映）。</li>
+                  <li>ステータスを「在席」「テレワーク」「休み」に変更した場合：
+                    <ul>
+                      <li><strong>戻り時間は空欄</strong>になります。</li>
+                      <li><strong>備考は、候補から選んでいた場合のみ空欄に</strong>なります。自由入力の文字列はリセットしません。</li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+
+              <li><strong>内線</strong>：入力は不要です（表示のみ）。</li>
             </ul>
           </li>
+
           <li><strong>ログオフ</strong>
-            <ul>
-              <li>開発上のために用意していますが、通常はログオフ操作は不要です。</li>
-            </ul>
+            <ul><li>開発・検証用の機能です。通常の利用でログオフ操作は不要です。</li></ul>
           </li>
         </ol>
       </section>
@@ -392,7 +400,7 @@ header .status-filter{
               </li>
             </ul>
           </li>
-          <li><strong>在席確認表【開発用】</strong>
+          <li><strong>在席確認表</strong>
             <ul>
               <li>ユーザーと同じ操作はすべて可能です。</li>
               <li>画面上部に<strong>「管理」</strong>ボタンが表示されます。</li>
@@ -415,21 +423,18 @@ header .status-filter{
                       <tr><td>グループ名</td><td>パネルの見出し名（同グループ全員で同じ値を推奨）</td></tr>
                       <tr><td>表示順</td><td>パネル内の並び順（数値昇順で表示）</td></tr>
                       <tr><td>id</td><td>一意のID。空欄は取り込み後に採番されます</td></tr>
-                      <tr><td>氏名</td><td>必須</td></tr>
-                      <tr><td>内線</td><td>表示のみ</td></tr>
-                      <tr><td>ステータス</td><td>取り込み時に指定可能（在席/外出/会議/テレワーク/休み）</td></tr>
-                      <tr><td>戻り時間</td><td>30分単位（外出/会議のときのみ有効化・07:00〜22:00）</td></tr>
-                      <tr><td>備考</td><td>自由入力／候補「直出」「直帰」「直出・直帰」も利用可</td></tr>
+                      <tr><td>氏名</td><td></td></tr>
+                      <tr><td>内線</td><td></td></tr>
+                      <tr><td>ステータス</td><td>取り込み時に指定可能</td></tr>
+                      <tr><td>戻り時間</td><td>30分単位（ステータスにより有効化）</td></tr>
+                      <tr><td>備考</td><td>自由入力／取り込み可（候補：直出・直帰など）</td></tr>
                     </tbody>
                   </table>
                 </div>
-                <ul>
-                  <li>英語ヘッダ（<code>group_index,group_title,member_order,id,name,ext,status,time,note</code>）でも取り込み可能です。</li>
-                </ul>
               </li>
-              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表【開発用】」が付きます）。</li>
+              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表」が付きます）。</li>
               <li><strong>拠点パスワードの変更</strong>：ユーザー／管理者パスワードを更新。片方のみ変更も可。</li>
-              <li><strong>メニュー設定</strong>：ステータスや備考候補などのJSON設定を変更できます（<code>timeStepMinutes</code>は刻みのみ変更、時間帯は固定 07:00〜22:00）。</li>
+              <li><strong>メニュー設定</strong>：ステータスや備考候補などのJSON設定を変更できます。</li>
             </ol>
           </li>
         </ol>
@@ -440,7 +445,7 @@ header .status-filter{
   <!-- ログイン -->
   <div id="login" class="login" style="display:none">
     <div class="card">
-      <h2>在席確認表【開発用】</h2>
+      <h2>在席確認表</h2>
       <p>拠点を選び、パスワードを入力してください</p>
       <select id="officeSel" aria-label="拠点"></select>
       <input type="password" id="pw" placeholder="Password" autocomplete="current-password" />
@@ -470,19 +475,27 @@ const SESSION_OFFICE_NAME_KEY = "presence-office-name";
 const board=document.getElementById('board'), toastEl=document.getElementById('toast'), diag=document.getElementById('diag');
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
-const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
+
+const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'),
+      adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
 const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel'), refreshOfficesBtn=document.getElementById('refreshOffices');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const addOfficeId=document.getElementById('addOfficeId'), addOfficeName=document.getElementById('addOfficeName'), addOfficePw=document.getElementById('addOfficePw'), addOfficeAdminPw=document.getElementById('addOfficeAdminPw'), btnAddOffice=document.getElementById('btnAddOffice');
 const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
+
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
-const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
+
+const filterName=document.getElementById('filterName'), filterStatus=document.getElementById('filterStatus');
 
 /* 状態 */
-let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
-let tokenRenewTimer=null, ro=null, remotePullTimer=null, remoteStartTimer=null, configWatchTimer=null;
+let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set();
+let statusClassMap=new Map();
+let NOTE_PRESETS=new Set();        // 「直出」「直帰」「直出・直帰」
+let CLEAR_TIME_ON_SET=new Set(['在席','テレワーク','休み']); // これらを選んだら time を空に
+
+let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let storeKeyBase="presence-board-v4";
 
 /* 認証状態 */
@@ -509,55 +522,22 @@ function getContainerWidth(){ const elc=board.parentElement||document.body; cons
 function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n); board.classList.toggle('force-cards', n === 1); }
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
-/* === 絞り込み（氏名 + ステータス） === */
-function buildStatusFilterOptions(){
-  statusFilter.replaceChildren();
-  const optAll = document.createElement('option');
-  optAll.value = ''; optAll.textContent = '（全てのステータス）';
-  statusFilter.appendChild(optAll);
-  (MENUS?.statuses||[]).forEach(s=>{
-    const o=document.createElement('option');
-    o.value=String(s.value); o.textContent=String(s.value);
-    statusFilter.appendChild(o);
-  });
-}
-function applyFilters(){
-  const q=(nameFilter.value||'').trim().toLowerCase();
-  const st=statusFilter.value||'';
-  board.querySelectorAll('section.panel').forEach(sec=>{
-    let anyRow=false;
-    sec.querySelectorAll('tbody tr').forEach(tr=>{
-      const nameCell=tr.querySelector('td.name');
-      const nameText=(nameCell?.textContent||'').toLowerCase();
-      const rowSt = tr.querySelector('select[name="status"]')?.value || '';
-      const showByName = !q || nameText.includes(q);
-      const showByStatus = !st || rowSt === st;
-      const show = showByName && showByStatus;
-      tr.style.display = show ? '' : 'none';
-      if(show) anyRow=true;
-    });
-    sec.style.display = anyRow ? '' : 'none';
-  });
-}
-nameFilter.addEventListener('input', applyFilters);
-statusFilter.addEventListener('change', applyFilters);
-
-/* === 時刻メニュー（07:00〜22:00） === */
-const TIME_RANGE_START_MIN = 7*60;  // 07:00
-const TIME_RANGE_END_MIN   = 22*60; // 22:00
+/* UI生成 */
 function buildTimeOptions(stepMin){
   const frag=document.createDocumentFragment();
   frag.appendChild(el('option',{value:"",text:""}));
   const step=Math.max(5,Math.min(60,Number(stepMin||30)));
-  for(let m=TIME_RANGE_START_MIN; m<=TIME_RANGE_END_MIN; m+=step){
-    const h=Math.floor(m/60), mm=m%60;
-    const t=`${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-    frag.appendChild(el('option',{value:t,text:t}));
+
+  const startH=7, endH=22; // 07:00〜22:00
+  for(let h=startH; h<=endH; h++){
+    for(let m=0; m<60; m+=step){
+      if(h===endH && m>0) break; // 22:00 以降は出さない
+      const t=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      frag.appendChild(el('option',{value:t,text:t}));
+    }
   }
   return frag;
 }
-
-/* 行UI */
 function buildRow(member){
   const name=sanitizeText(member.name||"");
   const ext=(member.ext&&/^[0-9]{1,4}$/.test(String(member.ext)))?String(member.ext):"";
@@ -565,7 +545,6 @@ function buildRow(member){
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key;
 
   const tdName=el('td',{class:'name','data-label':'氏名'},[name]);
-
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
@@ -580,14 +559,14 @@ function buildRow(member){
   selTime.appendChild(buildTimeOptions(MENUS?.timeStepMinutes)); tdTime.appendChild(selTime);
 
   const tdNote=el('td',{class:'note','data-label':'備考'});
-  const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考'});
+  const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考（直出/直帰/直出・直帰 も可）'});
   tdNote.appendChild(inpNote);
 
   tr.append(tdName,tdExt,tdStatus,tdTime,tdNote);
   return tr;
 }
 
-/* 既存行の自己修復（select が無ければ足す / 備考datalistの再付与） */
+/* 既存行の自己修復（select が無ければ足す） */
 function ensureRowControls(tr){
   if(!tr) return;
   const key=tr.dataset.key;
@@ -606,11 +585,6 @@ function ensureRowControls(tr){
     t.appendChild(buildTimeOptions(MENUS?.timeStepMinutes));
     td && td.appendChild(t);
     diagAdd('fix: time select injected');
-  }
-  const noteInp=tr.querySelector('input[name="note"]');
-  if(noteInp && noteInp.getAttribute('list')!=='noteOptions'){
-    noteInp.setAttribute('list','noteOptions');
-    diagAdd('fix: note datalist reattached');
   }
 }
 
@@ -634,10 +608,10 @@ function render(){
   board.replaceChildren();
   GROUPS.forEach((g,i)=> board.appendChild(buildPanel(g,i)));
   board.style.display='';
-  // 自己修復: 念のため全行チェック
+
   board.querySelectorAll('tbody tr').forEach(ensureRowControls);
   wireEvents(); loadLocal(); recolor(); startGridObserver(); buildGroupMenu();
-  applyFilters(); // フィルタ入力済みなら反映
+  applyFilters(); // 初期フィルタ
 }
 
 /* グループメニュー */
@@ -677,15 +651,40 @@ function applyState(data){
   if(!data) return;
   Object.entries(data).forEach(([k,v])=>{
     const s=document.getElementById(`status-${k}`), t=document.getElementById(`time-${k}`), n=document.getElementById(`note-${k}`);
-    if(!s||!t){ ensureRowControls(document.getElementById(`row-${k}`)); }   // 自己修復
+    if(!s||!t){ ensureRowControls(document.getElementById(`row-${k}`)); }
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");
     if(s&&t) toggleTimeEnable(s,t);
   });
   recolor();
 }
-function recolor(){ board.querySelectorAll("tbody tr").forEach(tr=>{ const st=tr.querySelector('select[name="status"]')?.value||""; statusClassMap.forEach(cls=>tr.classList.remove(cls)); const cls=statusClassMap.get(st); if(cls) tr.classList.add(cls); tr.dataset.status=st; }); }
+
+/* ステータス色反映 */
+function recolor(){
+  board.querySelectorAll("tbody tr").forEach(tr=>{
+    const st=tr.querySelector('select[name="status"]')?.value||"";
+    statusClassMap.forEach(cls=>tr.classList.remove(cls));
+    const cls=statusClassMap.get(st);
+    if(cls) tr.classList.add(cls);
+    tr.dataset.status=st;
+  });
+}
 function toggleTimeEnable(statusEl,timeEl){ const needsTime=requiresTimeSet.has(statusEl.value); if(timeEl) timeEl.disabled=!needsTime; }
+
+/* フィルタ処理 */
+function applyFilters(){
+  const nameQ = (filterName.value||"").trim();
+  const statQ = (filterStatus.value||"").trim();
+  const nameRe = nameQ ? new RegExp(nameQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')) : null;
+
+  board.querySelectorAll('tbody tr').forEach(tr=>{
+    const nameText = tr.querySelector('td.name')?.textContent || "";
+    const st = tr.dataset.status || tr.querySelector('select[name="status"]')?.value || "";
+    const nameOk = nameRe ? nameRe.test(nameText) : true;
+    const statOk = statQ ? (st===statQ) : true;
+    tr.style.display = (nameOk && statOk) ? '' : 'none';
+  });
+}
 
 /* ローカル保存 */
 function localKey(){ return `${storeKeyBase}:${CURRENT_OFFICE_ID||'__none__'}:${CONFIG_UPDATED||0}`; }
@@ -697,22 +696,19 @@ const noteTimers=new Map();
 function debounceRowPush(key,delay=900){ if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
 function markEditing(el){ if(!el) return; el.dataset.editing='1'; }
 function unmarkEditing(el){ if(!el) return; delete el.dataset.editing; }
-function markComposing(el){ if(!el) return; el.dataset.composing='1'; }
-function unmarkComposing(el){ if(!el) return; delete el.dataset.composing; }
 
 /* ===== メニュー・正規化・通信・同期 ===== */
 function defaultMenus(){
   return {
     timeStepMinutes: 30,
     statuses: [
-      { value: "在席",         class: "st-here",    clearOnSet: true  },
-      { value: "外出",         requireTime: true,   class: "st-out"   },
-      { value: "会議",         requireTime: true,   class: "st-meeting" },
-      { value: "テレワーク",   class: "st-remote",  clearOnSet: true  },
-      { value: "休み",         class: "st-off",     clearOnSet: true  }
+      { value: "在席",         class: "st-here" },
+      { value: "外出",         requireTime: true,  class: "st-out" },
+      { value: "会議",         requireTime: true,  class: "st-meeting" },
+      { value: "テレワーク",   class: "st-remote" },
+      { value: "休み",         class: "st-off" }
     ],
-    // 備考の候補（自由入力可、下記候補はプルダウンで提示）
-    noteOptions: ["直出","直帰","直出・直帰"]
+    noteOptions: ["直出","直帰","直出・直帰"] // デフォルト候補
   };
 }
 function setupMenus(m){
@@ -721,10 +717,10 @@ function setupMenus(m){
 
   STATUSES = sts.map(s => ({ value: String(s.value) }));
   requiresTimeSet = new Set(sts.filter(s => s.requireTime).map(s => String(s.value)));
-  clearOnSet       = new Set(sts.filter(s => s.clearOnSet).map(s => String(s.value)));
   statusClassMap   = new Map(sts.map(s => [String(s.value), String(s.class || "")]));
+  NOTE_PRESETS = new Set([...(MENUS.noteOptions||[])].map(x=>String(x)));
 
-  // 備考候補 datalist（先頭に空白を入れて4候補）
+  // 備考候補 datalist
   let dl = document.getElementById('noteOptions');
   if(!dl){
     dl = document.createElement('datalist');
@@ -732,26 +728,11 @@ function setupMenus(m){
     document.body.appendChild(dl);
   }
   dl.replaceChildren();
-  // 空白（null相当）
-  const optBlank = document.createElement('option');
-  optBlank.value = "";
-  optBlank.label = "（空白）";
-  optBlank.textContent = "（空白）";
-  dl.appendChild(optBlank);
   (MENUS.noteOptions || []).forEach(t => {
     const opt = document.createElement('option');
     opt.value = String(t);
     dl.appendChild(opt);
   });
-
-  // ステータス絞り込みの選択肢
-  buildStatusFilterOptions();
-}
-function isNotePresetValue(val){
-  const v=(val==null?"":String(val)).trim();
-  if(v==="") return true;
-  const set = new Set((MENUS?.noteOptions||[]).map(x=>String(x)));
-  return set.has(v);
 }
 function fallbackGroupTitle(g, idx){
   const t = (g && g.title != null) ? String(g.title).trim() : "";
@@ -816,6 +797,8 @@ async function pushRowDelta(key){
   const payload = { updated: Date.now(), data: { [key]: st } };
   await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload) });
 }
+
+/* 入力イベント（備考はデバウンス／IME対応） */
 function wireEvents(){
   // IME対策
   board.addEventListener('compositionstart', e => { const t=e.target; if(t && t.dataset) t.dataset.composing='1'; });
@@ -824,7 +807,6 @@ function wireEvents(){
   board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
   board.addEventListener('focusout', e => { const t=e.target; if(t && t.dataset) delete t.dataset.editing; });
 
-  // 入力（備考：入力中は自動更新停止 → setIfNeeded が弾く）
   board.addEventListener('input', (e)=>{
     const t = e.target;
     if(!(t && t.name)) return;
@@ -833,10 +815,9 @@ function wireEvents(){
     if(t.name === 'note'){ debounceRowPush(key); } /* extは表示専用 */
   });
 
-  // 変更（ステータス/時間）
   board.addEventListener('change', (e)=>{
     const t = e.target;
-    if(!t) return;
+    if(!(t && t.name)) return;
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
 
@@ -845,32 +826,30 @@ function wireEvents(){
       const noteInp = tr.querySelector('input[name="note"]');
       toggleTimeEnable(t, timeSel);
 
-      if(clearOnSet.has(t.value)){
-        // 戻り時間は常にクリア
-        if(timeSel) timeSel.value = '';
-        // 備考は候補値（空白含む）の時のみクリア。自由入力は維持。
-        if(noteInp && isNotePresetValue(noteInp.value)){
-          noteInp.value = '';
-        }
+      // ステータスでクリア：time は 在席/テレワーク/休み で必ず空に
+      if(CLEAR_TIME_ON_SET.has(t.value) && timeSel){ timeSel.value = ''; }
+
+      // 備考は「候補から選んでいた場合のみ」空に（自由入力は保持）
+      if(CLEAR_TIME_ON_SET.has(t.value) && noteInp){
+        const val = (noteInp.value||'').trim();
+        if(val==='' || NOTE_PRESETS.has(val)){ noteInp.value=''; }
       }
 
       recolor();
-      debounceRowPush(key);
-      return;
     }
-
-    if(t.name === 'time'){
-      debounceRowPush(key);
-      return;
-    }
+    debounceRowPush(key);
   });
+
+  // フィルタイベント
+  filterName.addEventListener('input', applyFilters);
+  filterStatus.addEventListener('change', applyFilters);
 }
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
 function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
-async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', enc.encode(str)); }
-async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,enc.encode(messageStr)); return sig; }
+async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
+async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(messageStr)); return sig; }
 async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
 
 /* 管理UIイベント */
@@ -880,9 +859,8 @@ btnExport.addEventListener('click', async ()=>{
   const dat=await adminGetFor(office);
   if(!(cfg&&cfg.groups) || !(dat&&typeof dat.data==='object')){ toast('エクスポート失敗',false); return; }
   const csv=makeNormalizedCSV(cfg,dat.data);
-  // Excel対策：UTF-8 BOM 付与
   const BOM=new Uint8Array([0xEF,0xBB,0xBF]);
-  const bytes=enc.encode(csv);
+  const bytes=new TextEncoder().encode(csv);
   const blob=new Blob([BOM,bytes],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -903,7 +881,6 @@ btnImport.addEventListener('click', async ()=>{
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());
-  // 英語/日本語どちらのヘッダでも受け入れ（列順は固定）
   const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
   const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
   const okEn = mustEn.every((h,i)=>hdr[i]===h);
@@ -983,7 +960,7 @@ btnSetPw.addEventListener('click', async ()=>{
   let proof=null;
   if(isSuper()){
     proof=await superHmacFlow("拠点パスワードを変更します。スーパー管理者パスワードを入力してください");
-    if(!superProof) return;
+    if(!proof) return;
   }
   const r=await adminSetOfficePassword(office,pw,apw,proof);
   if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; }
@@ -1040,7 +1017,6 @@ async function logout(){
   try{
     if(tokenRenewTimer){ clearTimeout(tokenRenewTimer); tokenRenewTimer=null; }
     if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
-    if(remoteStartTimer){ clearTimeout(remoteStartTimer); remoteStartTimer=null; }
     if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
     if(ro){ try{ ro.disconnect(); }catch{} }
   }catch{}
@@ -1050,7 +1026,7 @@ async function logout(){
   SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY);
   sessionStorage.removeItem(SESSION_OFFICE_KEY); sessionStorage.removeItem(SESSION_OFFICE_NAME_KEY);
   CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user";
-  titleBtn.textContent='在席確認表【開発用】';
+  titleBtn.textContent='在席確認表';
   ensureAuthUI();
   try{
     await refreshPublicOfficeSelect();
@@ -1067,8 +1043,6 @@ function ensureAuthUI(){
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
   manualBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
-  nameFilter.style.display = SESSION_TOKEN ? 'inline-block' : 'none';
-  statusFilter.style.display = SESSION_TOKEN ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
 function applyRoleToAdminPanel(){
@@ -1140,7 +1114,6 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
-  // 日本語ヘッダ（列順は従来どおり）
   rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{
@@ -1193,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     SESSION_TOKEN=res.token; sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN);
     CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
-    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
 
     // 役割確定（renewで上書き）
@@ -1212,8 +1185,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     })();
     const dataP=fastFetchDataOnce().catch(()=>null);
 
-    await cfgP;
-    render(); loadLocal();
+    await cfgP; render(); loadLocal();
     const data=await dataP; if(data&&data.data) applyState(data.data);
 
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
@@ -1224,9 +1196,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const existing=sessionStorage.getItem(SESSION_KEY);
   if(existing){
     SESSION_TOKEN=existing; loginEl.style.display='none';
-    loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     ensureAuthUI(); applyRoleToManual();
-    // 初期データ取得
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
       if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); render(); }
