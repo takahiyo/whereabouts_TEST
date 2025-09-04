@@ -722,8 +722,8 @@ function ensureTimePrompt(tr){
 
 /* フィルタ処理＆人数カウント */
 function applyFilters(){
-  const q=(nameFilter.value||'').trim().toLowerCase();
-  const st=statusFilter.value||'';
+  const q=(filterName.value||'').trim().toLowerCase();
+  const st=filterStatus.value||'';
   board.querySelectorAll('section.panel').forEach(sec=>{
     let anyRow=false;
     sec.querySelectorAll('tbody tr').forEach(tr=>{
