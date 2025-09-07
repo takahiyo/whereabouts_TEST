@@ -70,38 +70,31 @@
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
   header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
 
-  /* フィルタ（氏名/ステータス）のレイアウト＆幅上限 */
-  .filters{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .filters label{ font-size:12px; color:#6b7280; }
-  .filters input[type="text"], .filters select{
-    width: min(42vw, 220px);
-    max-width: 220px;
-    box-sizing: border-box;
-    padding:.3rem .45rem; border:1px solid var(--line); border-radius:6px;
-    font-size:14px; background:#fff; -webkit-appearance:auto;
+  /* フィルタUI（ログイン後のみ表示） */
+  .name-filter, .status-filter{
+    display:none;
+    padding:.35rem .6rem; border:1px solid var(--line); border-radius:999px;
+    font-size:14px;
   }
+  .name-filter{ min-width:220px; max-width:50vw; }
+  .status-filter{ min-width:170px; }
 
-  /* グループメニュー */
-  .grp-menu{ position: fixed; top: calc(var(--header-height) + 8px); left: 50%; transform: translateX(-50%);
-    background:#fff; border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12);
-    min-width: 260px; max-width: 92vw; max-height: 60vh; overflow:auto; padding:8px; z-index: 1600; display:none; }
-  .grp-menu.show{ display:block; }
-  .grp-menu h4{ font-size:12px; color:#6b7280; margin:4px 8px; }
-  .grp-menu ul{ list-style:none; padding:0; margin:4px 0; }
-  .grp-menu button.grp-item{ width:100%; text-align:left; border:0; background:transparent; cursor:pointer;
-    padding:10px 12px; border-radius:8px; font-size:14px; color:#111827; }
-  .grp-menu button.grp-item:hover{ background:#f3f4f6; }
-  .grp-menu .muted{ color:#6b7280; }
-
-  /* 管理モーダル */
-  .admin-modal{ position:fixed; inset:0; z-index:1800; display:none; }
-  .admin-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
-  .admin-card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px;
-    width:min(1000px, 94vw); max-height:80vh; overflow:auto; }
-  .admin-grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .admin-row{ display:flex; gap:8px; align-items:center; margin:6px 0; flex-wrap:wrap; }
-  .admin-row input, .admin-row select, .admin-row textarea{ padding:.35rem .45rem; border:1px solid var(--line); border-radius:6px; min-width:120px; }
-  .admin-note{ font-size:12px; color:#6b7280; }
+  /* ヘッダ内の検索ボックスの固定幅 */
+  header #nameFilter,
+  header .name-filter{
+    display: inline-block;
+    width: clamp(220px, 32vw, 360px) !important;
+    min-width: 220px;
+    max-width: 50vw;
+    flex: 0 0 auto;
+  }
+  header #statusFilter,
+  header .status-filter{
+    display: inline-block;
+    width: clamp(170px, 22vw, 240px) !important;
+    min-width: 170px;
+    flex: 0 0 auto;
+  }
 
   /* 盤面 */
   .wrap{width:100%; margin:0 auto;}
@@ -112,7 +105,7 @@
   .board[data-cols="1"]{ grid-template-columns: 1fr; }
 
   .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
-    scroll-margin-top: calc(var(--header-height) + 12px); }
+  scroll-margin-top: calc(var(--header-height) + 12px); }
 
   table{width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed}
   thead th{position:sticky; top:0; background:#f2efe9; font-weight:700}
@@ -125,11 +118,11 @@
   col.col-time{width:var(--w-time)}
   col.col-note{width:var(--w-note)}
 
-  select,input[type="text"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}
+  select,input[type="text"],input[type="search"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}
   td.status select{padding-right:2.6em}
   td.time   select{text-align-last:center; font-variant-numeric:tabular-nums}
 
-  /* ===== ステータス別の行色（在席はデフォルト） ===== */
+  /* ステータス別の行色（在席はデフォルト） */
   #board tbody tr{ transition: background-color .15s ease; }
   #board tbody tr.st-here{ background: transparent; }
   #board tbody tr.st-out{ background:#fff7ed; box-shadow: inset 4px 0 0 #f59e0b; }
@@ -138,7 +131,7 @@
   #board tbody tr.st-off{ background:#fef2f2; box-shadow: inset 4px 0 0 #ef4444; color:#374151; }
   #board tbody tr.st-off input, #board tbody tr.st-off select{ color:#374151; }
 
-  /* === 戻り時間入力の促し（外出/会議） === */
+  /* 戻り時間入力の促し（外出/会議） */
   td.time{ position:relative; }
   td.time.need-time select{
     border-color:#ef4444 !important;
@@ -177,7 +170,7 @@
     tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
   }
 
-  /* === 1列になったら強制カード化 === */
+  /* 1列になったら強制カード化 */
   .board[data-cols="1"] table,
   .board.force-cards table{
     display:block;
@@ -186,7 +179,7 @@
     border-collapse:separate;
   }
 
-  /* 診断用バナー（何かを補修した時だけ出る） */
+  /* 診断用バナー（必要時のみ） */
   .diag{ position:fixed; left:8px; bottom:8px; background:#fffbdd; border:1px solid #e6cf00; color:#614a00;
          padding:6px 8px; border-radius:6px; font-size:12px; z-index:2500; display:none; }
   .diag.show{ display:block; }
@@ -210,7 +203,7 @@
     white-space:nowrap;
   }
 
-  /* === マニュアルモーダル === */
+  /* マニュアルモーダル */
   .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
   .manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
   .manual-card{
@@ -226,17 +219,8 @@
 <body>
   <header>
     <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表【開発用】</button>
-
-    <!-- フィルタ -->
-    <div class="filters" role="region" aria-label="絞り込み">
-      <label for="filterName">氏名</label>
-      <input id="filterName" type="text" placeholder="例：田中" aria-label="氏名で絞り込み">
-      <label for="filterStatus">ステータス</label>
-      <select id="filterStatus" aria-label="ステータスで絞り込み">
-        <!-- 動的に「全て（合計）」と各ステータス（件数）を挿入 -->
-      </select>
-    </div>
-
+    <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
+    <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
@@ -313,7 +297,7 @@
     </div>
   </div>
 
-  <!-- マニュアルモーダル（差し替え済み） -->
+  <!-- マニュアルモーダル -->
   <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
     <div class="manual-card" role="document">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -321,18 +305,12 @@
         <button id="manualClose" aria-label="閉じる">閉じる</button>
       </div>
 
-      <!-- ユーザーマニュアル -->
       <section id="manualUser" class="manual-section">
         <h4>ユーザーマニュアル</h4>
         <ol>
           <li><strong>ログイン</strong>
             <ul>
-              <li>営業所を選び、パスワードを入力してください（例）
-                <ul>
-                  <li>名古屋中央営業所</li>
-                  <li>NagoChu6261</li>
-                </ul>
-              </li>
+              <li>営業所を選び、パスワードを入力してください</li>
             </ul>
           </li>
           <li><strong>在席確認表【開発用】</strong>
@@ -340,116 +318,20 @@
               <li>パネルはチーム（グループ）ごとです。</li>
               <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
               <li>縦スクロールが長い場合、タイトルをクリックでジャンプメニューから目的のグループへ移動できます。</li>
-
-              <li><strong>検索/絞り込み（ヘッダ）</strong>
-                <ul>
-                  <li>氏名フィルタ：入力と同時に部分一致で絞り込みます。空にすると全件表示へ戻ります。</li>
-                  <li>ステータスフィルタ：プルダウンに現在の人数が併記されます（例：「外出（3）」）。選ぶと該当の行だけを表示します。</li>
-                  <li>両方の条件を同時にかけられます。</li>
-                </ul>
-              </li>
-
-              <li><strong>行の色分け（ステータスが一目でわかります）</strong>
-                <ul>
-                  <li>在席：標準（背景なし）</li>
-                  <li>外出：淡いオレンジ（左端にオレンジの帯）</li>
-                  <li>会議：淡いブルー（左端にブルーの帯）</li>
-                  <li>テレワーク：淡いパープル（左端にパープルの帯）</li>
-                  <li>休み：淡いレッド（左端にレッドの帯）</li>
-                </ul>
-              </li>
-
-              <li><strong>更新の反映</strong>
-                <ul>
-                  <li>およそ2秒ごとに、変更が他の端末へ反映されます。</li>
-                  <li>備考欄を手入力している間は、その人の「備考」だけ反映を一時保留します（確定後に反映）。</li>
-                  <li>同じ箇所を複数人で同時編集した場合は、最後に確定した内容が残ります。</li>
-                </ul>
-              </li>
-
-              <li><strong>戻り時間</strong>
-                <ul>
-                  <li>ステータスが「外出」「会議」のときだけ選べます。</li>
-                  <li>07:00〜22:00の範囲で30分刻み（07:00, 07:30, …, 21:30, 22:00）。</li>
-                  <li>「外出」「会議」を選んだとき、戻り時間未入力だと赤枠＋ヒントで入力を促します。</li>
-                </ul>
-              </li>
-
-              <li><strong>備考欄（プルダウン＋自由入力・新仕様）</strong>
-                <ul>
-                  <li>1つのテキストボックスです。プルダウン候補から選択することも、自由に文字入力もできます。</li>
-                  <li>候補：空白（未設定）、直出、直帰、直出・直帰</li>
-                  <li>入力中は、その備考だけ更新が止まります（確定後に反映）。</li>
-                  <li>ステータスを「在席」「テレワーク」「休み」に変更した場合：
-                    <ul>
-                      <li><strong>戻り時間は空欄</strong>になります。</li>
-                      <li><strong>備考は、候補から選んでいた場合のみ空欄に</strong>なります。自由入力の文字列はリセットしません。</li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-
-              <li><strong>内線</strong>：入力は不要です（表示のみ）。</li>
+              <li><strong>検索/絞り込み</strong>：ヘッダの氏名検索・ステータス絞りで即時に反映。該当行ゼロのパネルは非表示。</li>
+              <li><strong>色分け</strong>：在席（無色）、外出（橙）、会議（青）、テレワーク（紫）、休み（赤）。</li>
+              <li><strong>戻り時間</strong>：外出/会議で有効（07:00〜22:00、既定30分刻み）。未入力時は赤枠で促します。</li>
+              <li><strong>備考</strong>：自由入力＋候補（空白/直出/直帰/直出・直帰）。入力中は自動更新を保留。</li>
+              <li><strong>反映速度</strong>：約2秒で他端末に反映。競合はサーバ時刻採用（CAS設定に依存）。</li>
             </ul>
-          </li>
-
-          <li><strong>ログオフ</strong>
-            <ul><li>開発・検証用の機能です。通常の利用でログオフ操作は不要です。</li></ul>
           </li>
         </ol>
       </section>
 
-      <!-- 管理者マニュアル（管理者のみ表示） -->
       <section id="manualAdmin" class="manual-section">
         <h4>管理者マニュアル</h4>
         <ol>
-          <li><strong>ログイン</strong>
-            <ul>
-              <li>営業所を選び、<strong>管理者パスワード</strong>を入力してください（例）
-                <ul>
-                  <li>名古屋中央営業所</li>
-                  <li>NagoChuAdmin116</li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-          <li><strong>在席確認表【開発用】</strong>
-            <ul>
-              <li>ユーザーと同じ操作はすべて可能です。</li>
-              <li>画面上部に<strong>「管理」</strong>ボタンが表示されます。</li>
-            </ul>
-          </li>
-          <li><strong>管理</strong>
-            <ol>
-              <li><strong>CSVエクスポート・インポート</strong>
-                <ul>
-                  <li>現在の名簿をCSVで出力／取り込みできます。</li>
-                  <li>列内容（日本語ヘッダ・固定順）</li>
-                </ul>
-                <div style="overflow:auto;">
-                  <table>
-                    <thead>
-                      <tr><th>項目</th><th>説明</th></tr>
-                    </thead>
-                    <tbody>
-                      <tr><td>グループ番号</td><td>表示されるパネル（グループ）を指定</td></tr>
-                      <tr><td>グループ名</td><td>パネルの見出し名（同グループ全員で同じ値を推奨）</td></tr>
-                      <tr><td>表示順</td><td>パネル内の並び順（数値昇順で表示）</td></tr>
-                      <tr><td>id</td><td>一意のID。空欄は取り込み後に採番されます</td></tr>
-                      <tr><td>氏名</td><td></td></tr>
-                      <tr><td>内線</td><td></td></tr>
-                      <tr><td>ステータス</td><td>取り込み時に指定可能</td></tr>
-                      <tr><td>戻り時間</td><td>30分単位（ステータスにより有効化）</td></tr>
-                      <tr><td>備考</td><td>自由入力／取り込み可（候補：直出・直帰など）</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </li>
-              <li><strong>拠点名の変更</strong>：ログイン中の拠点名を変更できます（見出しに「在席確認表【開発用】」が付きます）。</li>
-              <li><strong>拠点パスワードの変更</strong>：ユーザー／管理者パスワードを更新。片方のみ変更も可。</li>
-              <li><strong>メニュー設定</strong>：ステータスや備考候補などのJSON設定を変更できます。</li>
-            </ol>
-          </li>
+          <li>CSV入出力、拠点名変更、パスワード変更、メニュー設定（JSON：statuses / noteOptions / timeStepMinutes）に対応。</li>
         </ol>
       </section>
     </div>
@@ -488,26 +370,18 @@ const SESSION_OFFICE_NAME_KEY = "presence-office-name";
 const board=document.getElementById('board'), toastEl=document.getElementById('toast'), diag=document.getElementById('diag');
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
-
-const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'),
-      adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
+const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
 const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel'), refreshOfficesBtn=document.getElementById('refreshOffices');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const addOfficeId=document.getElementById('addOfficeId'), addOfficeName=document.getElementById('addOfficeName'), addOfficePw=document.getElementById('addOfficePw'), addOfficeAdminPw=document.getElementById('addOfficeAdminPw'), btnAddOffice=document.getElementById('btnAddOffice');
 const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
-
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
-
-const filterName=document.getElementById('filterName'), filterStatus=document.getElementById('filterStatus');
+const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 
 /* 状態 */
-let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set();
-let statusClassMap=new Map();
-let NOTE_PRESETS=new Set();        // 「直出」「直帰」「直出・直帰」
-let CLEAR_TIME_ON_SET=new Set(['在席','テレワーク','休み']); // これらを選んだら time を空に
-
+let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let storeKeyBase="presence-board-v4";
 
@@ -535,28 +409,86 @@ function getContainerWidth(){ const elc=board.parentElement||document.body; cons
 function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n); board.classList.toggle('force-cards', n === 1); }
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
-/* UI生成 */
+/* === フィルタ === */
+function buildStatusFilterOptions(){
+  statusFilter.replaceChildren();
+  const optAll = document.createElement('option'); optAll.value=''; optAll.textContent='（全てのステータス）';
+  statusFilter.appendChild(optAll);
+  (MENUS?.statuses||[]).forEach(s=>{
+    const o=document.createElement('option');
+    o.value=String(s.value); o.textContent=String(s.value);
+    statusFilter.appendChild(o);
+  });
+}
+function applyFilters(){
+  const q=(nameFilter.value||'').trim().toLowerCase();
+  const st=statusFilter.value||'';
+  board.querySelectorAll('section.panel').forEach(sec=>{
+    let anyRow=false;
+    sec.querySelectorAll('tbody tr').forEach(tr=>{
+      const nameCell=tr.querySelector('td.name');
+      const nameText=(nameCell?.textContent||'').toLowerCase();
+      const rowSt = tr.querySelector('select[name="status"]')?.value || '';
+      const showByName = !q || nameText.includes(q);
+      const showByStatus = !st || rowSt === st;
+      const show = showByName && showByStatus;
+      tr.style.display = show ? '' : 'none';
+      if(show) anyRow=true;
+    });
+    // F6相当：該当行が無いパネルは隠す
+    sec.style.display = anyRow ? '' : 'none';
+  });
+}
+nameFilter.addEventListener('input', applyFilters);
+statusFilter.addEventListener('change', applyFilters);
+
+function updateStatusFilterCounts(){
+  // 現在の人数（全件）を集計
+  const totalRows = board.querySelectorAll('tbody tr').length;
+  const counts = new Map();
+  STATUSES.forEach(s=>counts.set(s.value,0));
+  board.querySelectorAll('tbody tr').forEach(tr=>{
+    const st = tr.dataset.status || tr.querySelector('select[name="status"]')?.value || "";
+    if(!counts.has(st)) counts.set(st,0);
+    counts.set(st, counts.get(st)+1);
+  });
+  const cur = statusFilter.value;
+  statusFilter.innerHTML = '';
+  const optAll = document.createElement('option');
+  optAll.value = ''; optAll.textContent = `全て（${totalRows}）`;
+  statusFilter.appendChild(optAll);
+  STATUSES.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.value; o.textContent=`${s.value}（${counts.get(s.value)||0}）`;
+    statusFilter.appendChild(o);
+  });
+  statusFilter.value = (cur==='' || STATUSES.some(x=>x.value===cur)) ? cur : '';
+}
+
+/* === 時刻メニュー（07:00〜22:00） === */
+const TIME_RANGE_START_MIN = 7*60;  // 07:00
+const TIME_RANGE_END_MIN   = 22*60; // 22:00
 function buildTimeOptions(stepMin){
   const frag=document.createDocumentFragment();
   frag.appendChild(el('option',{value:"",text:""}));
   const step=Math.max(5,Math.min(60,Number(stepMin||30)));
-  const startH=7, endH=22; // 07:00〜22:00
-  for(let h=startH; h<=endH; h++){
-    for(let m=0; m<60; m+=step){
-      if(h===endH && m>0) break; // 22:00 以降は出さない
-      const t=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-      frag.appendChild(el('option',{value:t,text:t}));
-    }
+  for(let m=TIME_RANGE_START_MIN; m<=TIME_RANGE_END_MIN; m+=step){
+    const h=Math.floor(m/60), mm=m%60;
+    const t=`${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+    frag.appendChild(el('option',{value:t,text:t}));
   }
   return frag;
 }
+
+/* 行UI */
 function buildRow(member){
   const name=sanitizeText(member.name||"");
   const ext=(member.ext&&/^[0-9]{1,4}$/.test(String(member.ext)))?String(member.ext):"";
   const key=member.id;
-  const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key;
+  const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key; tr.dataset.rev='0';
 
   const tdName=el('td',{class:'name','data-label':'氏名'},[name]);
+
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
@@ -571,14 +503,14 @@ function buildRow(member){
   selTime.appendChild(buildTimeOptions(MENUS?.timeStepMinutes)); tdTime.appendChild(selTime);
 
   const tdNote=el('td',{class:'note','data-label':'備考'});
-  const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考（直出/直帰/直出・直帰 も可）'});
+  const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考'});
   tdNote.appendChild(inpNote);
 
   tr.append(tdName,tdExt,tdStatus,tdTime,tdNote);
   return tr;
 }
 
-/* 既存行の自己修復（select が無ければ足す） */
+/* 既存行の自己修復 */
 function ensureRowControls(tr){
   if(!tr) return;
   const key=tr.dataset.key;
@@ -597,6 +529,11 @@ function ensureRowControls(tr){
     t.appendChild(buildTimeOptions(MENUS?.timeStepMinutes));
     td && td.appendChild(t);
     diagAdd('fix: time select injected');
+  }
+  const noteInp=tr.querySelector('input[name="note"]');
+  if(noteInp && noteInp.getAttribute('list')!=='noteOptions'){
+    noteInp.setAttribute('list','noteOptions');
+    diagAdd('fix: note datalist reattached');
   }
 }
 
@@ -620,10 +557,11 @@ function render(){
   board.replaceChildren();
   GROUPS.forEach((g,i)=> board.appendChild(buildPanel(g,i)));
   board.style.display='';
+  // 自己修復
   board.querySelectorAll('tbody tr').forEach(ensureRowControls);
   wireEvents(); loadLocal(); recolor(); startGridObserver(); buildGroupMenu();
-  updateStatusFilterCounts();
-  applyFilters(); // 初期フィルタ
+  buildStatusFilterOptions(); updateStatusFilterCounts();
+  applyFilters();
 }
 
 /* グループメニュー */
@@ -662,112 +600,44 @@ function setIfNeeded(el,v){ if(!el) return; if(isEditingField(el)) return; if(el
 function applyState(data){
   if(!data) return;
   Object.entries(data).forEach(([k,v])=>{
-    const s=document.getElementById(`status-${k}`), t=document.getElementById(`time-${k}`), n=document.getElementById(`note-${k}`);
-    if(!s||!t){ ensureRowControls(document.getElementById(`row-${k}`)); }
+    const tr=document.getElementById(`row-${k}`);
+    const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), n=tr?.querySelector('input[name="note"]');
+    if(!tr || !s || !t){ ensureRowControls(tr); }
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");
     if(s&&t) toggleTimeEnable(s,t);
-    // 外出/会議 で time 未入力なら促す
-    const tr = document.getElementById(`row-${k}`);
+
+    // rev/serverUpdated 反映（無ければ0扱い）
+    const remoteRev = Number(v.rev || 0);
+    const localRev  = Number(tr?.dataset.rev || 0);
+    if(tr && remoteRev > localRev){ tr.dataset.rev = String(remoteRev); tr.dataset.serverUpdated = String(v.serverUpdated || 0); }
+
     ensureTimePrompt(tr);
   });
   recolor();
   updateStatusFilterCounts();
   applyFilters();
 }
-
-/* ステータス色反映 */
-function recolor(){
-  board.querySelectorAll("tbody tr").forEach(tr=>{
-    const st=tr.querySelector('select[name="status"]')?.value||"";
-    statusClassMap.forEach(cls=>tr.classList.remove(cls));
-    const cls=statusClassMap.get(st);
-    if(cls) tr.classList.add(cls);
-    tr.dataset.status=st;
-  });
-}
-
-/* 戻り時間の有効/促し */
-function toggleTimeEnable(statusEl,timeEl){
-  const needsTime=requiresTimeSet.has(statusEl.value);
-  if(timeEl) timeEl.disabled=!needsTime;
-}
+function recolor(){ board.querySelectorAll("tbody tr").forEach(tr=>{ const st=tr.querySelector('select[name="status"]')?.value||""; statusClassMap.forEach(cls=>tr.classList.remove(cls)); const cls=statusClassMap.get(st); if(cls) tr.classList.add(cls); tr.dataset.status=st; }); }
+function toggleTimeEnable(statusEl,timeEl){ const needsTime=requiresTimeSet.has(statusEl.value); if(timeEl) timeEl.disabled=!needsTime; }
 function ensureTimePrompt(tr){
   if(!tr) return;
   const statusEl = tr.querySelector('select[name="status"]');
   const timeTd   = tr.querySelector('td.time');
   const timeEl   = tr.querySelector('select[name="time"]');
   if(!(statusEl && timeTd && timeEl)) return;
-
   const needs = requiresTimeSet.has(statusEl.value);
   const empty = !timeEl.value;
-  // 促し表示
   if(needs && empty){
     timeTd.classList.add('need-time');
     timeEl.setAttribute('aria-invalid','true');
     let hint = timeTd.querySelector('.time-hint');
-    if(!hint){
-      hint = document.createElement('span');
-      hint.className = 'time-hint';
-      hint.textContent = '戻り時間を選択';
-      timeTd.appendChild(hint);
-    }
+    if(!hint){ hint = document.createElement('span'); hint.className = 'time-hint'; hint.textContent = '戻り時間を選択'; timeTd.appendChild(hint); }
   }else{
     timeTd.classList.remove('need-time');
     timeEl.removeAttribute('aria-invalid');
-    const hint = timeTd.querySelector('.time-hint');
-    if(hint) hint.remove();
+    const hint = timeTd.querySelector('.time-hint'); if(hint) hint.remove();
   }
-}
-
-/* フィルタ処理＆人数カウント */
-function applyFilters(){
-  const q=(filterName.value||'').trim().toLowerCase();
-  const st=filterStatus.value||'';
-  board.querySelectorAll('section.panel').forEach(sec=>{
-    let anyRow=false;
-    sec.querySelectorAll('tbody tr').forEach(tr=>{
-      const nameCell=tr.querySelector('td.name');
-      const nameText=(nameCell?.textContent||'').toLowerCase();
-      const rowSt = tr.querySelector('select[name="status"]')?.value || '';
-      const showByName = !q || nameText.includes(q);
-      const showByStatus = !st || rowSt === st;
-      const show = showByName && showByStatus;
-      tr.style.display = show ? '' : 'none';
-      if(show) anyRow=true;
-    });
-    // 行が1つも表示されないパネルは隠す
-    sec.style.display = anyRow ? '' : 'none';
-  });
-}
-
-function updateStatusFilterCounts(){
-  // 現在の人数を集計（全件ベース）
-  const totalRows = board.querySelectorAll('tbody tr').length;
-  const counts = new Map();
-  STATUSES.forEach(s=>counts.set(s.value,0));
-  board.querySelectorAll('tbody tr').forEach(tr=>{
-    const st = tr.dataset.status || tr.querySelector('select[name="status"]')?.value || "";
-    if(!counts.has(st)) counts.set(st,0);
-    counts.set(st, counts.get(st)+1);
-  });
-  const cur = filterStatus.value;
-  filterStatus.innerHTML = '';
-  // 全て（合計）
-  const optAll = document.createElement('option');
-  optAll.value = '';
-  optAll.textContent = `全て（${totalRows}）`;
-  filterStatus.appendChild(optAll);
-  // 各ステータス（件数）
-  STATUSES.forEach(s=>{
-    const o = document.createElement('option');
-    o.value = s.value;
-    o.textContent = `${s.value}（${counts.get(s.value)||0}）`;
-    filterStatus.appendChild(o);
-  });
-  // 既存選択を保持（無ければ全て）
-  const exists = (cur==='' || STATUSES.some(x=>x.value===cur));
-  filterStatus.value = exists ? cur : '';
 }
 
 /* ローカル保存 */
@@ -775,7 +645,7 @@ function localKey(){ return `${storeKeyBase}:${CURRENT_OFFICE_ID||'__none__'}:${
 function saveLocal(){ try{ localStorage.setItem(localKey(), JSON.stringify(getState())); }catch{} }
 function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) applyState(JSON.parse(raw)); }catch{} }
 
-/* 同期 */
+/* 同期（行ごとデバウンス送信） */
 const noteTimers=new Map();
 function debounceRowPush(key,delay=900){ if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
 
@@ -784,13 +654,13 @@ function defaultMenus(){
   return {
     timeStepMinutes: 30,
     statuses: [
-      { value: "在席",         class: "st-here" },
-      { value: "外出",         requireTime: true,  class: "st-out" },
-      { value: "会議",         requireTime: true,  class: "st-meeting" },
-      { value: "テレワーク",   class: "st-remote" },
-      { value: "休み",         class: "st-off" }
+      { value: "在席",         class: "st-here",    clearOnSet: true  },
+      { value: "外出",         requireTime: true,   class: "st-out"   },
+      { value: "会議",         requireTime: true,   class: "st-meeting" },
+      { value: "テレワーク",   class: "st-remote",  clearOnSet: true  },
+      { value: "休み",         class: "st-off",     clearOnSet: true  }
     ],
-    noteOptions: ["直出","直帰","直出・直帰"] // デフォルト候補
+    noteOptions: ["直出","直帰","直出・直帰"]
   };
 }
 function setupMenus(m){
@@ -799,25 +669,23 @@ function setupMenus(m){
 
   STATUSES = sts.map(s => ({ value: String(s.value) }));
   requiresTimeSet = new Set(sts.filter(s => s.requireTime).map(s => String(s.value)));
+  clearOnSet       = new Set(sts.filter(s => s.clearOnSet).map(s => String(s.value)));
   statusClassMap   = new Map(sts.map(s => [String(s.value), String(s.class || "")]));
-  NOTE_PRESETS = new Set([...(MENUS.noteOptions||[])].map(x=>String(x)));
 
-  // 備考候補 datalist
+  // 備考候補 datalist（先頭は空白のラベル付き）
   let dl = document.getElementById('noteOptions');
-  if(!dl){
-    dl = document.createElement('datalist');
-    dl.id = 'noteOptions';
-    document.body.appendChild(dl);
-  }
+  if(!dl){ dl = document.createElement('datalist'); dl.id = 'noteOptions'; document.body.appendChild(dl); }
   dl.replaceChildren();
-  (MENUS.noteOptions || []).forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = String(t);
-    dl.appendChild(opt);
-  });
+  const optBlank = document.createElement('option'); optBlank.value = ""; optBlank.label = "（空白）"; optBlank.textContent = "（空白）"; dl.appendChild(optBlank);
+  (MENUS.noteOptions || []).forEach(t => { const opt = document.createElement('option'); opt.value = String(t); dl.appendChild(opt); });
 
-  // ステータスフィルタの初期オプションも人数込みで作る
-  updateStatusFilterCounts();
+  buildStatusFilterOptions();
+}
+function isNotePresetValue(val){
+  const v=(val==null?"":String(val)).trim();
+  if(v==="") return true;
+  const set = new Set((MENUS?.noteOptions||[]).map(x=>String(x)));
+  return set.has(v);
 }
 function fallbackGroupTitle(g, idx){
   const t = (g && g.title != null) ? String(g.title).trim() : "";
@@ -842,16 +710,14 @@ async function fastFetchDataOnce(){
 }
 function startRemoteSync(immediate){
   if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer = null; }
-  if(immediate){
-    fastFetchDataOnce().then(r => { if(r && r.data) applyState(r.data); }).catch(()=>{});
-  }
+  if(immediate){ fastFetchDataOnce().then(r => { if(r && r.data) applyState(r.data); }).catch(()=>{}); }
   remotePullTimer = setInterval(async ()=>{
     const r = await apiPost({ action:'get', token: SESSION_TOKEN });
     if(r && r.data) applyState(r.data);
   }, REMOTE_POLL_MS);
 }
 function startConfigWatch(){
-  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
+  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
   configWatchTimer = setInterval(async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
     if(cfg && !cfg.error){
@@ -869,7 +735,7 @@ function scheduleRenew(ttlMs){
   if(tokenRenewTimer) { clearTimeout(tokenRenewTimer); tokenRenewTimer = null; }
   const delay = Math.max(10_000, Number(ttlMs||TOKEN_DEFAULT_TTL) - 60_000);
   tokenRenewTimer = setTimeout(async ()=>{
-    const me = await apiPost({ action:'renew', token: SESSION_TOKEN });
+    const me = await apiPost({ action: 'renew', token: SESSION_TOKEN });
     if(me && me.ok){
       CURRENT_ROLE = me.role || CURRENT_ROLE;
       saveSessionMeta();
@@ -877,13 +743,46 @@ function scheduleRenew(ttlMs){
     }
   }, delay);
 }
+
+/* 送信（CAS: baseRev 同梱） */
 async function pushRowDelta(key){
+  const tr = document.getElementById(`row-${key}`);
+  if(!tr) return;
   const st = getRowState(key);
+  const baseRev = {}; baseRev[key] = Number(tr.dataset.rev || 0);
   const payload = { updated: Date.now(), data: { [key]: st } };
-  await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload) });
+  const r = await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload), baseRev: JSON.stringify(baseRev) });
+
+  if(!r){ toast('通信エラー', false); return; }
+
+  if(r.error === 'conflict'){
+    // サーバ側の値で上書き
+    const c = (r.conflicts && r.conflicts.find(x=>x.id===key)) || null;
+    if(c && c.server){
+      applyState({ [key]: c.server });
+      toast('他端末と競合しました（サーバ値で更新）', false);
+    }else{
+      // 競合配列が無い場合でも rev マップがあれば反映
+      const rev = Number((r.rev && r.rev[key]) || 0);
+      const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
+      if(rev) { tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
+      toast('競合しました', false);
+    }
+    return;
+  }
+
+  if(r.ok){
+    const rev = Number((r.rev && r.rev[key]) || 0);
+    const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
+    if(rev){ tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
+    saveLocal();
+    return;
+  }
+
+  toast('保存に失敗しました', false);
 }
 
-/* 入力イベント（備考はデバウンス／IME対応） */
+/* 入力イベント（IME配慮・デバウンス） */
 function wireEvents(){
   // IME対策
   board.addEventListener('compositionstart', e => { const t=e.target; if(t && t.dataset) t.dataset.composing='1'; });
@@ -892,17 +791,19 @@ function wireEvents(){
   board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
   board.addEventListener('focusout', e => { const t=e.target; if(t && t.dataset) delete t.dataset.editing; });
 
+  // 入力（備考：入力中は自動更新停止 → setIfNeeded が弾く）
   board.addEventListener('input', (e)=>{
     const t = e.target;
     if(!(t && t.name)) return;
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
-    if(t.name === 'note'){ debounceRowPush(key); } /* extは表示専用 */
+    if(t.name === 'note'){ debounceRowPush(key); }
   });
 
+  // 変更（ステータス/時間）
   board.addEventListener('change', (e)=>{
     const t = e.target;
-    if(!(t && t.name)) return;
+    if(!t) return;
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
 
@@ -911,38 +812,24 @@ function wireEvents(){
       const noteInp = tr.querySelector('input[name="note"]');
       toggleTimeEnable(t, timeSel);
 
-      // ステータスでクリア：time は 在席/テレワーク/休み で必ず空に
-      if(CLEAR_TIME_ON_SET.has(t.value) && timeSel){ timeSel.value = ''; }
-
-      // 備考は「候補から選んでいた場合のみ」空に（自由入力は保持）
-      if(CLEAR_TIME_ON_SET.has(t.value) && noteInp){
-        const val = (noteInp.value||'').trim();
-        if(val==='' || NOTE_PRESETS.has(val)){ noteInp.value=''; }
+      if(clearOnSet.has(t.value)){
+        if(timeSel) timeSel.value = '';
+        if(noteInp && isNotePresetValue(noteInp.value)){ noteInp.value = ''; }
       }
 
-      // 外出/会議 → 戻り時間を促す
-      if(requiresTimeSet.has(t.value)){
-        ensureTimePrompt(tr);
-        toast('外出/会議では戻り時間の選択をお願いします');
-      }else{
-        ensureTimePrompt(tr); // クリア側も実行して外す
-      }
-
+      ensureTimePrompt(tr);
       recolor();
       updateStatusFilterCounts();
+      debounceRowPush(key);
+      return;
     }
 
     if(t.name === 'time'){
-      // 時間選択で促しを外す/付け直す
       ensureTimePrompt(tr);
+      debounceRowPush(key);
+      return;
     }
-
-    debounceRowPush(key);
   });
-
-  // フィルタイベント
-  filterName.addEventListener('input', applyFilters);
-  filterStatus.addEventListener('change', applyFilters);
 }
 
 /* 重要操作の再認証（HMAC+Nonce） */
@@ -972,10 +859,10 @@ btnImport.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const file=csvFile.files&&csvFile.files[0];
   if(!file){ toast('CSVを選択してください',false); return; }
-  let superProof=null;
+  let proof=null;
   if(isSuper()){
-    superProof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください");
-    if(!superProof) return;
+    proof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください");
+    if(!proof) return;
   }
   const text=await file.text();
   const rows=parseCSV(text);
@@ -1000,11 +887,9 @@ btnImport.addEventListener('click', async ()=>{
     g.title=r.gt||'';
     g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined});
   }
-  const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{
-    g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g;
-  });
+  const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
   const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
-  const r1=await adminSetConfigFor(office,cfgToSet,superProof);
+  const r1=await adminSetConfigFor(office,cfgToSet,proof);
   if(!(r1&&r1.ok)){ toast('名簿の設定に失敗',false); return; }
 
   const newCfg=await adminGetConfigFor(office);
@@ -1020,7 +905,7 @@ btnImport.addEventListener('click', async ()=>{
     if(!id) continue;
     dataObj[id]={ ext:r.ext||'', status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
   }
-  const r2=await adminSetForChunked(office,dataObj,superProof);
+  const r2=await adminSetForChunked(office,dataObj,proof);
   if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
   toast('インポート完了',true);
 });
@@ -1128,21 +1013,20 @@ async function logout(){
   CURRENT_OFFICE_NAME=""; CURRENT_OFFICE_ID=""; CURRENT_ROLE="user";
   titleBtn.textContent='在席確認表【開発用】';
   ensureAuthUI();
-  try{
-    await refreshPublicOfficeSelect();
-  }catch{
-    ensureAuthUIPublicError();
-  }finally{
-    loginEl.style.display='flex';
-  }
+  try{ await refreshPublicOfficeSelect(); }
+  catch{ ensureAuthUIPublicError(); }
+  finally{ loginEl.style.display='flex'; }
 }
 
 /* 認証UI + 管理UI + マニュアルUI */
 function ensureAuthUI(){
-  const showAdmin = (SESSION_TOKEN && (isSuper() || isOfficeAdmin()));
+  const loggedIn = !!SESSION_TOKEN;
+  const showAdmin = loggedIn && (isSuper() || isOfficeAdmin());
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
-  logoutBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
-  manualBtn.style.display  = SESSION_TOKEN ? 'inline-block' : 'none';
+  logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+  manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+  nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
+  statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
 function applyRoleToAdminPanel(){
@@ -1185,12 +1069,12 @@ function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFIC
 async function adminListOffices(){ return await apiPost({ action:'listOffices', token:SESSION_TOKEN }); }
 async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminSetConfigFor(office,cfgObj,superProof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
-async function adminSetForChunked(office,dataObjFull,superProof){
+async function adminSetConfigFor(office,cfgObj,proof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
+async function adminSetForChunked(office,dataObjFull,proof){
   const entries=Object.entries(dataObjFull||{});
   if(entries.length===0){
     const base={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify({updated:Date.now(),data:{},full:true}) };
-    if(superProof){ base.superHmac=superProof.hmac; base.nonce=superProof.nonce; }
+    if(proof){ base.superHmac=proof.hmac; base.nonce=proof.nonce; }
     return await apiPost(base);
   }
   const chunkSize=100; let first=true, ok=true;
@@ -1198,7 +1082,7 @@ async function adminSetForChunked(office,dataObjFull,superProof){
     const chunk=Object.fromEntries(entries.slice(i,i+chunkSize));
     const obj={updated:Date.now(),data:chunk,full:first};
     const q={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify(obj) };
-    if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; }
+    if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; }
     const r=await apiPost(q);
     if(!(r&&r.ok)) ok=false; first=false;
   }
@@ -1206,8 +1090,8 @@ async function adminSetForChunked(office,dataObjFull,superProof){
 }
 async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
 async function adminAddOffice(id,name,pw,apw){ return await apiPost({ action:'addOffice', id, name, password:pw, adminPassword:apw, token:SESSION_TOKEN }); }
-async function adminDeleteOffice(office,superProof){ const q={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
-async function adminSetOfficePassword(office,pw,apw,superProof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(superProof){ q.superHmac=superProof.hmac; q.nonce=superProof.nonce; } return await apiPost(q); }
+async function adminDeleteOffice(office,proof){ const q={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
+async function adminSetOfficePassword(office,pw,apw,proof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
 
 /* CSV（共通） */
 function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
@@ -1285,7 +1169,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     })();
     const dataP=fastFetchDataOnce().catch(()=>null);
 
-    await cfgP; render(); loadLocal();
+    await cfgP;
+    render(); loadLocal();
     const data=await dataP; if(data&&data.data) applyState(data.data);
 
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
