@@ -890,10 +890,12 @@ function wireEvents(){
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
 function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
+function fromBase64(b64){ const bin=atob(b64); return Uint8Array.from(bin, c=>c.charCodeAt(0)); }
+async function generateKeyB64(saltB64, plain){ const saltStr=atob(saltB64); const keyBytes=await sha256Bytes(saltStr+plain); return toBase64(keyBytes); }
 async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
 async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(messageStr)); return sig; }
-async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
-
+sync function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const keyB64=await generateKeyB64(salt,pw); const kBytes=fromBase64(keyB64); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
+      
 /* 管理UIイベント */
 btnExport.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
@@ -1216,8 +1218,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // まずスーパー管理者（HMAC）試行
     try{
       const {nonce,salt}=await getNonce();
-      const kBytes=await sha256Bytes(salt+pw);
-      const hmac=toBase64(await hmacSha256(kBytes,nonce));
+      const keyB64=await generateKeyB64(salt,pw);
+      const kBytes=fromBase64(keyB64);
+          const hmac=toBase64(await hmacSha256(kBytes,nonce));
       const resSup=await apiPost({ action:'login', office, hmac, nonce });
       if(resSup && resSup.token && resSup.role==='superAdmin'){ await afterLogin(resSup); return; }
     }catch{}
