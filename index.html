@@ -792,7 +792,7 @@ async function pushRowDelta(key){
       return;
     }
         
-    if(r.ok){
+    if(!r.error){
       const rev = Number((r.rev && r.rev[key]) || 0);
       const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
       if(rev) { tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
