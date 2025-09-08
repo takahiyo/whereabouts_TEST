@@ -59,7 +59,20 @@ function loadSessionMeta(){ try{ CURRENT_ROLE=sessionStorage.getItem(SESSION_ROL
 /* レイアウト（JS + CSS両方で冗長に制御） */
 const PANEL_MIN_PX=760,GAP_PX=20,MAX_COLS=3;
 function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
-function updateCols(){ const w=getContainerWidth(); let n=Math.floor((w+GAP_PX)/(PANEL_MIN_PX+GAP_PX)); if(!Number.isFinite(n)||n<1) n=1; if(n>MAX_COLS) n=MAX_COLS; board.style.setProperty('--cols', String(n)); board.dataset.cols=String(n); board.classList.toggle('force-cards', n === 1); }
+function updateCols(){
+  const w = getContainerWidth();
+  if (w < CARD_BREAKPOINT_PX) {
+    board.classList.add('force-cards');
+    board.dataset.cols = '2'; // 1列レイアウトを回避
+    return;
+  }
+  let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
+  if (n < 2) n = 2;
+  if (n > MAX_COLS) n = MAX_COLS;
+  board.style.setProperty('--cols', String(n));
+  board.dataset.cols = String(n);
+  board.classList.remove('force-cards');
+}
 function startGridObserver(){ if(ro) ro.disconnect(); ro=new ResizeObserver(updateCols); ro.observe(board.parentElement||document.body); window.addEventListener('resize',updateCols,{passive:true}); updateCols(); }
 
 /* === フィルタ === */
