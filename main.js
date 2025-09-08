@@ -1,8 +1,5 @@
 /* ===== 接続設定 ===== */
-const REMOTE_ENDPOINT = "https://presence-proxy-test.taka-hiyo.workers.dev";
-const REMOTE_POLL_MS = 2000;
-const CONFIG_POLL_MS = 120000;
-const TOKEN_DEFAULT_TTL = 3600000;
+/* config.js で REMOTE_ENDPOINT などを定義 */
 
 /* セッションキー */
 const SESSION_KEY = "presence-session-token";
