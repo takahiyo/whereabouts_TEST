@@ -389,6 +389,7 @@ const nameFilter=document.getElementById('nameFilter'), statusFilter=document.ge
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let storeKeyBase="presence-board-v4";
+const PENDING_ROWS = new Set();
 
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
@@ -617,6 +618,8 @@ function setIfNeeded(el,v){ if(!el) return; if(isEditingField(el)) return; if(el
 function applyState(data){
   if(!data) return;
   Object.entries(data).forEach(([k,v])=>{
+    if (PENDING_ROWS.has(k)) return;
+
     const tr=document.getElementById(`row-${k}`);
     const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), n=tr?.querySelector('input[name="note"]');
     if(!tr || !s || !t){ ensureRowControls(tr); }
@@ -664,8 +667,8 @@ function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) a
 
 /* 同期（行ごとデバウンス送信） */
 const noteTimers=new Map();
-function debounceRowPush(key,delay=900){ if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
-
+function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
+      
 /* ===== メニュー・正規化・通信・同期 ===== */
 function defaultMenus(){
   return {
@@ -764,22 +767,32 @@ function scheduleRenew(ttlMs){
 /* 送信（CAS: baseRev 同梱） */
 async function pushRowDelta(key){
   const tr = document.getElementById(`row-${key}`);
-  if(!tr) return;
-  const st = getRowState(key);
-  const baseRev = {}; baseRev[key] = Number(tr.dataset.rev || 0);
-  const payload = { updated: Date.now(), data: { [key]: st } };
-  const r = await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload), baseRev: JSON.stringify(baseRev) });
+  try{
+    if(!tr) return;
+    const st = getRowState(key);
+    const baseRev = {}; baseRev[key] = Number(tr.dataset.rev || 0);
+    const payload = { updated: Date.now(), data: { [key]: st } };
+    const r = await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload), baseRev: JSON.stringify(baseRev) });
 
-  if(!r){ toast('通信エラー', false); return; }
+    if(!r){ toast('通信エラー', false); return; }
 
-  if(r.error === 'conflict'){
-    // サーバ側の値で上書き
-    const c = (r.conflicts && r.conflicts.find(x=>x.id===key)) || null;
-    if(c && c.server){
-      applyState({ [key]: c.server });
-      toast('他端末と競合しました（サーバ値で更新）', false);
-    }else{
-      // 競合配列が無い場合でも rev マップがあれば反映
+    if(r.error === 'conflict'){
+      // サーバ側の値で上書き
+      const c = (r.conflicts && r.conflicts.find(x=>x.id===key)) || null;
+      if(c && c.server){
+        applyState({ [key]: c.server });
+        toast('他端末と競合しました（サーバ値で更新）', false);
+      }else{
+        // 競合配列が無い場合でも rev マップがあれば反映
+        const rev = Number((r.rev && r.rev[key]) || 0);
+        const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
+      if(rev){ tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
+      saveLocal();
+      return;
+      }
+
+
+    if(r.ok){
       const rev = Number((r.rev && r.rev[key]) || 0);
       const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
       if(rev) { tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
@@ -788,15 +801,12 @@ async function pushRowDelta(key){
     return;
   }
 
-  if(r.ok){
-    const rev = Number((r.rev && r.rev[key]) || 0);
-    const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
-    if(rev){ tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
-    saveLocal();
-    return;
+    toast('保存に失敗しました', false);
+  }finally{
+    PENDING_ROWS.delete(key);
+    if(tr){ const n=tr.querySelector('input[name="note"]'); if(n) delete n.dataset.editing; }
   }
 
-  toast('保存に失敗しました', false);
 }
 
 /* 入力イベント（IME配慮・デバウンス） */
@@ -806,8 +816,14 @@ function wireEvents(){
   board.addEventListener('compositionend',   e => { const t=e.target; if(t && t.dataset) delete t.dataset.composing; });
 
   board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
-  board.addEventListener('focusout', e => { const t=e.target; if(t && t.dataset) delete t.dataset.editing; });
-
+  board.addEventListener('focusout', e => {
+    const t=e.target;
+    if(!(t && t.dataset)) return;
+    const tr=t.closest('tr');
+    const key=tr?.dataset.key;
+    if(t.name==='note' && key && PENDING_ROWS.has(key)){ t.dataset.editing='1'; }
+    else{ delete t.dataset.editing; }
+  });
   // 入力（備考：入力中は自動更新停止 → setIfNeeded が弾く）
   board.addEventListener('input', (e)=>{
     const t = e.target;
