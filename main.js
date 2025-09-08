@@ -840,6 +840,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(res?.error==='unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
     if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
     if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
+        await afterLogin(res);
   });
 
   async function afterLogin(res){
