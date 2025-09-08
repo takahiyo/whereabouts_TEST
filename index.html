@@ -202,9 +202,10 @@
     content: attr(data-label) !important;
     white-space:nowrap;
   }
-  .admin-modal{display:none;}
+  .admin-modal{position:fixed;inset:0;z-index:1850;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);}
   .admin-modal.show{display:flex;}
-
+  .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:80vh;overflow:auto;}
+      
   /* マニュアルモーダル */
   .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
   .manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
