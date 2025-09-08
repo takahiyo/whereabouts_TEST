@@ -394,7 +394,13 @@ function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin'; }
 /* ユーティリティ */
 function toast(msg,ok=true){ toastEl.style.background=ok?'#334155':'#c53030'; toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000); }
 function diagAdd(line){ diag.classList.add('show'); diag.innerHTML += (diag.innerHTML?'<br>':'') + line; }
-function sanitizeText(s){ s=(s==null)?'':String(s); return s.replace(/[\u0000-\u001F\u007F]/g,''); }
+function sanitizeText(s){
+  s = (s==null) ? '' : String(s);
+  s = s.replace(/[\u0000-\u001F\u007F]/g,'');
+  return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const ID_RE=/^[0-9A-Za-z_-]+$/;
+
 function el(tag,attrs={},children=[]){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k==='class') e.className=v; else if(k==='text') e.textContent=String(v); else e.setAttribute(k,String(v)); } (children||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c)); return e; }
 function qsEncode(obj){ const p=new URLSearchParams(); Object.entries(obj||{}).forEach(([k,v])=>{ if(v==null) return; p.append(k,String(v)); }); return p.toString(); }
 async function apiPost(params,timeout=20000){ const controller=new AbortController(); const t=setTimeout(()=>controller.abort(),timeout); try{ const res=await fetch(REMOTE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:qsEncode(params),signal:controller.signal,credentials:'omit',cache:'no-store'}); const ct=(res.headers.get('content-type')||'').toLowerCase(); if(!ct.includes('application/json')) return null; return await res.json(); }catch{ return null; } finally{ clearTimeout(t); }}
@@ -487,7 +493,7 @@ function buildRow(member){
   const key=member.id;
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key; tr.dataset.rev='0';
 
-  const tdName=el('td',{class:'name','data-label':'氏名'},[name]);
+  const tdName=el('td',{class:'name','data-label':'氏名'}); tdName.innerHTML=name;
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
@@ -1034,13 +1040,27 @@ function applyRoleToAdminPanel(){
   document.querySelectorAll('.admin-box[data-super-only="1"]').forEach(el=>{ el.style.display = isSuper() ? '' : 'none'; });
 }
 async function populateAdminOffices(selected){
+        adminOfficeSel.textContent='';
   if(isSuper()){
     const res=await adminListOffices();
     if(!(res&&res.offices)){ toast('拠点一覧の取得に失敗',false); return; }
-    adminOfficeSel.innerHTML=res.offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}（${o.id}）</option>`).join('');
-    if(selected) adminOfficeSel.value=selected;
+    res.offices.forEach(o=>{
+      if(!ID_RE.test(o.id)) return;
+      const opt=document.createElement('option');
+      opt.value=o.id;
+      const name=(o.name==null?'':String(o.name).replace(/[\u0000-\u001F\u007F]/g,''));
+      opt.textContent=`${name}（${o.id}）`;
+      adminOfficeSel.appendChild(opt);
+    });
+    if(selected && ID_RE.test(selected)) adminOfficeSel.value=selected;
   } else {
-    adminOfficeSel.innerHTML=`<option value="${CURRENT_OFFICE_ID}">${sanitizeText(CURRENT_OFFICE_NAME)}（${CURRENT_OFFICE_ID}）</option>`;
+    if(ID_RE.test(CURRENT_OFFICE_ID)){
+      const opt=document.createElement('option');
+      opt.value=CURRENT_OFFICE_ID;
+      const name=(CURRENT_OFFICE_NAME==null?'':String(CURRENT_OFFICE_NAME).replace(/[\u0000-\u001F\u007F]/g,''));
+      opt.textContent=`${name}（${CURRENT_OFFICE_ID}）`;
+      adminOfficeSel.appendChild(opt);
+    }
   }
 }
 function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
@@ -1109,14 +1129,29 @@ function makeNormalizedCSV(cfg,data){
 }
 
 /* 認証UI（公開オフィス一覧） */
-function ensureAuthUIPublicError(){ officeSel.innerHTML=`<option value="" disabled selected>取得できませんでした。再読込してください</option>`; }
-async function refreshPublicOfficeSelect(selectedId){
-  officeSel.innerHTML=`<option value="" disabled selected>読込中…</option>`;
+function setSelectMessage(sel,msg){
+  sel.textContent='';
+  const opt=document.createElement('option');
+  opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent=msg;
+  sel.appendChild(opt);
+}
+function ensureAuthUIPublicError(){ setSelectMessage(officeSel,'取得できませんでした。再読込してください'); }async function refreshPublicOfficeSelect(selectedId){
+  setSelectMessage(officeSel,'読込中…');
   const res=await apiPost({ action:'publicListOffices' });
   const offices=(res&&Array.isArray(res.offices))?res.offices:[];
-  if(offices.length===0){ ensureAuthUIPublicError(); return; }
-  officeSel.innerHTML=offices.map(o=>`<option value="${o.id}">${sanitizeText(o.name)}</option>`).join('');
-  if(selectedId && offices.some(o=>o.id===selectedId)) officeSel.value=selectedId; else officeSel.selectedIndex=0;
+  officeSel.textContent='';
+  let found=false;
+  offices.forEach(o=>{
+    if(!ID_RE.test(o.id)) return;
+    const opt=document.createElement('option');
+    opt.value=o.id;
+    const name=(o.name==null?'':String(o.name).replace(/[\u0000-\u001F\u007F]/g,''));
+    opt.textContent=name;
+    officeSel.appendChild(opt);
+    if(selectedId && o.id===selectedId) found=true;
+  });
+  if(officeSel.options.length===0){ ensureAuthUIPublicError(); return; }
+  if(selectedId && found) officeSel.value=selectedId; else officeSel.selectedIndex=0;
 }
 
 /* 起動 */
