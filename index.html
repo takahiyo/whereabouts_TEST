@@ -148,7 +148,7 @@
     100%{ box-shadow:0 0 0 3px rgba(239,68,68,.25); }
   }
 
-  .login{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:2200}
+  .login{position:fixed; inset:0; background:#fff; display:flex; align-items:center; justify-content:center; z-index:2200}
   .login .card{background:#fff; border-radius:8px; padding:20px; min-width:300px; max-width:90vw; text-align:center}
 
   .toast{position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:8px 12px;border-radius:4px;font-size:12px;opacity:0;transition:.25s;z-index:2000}
@@ -202,6 +202,8 @@
     content: attr(data-label) !important;
     white-space:nowrap;
   }
+  .admin-modal{display:none;}
+  .admin-modal.show{display:flex;}
 
   /* マニュアルモーダル */
   .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
@@ -214,6 +216,8 @@
   .manual-section h4{ margin:8px 0; }
   .manual-section table{ width:100%; border-collapse:collapse; font-size:14px; }
   .manual-section table th, .manual-section table td{ border:1px solid #ddd; padding:6px; }
+  .grp-menu{display:none;}
+  .grp-menu.show{display:block;}
 </style>
 </head>
 <body>
@@ -393,10 +397,16 @@ function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin'; }
 
 /* ユーティリティ */
 function toast(msg,ok=true){ toastEl.style.background=ok?'#334155':'#c53030'; toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000); }
-function diagAdd(line){ diag.classList.add('show'); diag.innerHTML += (diag.innerHTML?'<br>':'') + line; }
+function diagAdd(line){
+  diag.classList.add('show');
+  const div=document.createElement('div');
+  div.textContent=line;
+  diag.appendChild(div);
+}
+function stripCtl(s){ return (s==null?'':String(s)).replace(/[\u0000-\u001F\u007F]/g,''); }
 function sanitizeText(s){
-  s = (s==null) ? '' : String(s);
-  s = s.replace(/[\u0000-\u001F\u007F]/g,'');
+  s = stripCtl(s);
+
   return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 const ID_RE=/^[0-9A-Za-z_-]+$/;
@@ -493,7 +503,7 @@ function buildRow(member){
   const key=member.id;
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key; tr.dataset.rev='0';
 
-  const tdName=el('td',{class:'name','data-label':'氏名'}); tdName.innerHTML=name;
+  const tdName=el('td',{class:'name','data-label':'氏名'}); tdName.textContent=name;
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
@@ -1048,7 +1058,7 @@ async function populateAdminOffices(selected){
       if(!ID_RE.test(o.id)) return;
       const opt=document.createElement('option');
       opt.value=o.id;
-      const name=(o.name==null?'':String(o.name).replace(/[\u0000-\u001F\u007F]/g,''));
+        const name=stripCtl(o.name);
       opt.textContent=`${name}（${o.id}）`;
       adminOfficeSel.appendChild(opt);
     });
@@ -1057,7 +1067,7 @@ async function populateAdminOffices(selected){
     if(ID_RE.test(CURRENT_OFFICE_ID)){
       const opt=document.createElement('option');
       opt.value=CURRENT_OFFICE_ID;
-      const name=(CURRENT_OFFICE_NAME==null?'':String(CURRENT_OFFICE_NAME).replace(/[\u0000-\u001F\u007F]/g,''));
+        const name=stripCtl(CURRENT_OFFICE_NAME);
       opt.textContent=`${name}（${CURRENT_OFFICE_ID}）`;
       adminOfficeSel.appendChild(opt);
     }
@@ -1145,8 +1155,8 @@ function ensureAuthUIPublicError(){ setSelectMessage(officeSel,'取得できま�
     if(!ID_RE.test(o.id)) return;
     const opt=document.createElement('option');
     opt.value=o.id;
-    const name=(o.name==null?'':String(o.name).replace(/[\u0000-\u001F\u007F]/g,''));
-    opt.textContent=name;
+      const name=stripCtl(o.name);
+      opt.textContent=name;
     officeSel.appendChild(opt);
     if(selectedId && o.id===selectedId) found=true;
   });
