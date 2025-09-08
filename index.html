@@ -786,20 +786,19 @@ async function pushRowDelta(key){
         // 競合配列が無い場合でも rev マップがあれば反映
         const rev = Number((r.rev && r.rev[key]) || 0);
         const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
-      if(rev){ tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
-      saveLocal();
-      return;
+        if(rev){ tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
+        saveLocal();
       }
-
-
+      return;
+    }
+        
     if(r.ok){
       const rev = Number((r.rev && r.rev[key]) || 0);
       const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
       if(rev) { tr.dataset.rev = String(rev); tr.dataset.serverUpdated = String(ts||0); }
-      toast('競合しました', false);
+      saveLocal();
+      return;
     }
-    return;
-  }
 
     toast('保存に失敗しました', false);
   }finally{
