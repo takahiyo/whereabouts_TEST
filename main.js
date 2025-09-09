@@ -1030,9 +1030,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     SESSION_TOKEN=existing;
     try{
       const me=await apiPost({ action:'renew', token:SESSION_TOKEN });
-      if(!me || me.error==='unauthorized'){ logout(); return; }
+      if(!me || !me.ok || me.error==='unauthorized'){
+        console.error(me);
+        await logout();
+        return;
+      }
       if(me.ok){ CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=me.office||CURRENT_OFFICE_ID; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME; saveSessionMeta(); }
-    }catch(err){ console.error(err); logout(); return; }
+    }catch(err){ console.error(err); await logout(); return; }
     loginEl.style.display='none';
     loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
     ensureAuthUI(); applyRoleToManual();
