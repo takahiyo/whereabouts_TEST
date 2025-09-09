@@ -24,14 +24,14 @@ function SET_SUPER_PASSWORD_ONCE() {
     Utilities.DigestAlgorithm.SHA_256,
     Utilities.newBlob(Utilities.getUuid()).getBytes()
   );
-  const saltB64 = Utilities.base64Encode(saltBytes);
+  const saltB64 = Utilities.base64EncodeWebSafe(saltBytes, false);
 
   // key = SHA256( salt(Base64文字列のまま) + NEW_PLAIN ) を Base64 で保存
   const keyBytes = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
     Utilities.newBlob(saltB64 + NEW_PLAIN).getBytes()
   );
-  const keyB64 = Utilities.base64Encode(keyBytes);
+  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes, false);
 
   p.setProperty(ADMIN_SUPER_PROP_SALT,   saltB64);
   p.setProperty(ADMIN_SUPER_PROP_KEYB64, keyB64);
@@ -55,7 +55,7 @@ function SET_SUPER_PASSWORD_KEEP_SALT() {
     Utilities.DigestAlgorithm.SHA_256,
     Utilities.newBlob(saltB64 + NEW_PLAIN).getBytes()
   );
-  const keyB64 = Utilities.base64Encode(keyBytes);
+  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes, false);
 
   p.setProperty(ADMIN_SUPER_PROP_KEYB64, keyB64);
   Logger.log('OK: super password updated with existing salt.');
