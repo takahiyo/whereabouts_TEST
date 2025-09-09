@@ -109,8 +109,12 @@
   #board tbody tr{ transition: background-color .15s ease; }
   #board tbody tr.st-here{ background: transparent; }
   #board tbody tr.st-out{ background:#fff7ed; box-shadow: inset 4px 0 0 #f59e0b; }
-  #board tbody tr.st-meeting{ background:#eff6ff; box-shadow: inset 4px 0 0 #3b82f6; }
   #board tbody tr.st-remote{ background:#f5f3ff; box-shadow: inset 4px 0 0 #8b5cf6; }
+  #board tbody tr.st-trip{ background:#ecfeff; box-shadow: inset 4px 0 0 #06b6d4; }
+  #board tbody tr.st-training{ background:#eff6ff; box-shadow: inset 4px 0 0 #3b82f6; }
+  #board tbody tr.st-health{ background:#fdf2f8; box-shadow: inset 4px 0 0 #ec4899; }
+  #board tbody tr.st-coadoc{ background:#fefce8; box-shadow: inset 4px 0 0 #eab308; }
+  #board tbody tr.st-home{ background:#f3f4f6; box-shadow: inset 4px 0 0 #6b7280; }
   #board tbody tr.st-off{ background:#fef2f2; box-shadow: inset 4px 0 0 #ef4444; color:#374151; }
   #board tbody tr.st-off input, #board tbody tr.st-off select{ color:#374151; }
 
