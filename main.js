@@ -606,7 +606,8 @@ btnImport.addEventListener('click', async ()=>{
     proof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください");
     if(!proof) return;
   }
-  const text=await file.text();
+  let text=await file.text();
+  text = text.replace(/^\uFEFF/, '');
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());

@@ -445,7 +445,7 @@ function doPost(e){
     let cfg;
     try{ cfg = JSON.parse(p_(e,'data','{}')); }catch(_){ return json_({ error:'bad_json' }); }
     const parsed = adminSetConfigFor(office, cfg);
-    return json_(parsed);
+    return json_({ ok:true, config: parsed });
   }
 
   if(action === 'setFor'){
