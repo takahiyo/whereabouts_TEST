@@ -158,10 +158,10 @@ function defaultMenus_(){
 function defaultConfig_(){
   return { version: 2, updated: 0, groups: [], menus: defaultMenus_() };
 }
-function normalizeConfig_(cfg){
-  if(!cfg || typeof cfg !== 'object') return defaultConfig_();
-  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
-  const out = {
+function normalizeConfig_(cfg){␊
+  if(!cfg || typeof cfg !== 'object') return defaultConfig_();␊
+  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];␊
+  const out = {␊
     version: 2,
     updated: Number(cfg.updated || 0),
     groups: groups.map(g=>{
@@ -180,11 +180,39 @@ function normalizeConfig_(cfg){
   return out;
 }
 
+function adminSetConfigFor(office, cfg){
+  const prop = PropertiesService.getScriptProperties();
+  const parsed = normalizeConfig_(cfg);
+  parsed.updated = now_();
+  const CONFIG_KEY = configKeyForOffice_(office);
+  const out = JSON.stringify(parsed);
+  prop.setProperty(CONFIG_KEY, out);
+  CacheService.getScriptCache().put(KEY_PREFIX+'cfg:'+office, out, CACHE_TTL_SEC);
+  return parsed;
+}
+
+function syncStatuses(){
+  const prop = PropertiesService.getScriptProperties();
+  const defStatuses = defaultMenus_().statuses;
+  const defJson = JSON.stringify(defStatuses);
+  (prop.getKeys() || []).filter(k=>k.indexOf('presence-config-')===0).forEach(k=>{
+    let cfg; try{ cfg = JSON.parse(prop.getProperty(k) || '') || {}; }catch(_){ cfg = {}; }
+    const curJson = JSON.stringify((cfg.menus && cfg.menus.statuses) || []);
+    if(curJson !== defJson){
+      cfg.menus = cfg.menus || {};
+      cfg.menus.statuses = defStatuses;
+      const office = k.replace('presence-config-','');
+      adminSetConfigFor(office, cfg);
+    }
+  });
+}
+
 /* ===== メイン ===== */
 function doPost(e){
   const action = p_(e, 'action', '');
   const prop   = PropertiesService.getScriptProperties();
   const cache  = CacheService.getScriptCache();
+  syncStatuses();
 
   /* --- 無認証API --- */
   if(action === 'publicListOffices'){
@@ -396,12 +424,7 @@ function doPost(e){
     if(!canAdminOffice_(prop, token, office)) return json_({ error:'forbidden' });
     let cfg;
     try{ cfg = JSON.parse(p_(e,'data','{}')); }catch(_){ return json_({ error:'bad_json' }); }
-    const parsed = normalizeConfig_(cfg);
-    parsed.updated = now_();
-    const CONFIG_KEY = configKeyForOffice_(office);
-    const out = JSON.stringify(parsed);
-    prop.setProperty(CONFIG_KEY, out);
-    CacheService.getScriptCache().put(KEY_PREFIX+'cfg:'+office, out, CACHE_TTL_SEC);
+    const parsed = adminSetConfigFor(office, cfg);
     return json_(parsed);
   }
 

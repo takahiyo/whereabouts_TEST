@@ -109,16 +109,12 @@
   #board tbody tr{ transition: background-color .15s ease; }
   #board tbody tr.st-here{ background: transparent; }
   #board tbody tr.st-out{ background:#fff7ed; box-shadow: inset 4px 0 0 #f59e0b; }
+  #board tbody tr.st-meeting{ background:#eff6ff; box-shadow: inset 4px 0 0 #3b82f6; }
   #board tbody tr.st-remote{ background:#f5f3ff; box-shadow: inset 4px 0 0 #8b5cf6; }
-  #board tbody tr.st-trip{ background:#eff6ff; box-shadow: inset 4px 0 0 #3b82f6; }      /* 出張：青 */
-  #board tbody tr.st-training{ background:#f0fdf4; box-shadow: inset 4px 0 0 #22c55e; } /* 研修：緑 */
-  #board tbody tr.st-health{ background:#fdf2f8; box-shadow: inset 4px 0 0 #db2777; }   /* 健康診断：桃 */
-  #board tbody tr.st-coadoc{ background:#f0fdfa; box-shadow: inset 4px 0 0 #14b8a6; }   /* コアドック：水色 */
-  #board tbody tr.st-home{ background:#f3f4f6; box-shadow: inset 4px 0 0 #6b7280; }     /* 帰宅：灰 */
   #board tbody tr.st-off{ background:#fef2f2; box-shadow: inset 4px 0 0 #ef4444; color:#374151; }
   #board tbody tr.st-off input, #board tbody tr.st-off select{ color:#374151; }
 
-  /* 戻り時間入力の促し（外出・出張・研修・健康診断・コアドック） */
+  /* 戻り時間入力の促し（外出/会議） */
   td.time{ position:relative; }
   td.time.need-time select{
     border-color:#ef4444 !important;
