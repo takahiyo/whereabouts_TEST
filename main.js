@@ -23,7 +23,7 @@ const nameFilter=document.getElementById('nameFilter'), statusFilter=document.ge
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
-let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
+let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null, configWatchSource=null, configWatchSince=0;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 
@@ -407,11 +407,45 @@ function startRemoteSync(immediate){
   }, REMOTE_POLL_MS);
 }
 function startConfigWatch(){
-  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
-  configWatchTimer = setInterval(async ()=>{
+  if(configWatchTimer){ clearTimeout(configWatchTimer); configWatchTimer=null; }
+  if(configWatchSource){ try{ configWatchSource.close(); }catch{} configWatchSource=null; }
+
+  const url = `${REMOTE_ENDPOINT.replace(/\/$/, '')}?action=watchConfig&token=${encodeURIComponent(SESSION_TOKEN)}&since=${configWatchSince}`;
+  if('EventSource' in window){
+    try{
+      configWatchSource = new EventSource(url);
+      configWatchSource.onmessage = ev=>{
+        try{
+          const cfg = JSON.parse(ev.data||'{}');
+          const updated = Number(cfg.updated||0);
+          if(updated && updated !== CONFIG_UPDATED){
+            GROUPS = normalizeConfigClient(cfg);
+            CONFIG_UPDATED = updated;
+            setupMenus(cfg.menus || null);
+            render();
+          }
+          configWatchSince = Number(ev.lastEventId||configWatchSince);
+        }catch(err){ console.error(err); }
+        if(configWatchSource){ try{ configWatchSource.close(); }catch{} configWatchSource=null; }
+        startConfigWatch();
+      };
+      configWatchSource.onerror = ()=>{
+        try{ configWatchSource.close(); }catch{}
+        configWatchSource=null;
+        startConfigPolling();
+      };
+      return;
+    }catch(err){ console.error(err); }
+  }
+  startConfigPolling();
+}
+
+function startConfigPolling(){
+  if(configWatchTimer){ clearTimeout(configWatchTimer); configWatchTimer=null; }
+  const poll = async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
     if(cfg && !cfg.error){
-      const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
+      const updated = Number(cfg.updated||0);
       if(updated && updated !== CONFIG_UPDATED){
         GROUPS = normalizeConfigClient(cfg);
         CONFIG_UPDATED = updated;
@@ -419,7 +453,9 @@ function startConfigWatch(){
         render();
       }
     }
-  }, CONFIG_POLL_MS);
+    configWatchTimer = setTimeout(poll, CONFIG_POLL_MS);
+  };
+  poll();
 }
 function scheduleRenew(ttlMs){
   if(tokenRenewTimer) { clearTimeout(tokenRenewTimer); tokenRenewTimer = null; }
