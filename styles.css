@@ -255,6 +255,7 @@
   background:#dff1ff; border:1px solid #bfe4ff; border-radius:8px; padding:4px 0;
   max-height:calc(100vh - var(--header-height) - 20px); overflow:auto;
   box-shadow:0 4px 8px rgba(0,0,0,.08);
+  z-index:1600;
   transition:opacity .15s ease; opacity:0; pointer-events:none;
 }
 .grp-menu.show{opacity:1; pointer-events:auto;}
