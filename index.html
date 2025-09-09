@@ -94,8 +94,23 @@
         </div>
 
         <div class="admin-box">
-          <h4>メニュー設定（JSON）</h4>
-          <div class="admin-row"><textarea id="menusJson" placeholder='{"statuses":[...], "noteOptions":[...], "timeStepMinutes":30}'></textarea></div>
+          <h4>メニュー設定</h4>
+          <div class="admin-row">
+            <label>戻り時間刻み（分）<input type="number" id="timeStepMinutes" min="5" max="60" step="5"></label>
+          </div>
+          <div class="admin-row">
+            <table id="statusesTable">
+              <thead>
+                <tr><th>表示名</th><th>色クラス</th><th>要戻り時間</th><th>設定時にクリア</th><th></th></tr>
+              </thead>
+              <tbody id="statusesTbody"></tbody>
+            </table>
+            <button id="addStatus">行追加</button>
+          </div>
+          <div class="admin-row">
+            <div id="noteOptionsList"></div>
+            <button id="addNoteOption">備考候補を追加</button>
+          </div>
           <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
         </div>
       </div>

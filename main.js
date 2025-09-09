@@ -17,7 +17,7 @@ const btnExport=document.getElementById('btnExport'), csvFile=document.getElemen
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const addOfficeId=document.getElementById('addOfficeId'), addOfficeName=document.getElementById('addOfficeName'), addOfficePw=document.getElementById('addOfficePw'), addOfficeAdminPw=document.getElementById('addOfficeAdminPw'), btnAddOffice=document.getElementById('btnAddOffice');
 const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
-const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
+const timeStepMinutes=document.getElementById('timeStepMinutes'), statusesTbody=document.getElementById('statusesTbody'), addStatus=document.getElementById('addStatus'), noteOptionsList=document.getElementById('noteOptionsList'), addNoteOption=document.getElementById('addNoteOption'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 
@@ -357,6 +357,61 @@ function defaultMenus(){
     noteOptions: ["直出","直帰","直出・直帰"]
   };
 }
+function addStatusRow(st){
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td><input type="text" class="st-value"></td>'+
+              '<td><input type="text" class="st-class"></td>'+
+              '<td><input type="checkbox" class="st-require"></td>'+
+              '<td><input type="checkbox" class="st-clear"></td>'+
+              '<td><button type="button" class="del">削除</button></td>';
+  const v=tr.querySelector('.st-value'), c=tr.querySelector('.st-class'), r=tr.querySelector('.st-require'), cl=tr.querySelector('.st-clear');
+  if(st){
+    v.value=st.value||'';
+    c.value=st.class||'';
+    r.checked=!!st.requireTime;
+    cl.checked=!!st.clearOnSet;
+  }
+  tr.querySelector('.del').addEventListener('click',()=>tr.remove());
+  statusesTbody.appendChild(tr);
+}
+function addNoteOptionRow(val){
+  const div=document.createElement('div');
+  const inp=document.createElement('input'); inp.type='text'; inp.value=val||'';
+  const btn=document.createElement('button'); btn.type='button'; btn.textContent='削除';
+  btn.addEventListener('click',()=>div.remove());
+  div.appendChild(inp); div.appendChild(btn);
+  noteOptionsList.appendChild(div);
+}
+function loadMenusToForm(m){
+  const data=m||defaultMenus();
+  timeStepMinutes.value=String(data.timeStepMinutes||30);
+  statusesTbody.innerHTML='';
+  (data.statuses||[]).forEach(s=>addStatusRow(s));
+  noteOptionsList.innerHTML='';
+  (data.noteOptions||[]).forEach(n=>addNoteOptionRow(n));
+}
+function collectMenusFromForm(){
+  const step=Number(timeStepMinutes.value);
+  if(!step){ toast('戻り時間刻みは必須です',false); return null; }
+  const statuses=[]; const names=new Set();
+  for(const tr of statusesTbody.querySelectorAll('tr')){
+    const v=tr.querySelector('.st-value').value.trim();
+    const c=tr.querySelector('.st-class').value.trim();
+    const r=tr.querySelector('.st-require').checked;
+    const cl=tr.querySelector('.st-clear').checked;
+    if(!v){ toast('ステータス名は必須です',false); return null; }
+    if(names.has(v)){ toast('ステータス名が重複しています',false); return null; }
+    names.add(v);
+    const o={value:v};
+    if(c) o.class=c;
+    if(r) o.requireTime=true;
+    if(cl) o.clearOnSet=true;
+    statuses.push(o);
+  }
+  const noteOptions=[];
+  noteOptionsList.querySelectorAll('input').forEach(i=>{ const v=i.value.trim(); if(v) noteOptions.push(v); });
+  return {timeStepMinutes:step,statuses,noteOptions};
+}
 function setupMenus(m){
   MENUS = m || defaultMenus();
   const sts = Array.isArray(MENUS.statuses) ? MENUS.statuses : defaultMenus().statuses;
@@ -694,14 +749,16 @@ btnSetPw.addEventListener('click', async ()=>{
   if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; }
   else toast('更新に失敗',false);
 });
+addStatus.addEventListener('click',()=>addStatusRow());
+addNoteOption.addEventListener('click',()=>addNoteOptionRow());
 btnLoadMenus.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const cfg=await adminGetConfigFor(office);
-  menusJson.value=JSON.stringify((cfg&&cfg.menus)||defaultMenus(),null,2);
+  loadMenusToForm((cfg&&cfg.menus)||defaultMenus());
 });
 btnSaveMenus.addEventListener('click', async ()=>{
-  let obj;
-  try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; }
+  const obj=collectMenusFromForm();
+  if(!obj) return;
   const office=selectedOfficeId();
   const cfg=await adminGetConfigFor(office);
   if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
