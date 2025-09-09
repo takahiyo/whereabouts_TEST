@@ -967,7 +967,12 @@ function ensureAuthUIPublicError(){ setSelectMessage(officeSel,'取得できま�
 
 /* 起動 */
 document.addEventListener('DOMContentLoaded', async ()=>{
-  await refreshPublicOfficeSelect();
+  loginEl.style.display='flex';
+  try{
+    await refreshPublicOfficeSelect();
+  }finally{
+    loginEl.style.display='flex';
+  }
 
   document.getElementById('btnLogin').addEventListener('click', async ()=>{
     const pw=pwInput.value, office=officeSel.value;
@@ -1053,7 +1058,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(!me || !me.ok || me.error==='unauthorized'){
         console.error(me);
         await logout();
-		loginEl.style.display='flex';
+        sessionStorage.removeItem(SESSION_KEY);
+        loginEl.style.display='flex';
         return;
       }
       if(me.ok){ CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=me.office||CURRENT_OFFICE_ID; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME; saveSessionMeta(); }
