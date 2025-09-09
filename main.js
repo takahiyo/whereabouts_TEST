@@ -65,7 +65,7 @@ function updateCols(){
   let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
   if (n < 2) {
     board.classList.add('force-cards');
-    board.dataset.cols = '2';
+    board.dataset.cols = '1';
     board.style.removeProperty('--cols');
     return;
   }
