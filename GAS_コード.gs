@@ -166,7 +166,7 @@ function defaultMenus_(){
       { value: "帰宅",       class: "st-home",    clearOnSet: true  },
       { value: "休み",       class: "st-off",     clearOnSet: true  }
       ],
-    noteOptions: ["直出","直帰","直出・直帰"]
+    noteOptions: ["", "直出","直帰","直出・直帰"]
   };
 }
 function defaultConfig_(){

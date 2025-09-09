@@ -354,7 +354,7 @@ function defaultMenus(){
       { value: "帰宅",       class: "st-home",    clearOnSet: true  },
       { value: "休み",       class: "st-off",     clearOnSet: true  }
     ],
-    noteOptions: ["直出","直帰","直出・直帰"]
+    noteOptions: ["", "直出","直帰","直出・直帰"]
   };
 }
 function addStatusRow(st){
@@ -409,7 +409,11 @@ function collectMenusFromForm(){
     statuses.push(o);
   }
   const noteOptions=[];
-  noteOptionsList.querySelectorAll('input').forEach(i=>{ const v=i.value.trim(); if(v) noteOptions.push(v); });
+  noteOptionsList.querySelectorAll('input').forEach(i=>{
+    const raw=i.value;
+    const v=raw.trim();
+    if(v || raw==="") noteOptions.push(raw);
+  });
   return {timeStepMinutes:step,statuses,noteOptions};
 }
 function setupMenus(m){
