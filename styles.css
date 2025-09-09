@@ -83,6 +83,9 @@
     grid-template-columns: repeat(var(--cols, auto-fit), minmax(min(100%, 760px), 1fr));
   }
   .board[data-cols="1"]{ grid-template-columns: 1fr; }
+  #board.force-cards {
+    grid-template-columns: 1fr;
+  }
 
   .panel{ border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px; overflow:auto;
   scroll-margin-top: calc(var(--header-height) + 12px); }
