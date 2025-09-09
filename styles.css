@@ -245,7 +245,15 @@
   .admin-modal{position:fixed;inset:0;z-index:1850;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);}
   .admin-modal.show{display:flex;}
   .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:80vh;overflow:auto;}
-      
+  .admin-tabs{ }
+  .tab-buttons{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .tab-btn{padding:.35rem .9rem;border:1px solid var(--line);border-radius:6px;background:#f3f4f6;cursor:pointer;}
+  .tab-btn.active{background:#e7f8e7;border-color:#b7e6b7;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .admin-box{margin-bottom:16px;}
+  .admin-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+  .admin-note{font-size:12px;color:#6B7280;margin-top:4px;}
   /* マニュアルモーダル */
   .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
   .manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }

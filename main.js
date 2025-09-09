@@ -20,7 +20,7 @@ const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document
 const timeStepMinutes=document.getElementById('timeStepMinutes'), statusesTbody=document.getElementById('statusesTbody'), addStatus=document.getElementById('addStatus'), noteOptionsList=document.getElementById('noteOptionsList'), addNoteOption=document.getElementById('addNoteOption'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
-
+const tabBtns=document.querySelectorAll('.tab-btn'), tabPanels=document.querySelectorAll('.tab-panel');
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null, configWatchSource=null, configWatchSince=0;
@@ -828,7 +828,17 @@ function ensureAuthUI(){
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
-function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
+function setActiveAdminTab(id){
+  tabBtns.forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===id));
+  tabPanels.forEach(panel=>panel.classList.toggle('active', panel.id===id));
+}
+function showAdminModal(yes){
+  adminModal.classList.toggle('show', !!yes);
+  if(yes){
+    const first=tabBtns[0]?.dataset.tab;
+    if(first) setActiveAdminTab(first);
+  }
+}
 function applyRoleToAdminPanel(){
   adminOfficeRow.style.display = isSuper() ? '' : 'none';
   document.querySelectorAll('.admin-box[data-super-only="1"]').forEach(el=>{ el.style.display = isSuper() ? '' : 'none'; });
@@ -871,6 +881,8 @@ adminBtn.addEventListener('click', async ()=>{
   showAdminModal(true);
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
+tabBtns.forEach(btn=>btn.addEventListener('click', ()=> setActiveAdminTab(btn.dataset.tab)));
+
 refreshOfficesBtn.addEventListener('click', ()=> populateAdminOffices());
 logoutBtn.addEventListener('click', logout);
 
@@ -882,6 +894,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal
 function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFICE_ID; }
 async function adminListOffices(){ return await apiPost({ action:'listOffices', token:SESSION_TOKEN }); }
 async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
+
 async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminSetConfigFor(office,cfgObj,proof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
 async function adminSetForChunked(office,dataObjFull,proof){

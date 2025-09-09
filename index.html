@@ -51,67 +51,72 @@
         <span class="admin-note">（スーパー管理者は拠点選択可／拠点管理者は自拠点固定）</span>
       </div>
 
-      <div class="admin-grid">
-        <div class="admin-box">
-          <h4>CSVエクスポート</h4>
-          <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-          <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）</div>
+      <div class="admin-tabs">
+        <div class="tab-buttons" role="tablist">
+          <button class="tab-btn active" data-tab="tab-csv" role="tab" aria-controls="tab-csv">CSV入出力</button>
+          <button class="tab-btn" data-tab="tab-office" role="tab" aria-controls="tab-office">拠点設定</button>
+          <button class="tab-btn" data-tab="tab-menu" role="tab" aria-controls="tab-menu">メニュー設定</button>
         </div>
-
-        <div class="admin-box">
-          <h4>CSVインポート</h4>
-          <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
-        </div>
-
-        <div class="admin-box">
-          <h4>拠点名の変更</h4>
-          <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
-        </div>
-
-        <div class="admin-box" data-super-only="1">
-          <h4>拠点の追加</h4>
-          <div class="admin-row">
-            <input id="addOfficeId" placeholder="ID（半角英数_-）" />
-            <input id="addOfficeName" placeholder="拠点名" />
-            <input id="addOfficePw" placeholder="パスワード" />
-            <input id="addOfficeAdminPw" placeholder="管理者PW" />
-            <button id="btnAddOffice">追加</button>
+        <div id="tab-csv" class="tab-panel active" role="tabpanel">
+          <div class="admin-box">
+            <h4>CSVエクスポート</h4>
+            <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
+            <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考（従来ヘッダも可）</div>
+          </div>
+          <div class="admin-box">
+            <h4>CSVインポート</h4>
+            <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
           </div>
         </div>
-
-        <div class="admin-box" data-super-only="1">
-          <h4>拠点の削除</h4>
-          <div class="admin-row"><button id="btnDeleteOffice" style="background:#fee2e2;border-color:#fecaca;">この拠点を削除</button></div>
-        </div>
-
-        <div class="admin-box">
-          <h4>拠点パスワードの変更</h4>
-          <div class="admin-row">
-            <input id="setPw" placeholder="新パスワード（任意）" />
-            <input id="setAdminPw" placeholder="新管理者PW（任意）" />
-            <button id="btnSetPw">更新</button>
+        <div id="tab-office" class="tab-panel" role="tabpanel">
+          <div class="admin-box">
+            <h4>拠点名の変更</h4>
+            <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
+          </div>
+          <div class="admin-box" data-super-only="1">
+            <h4>拠点の追加</h4>
+            <div class="admin-row">
+              <input id="addOfficeId" placeholder="ID（半角英数_-）" />
+              <input id="addOfficeName" placeholder="拠点名" />
+              <input id="addOfficePw" placeholder="パスワード" />
+              <input id="addOfficeAdminPw" placeholder="管理者PW" />
+              <button id="btnAddOffice">追加</button>
+            </div>
+          </div>
+          <div class="admin-box" data-super-only="1">
+            <h4>拠点の削除</h4>
+            <div class="admin-row"><button id="btnDeleteOffice" style="background:#fee2e2;border-color:#fecaca;">この拠点を削除</button></div>
+          </div>
+          <div class="admin-box">
+            <h4>拠点パスワードの変更</h4>
+            <div class="admin-row">
+              <input id="setPw" placeholder="新パスワード（任意）" />
+              <input id="setAdminPw" placeholder="新管理者PW（任意）" />
+              <button id="btnSetPw">更新</button>
+            </div>
           </div>
         </div>
-
-        <div class="admin-box">
-          <h4>メニュー設定</h4>
-          <div class="admin-row">
-            <label>戻り時間刻み（分）<input type="number" id="timeStepMinutes" min="5" max="60" step="5"></label>
+        <div id="tab-menu" class="tab-panel" role="tabpanel">
+          <div class="admin-box">
+            <h4>メニュー設定</h4>
+            <div class="admin-row">
+              <label>戻り時間刻み（分）<input type="number" id="timeStepMinutes" min="5" max="60" step="5"></label>
+            </div>
+            <div class="admin-row">
+              <table id="statusesTable">
+                <thead>
+                  <tr><th>表示名</th><th>色クラス</th><th>要戻り時間</th><th>設定時にクリア</th><th></th></tr>
+                </thead>
+                <tbody id="statusesTbody"></tbody>
+              </table>
+              <button id="addStatus">行追加</button>
+            </div>
+            <div class="admin-row">
+              <div id="noteOptionsList"></div>
+              <button id="addNoteOption">備考候補を追加</button>
+            </div>
+            <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
           </div>
-          <div class="admin-row">
-            <table id="statusesTable">
-              <thead>
-                <tr><th>表示名</th><th>色クラス</th><th>要戻り時間</th><th>設定時にクリア</th><th></th></tr>
-              </thead>
-              <tbody id="statusesTbody"></tbody>
-            </table>
-            <button id="addStatus">行追加</button>
-          </div>
-          <div class="admin-row">
-            <div id="noteOptionsList"></div>
-            <button id="addNoteOption">備考候補を追加</button>
-          </div>
-          <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
         </div>
       </div>
     </div>
