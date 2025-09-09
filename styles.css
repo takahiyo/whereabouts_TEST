@@ -269,7 +269,4 @@
   text-align:left; font-size:14px; font-weight:600; color:#1f2937; cursor:pointer;
 }
 .grp-menu button.grp-item:hover{background:#bfe4ff;}
-      
-  .grp-menu ul{ list-style:none; margin:0; padding:0; }
-  .grp-menu li{ padding:4px 8px; border-radius:4px; cursor:pointer; }
-  .grp-menu li:hover{ background:#f0f9ff; }
+
