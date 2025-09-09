@@ -244,8 +244,9 @@ function render(){
     startGridObserver();
   } catch (e) {
     console.error(e);
+  } finally {
+    buildGroupMenu();
   }
-  buildGroupMenu();
   buildStatusFilterOptions(); updateStatusFilterCounts();
   applyFilters();
 }
