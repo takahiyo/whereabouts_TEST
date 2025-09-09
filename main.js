@@ -58,6 +58,7 @@ function loadSessionMeta(){ try{ CURRENT_ROLE=sessionStorage.getItem(SESSION_ROL
 
 /* レイアウト（JS + CSS両方で冗長に制御） */
 const PANEL_MIN_PX=760,GAP_PX=20,MAX_COLS=3;
+const CARD_BREAKPOINT_PX=760; // これより狭い幅ではカード表示を強制
 function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
 function updateCols(){
   const w = getContainerWidth();
