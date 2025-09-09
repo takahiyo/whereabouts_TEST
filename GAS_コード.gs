@@ -11,6 +11,20 @@
  *  addOffice, deleteOffice, setOfficePassword, （任意）setSuperPassword
  */
 
+/** ユーザー関数
+ * adminSetConfigFor(office, cfg)
+ * 受け取った設定 cfg を正規化しタイムスタンプを付与、Script Properties とキャッシュへ保存したうえでクライアントに変更を通知します
+ * 
+ * syncStatuses()
+ * 全オフィスの設定を巡回し、既定ステータス一覧と相違がある場合は adminSetConfigFor を介して最新のステータス構成に同期します
+ * 
+ * doPost(e)
+ * 各種 POST アクションを受け付けるエントリーポイント。先に syncStatuses を呼び出して設定を最新化し、publicListOffices などの API 要求に応じたレスポンスを返します
+ * 
+ * doGet(e)
+ * GET リクエストの入口。watchConfig アクションではサーバーサイド設定の更新を監視し、イベントストリームとしてクライアントへ送信します
+ */
+
 /* ===== 設定 ===== */
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
