@@ -246,6 +246,7 @@ function render(){
     console.error(e);
   } finally {
     buildGroupMenu();
+    updateCols();
   }
   buildStatusFilterOptions(); updateStatusFilterCounts();
   applyFilters();
