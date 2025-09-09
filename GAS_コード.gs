@@ -158,10 +158,10 @@ function defaultMenus_(){
 function defaultConfig_(){
   return { version: 2, updated: 0, groups: [], menus: defaultMenus_() };
 }
-function normalizeConfig_(cfg){␊
-  if(!cfg || typeof cfg !== 'object') return defaultConfig_();␊
-  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];␊
-  const out = {␊
+function normalizeConfig_(cfg){
+  if(!cfg || typeof cfg !== 'object') return defaultConfig_();
+  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
+  const out = {
     version: 2,
     updated: Number(cfg.updated || 0),
     groups: groups.map(g=>{
@@ -180,6 +180,11 @@ function normalizeConfig_(cfg){␊
   return out;
 }
 
+function notifyConfigPush_(office){
+  CacheService.getScriptCache().put(KEY_PREFIX + 'cfgpush:' + office, String(now_()), CACHE_TTL_SEC);
+}
+
+
 function adminSetConfigFor(office, cfg){
   const prop = PropertiesService.getScriptProperties();
   const parsed = normalizeConfig_(cfg);
@@ -188,6 +193,7 @@ function adminSetConfigFor(office, cfg){
   const out = JSON.stringify(parsed);
   prop.setProperty(CONFIG_KEY, out);
   CacheService.getScriptCache().put(KEY_PREFIX+'cfg:'+office, out, CACHE_TTL_SEC);
+  notifyConfigPush_(office);
   return parsed;
 }
 
@@ -530,4 +536,31 @@ function doPost(e){
   }
 
   return json_({ error:'unknown_action' });
+}
+
+function doGet(e){
+  const action = p_(e,'action','');
+  if(action === 'watchConfig'){
+    const token = p_(e,'token','');
+    const since = Number(p_(e,'since','0'));
+    const prop = PropertiesService.getScriptProperties();
+    if(!checkToken_(prop, token)) return ContentService.createTextOutput('unauthorized');
+    const office = getOfficeByToken_(prop, token);
+    const cache = CacheService.getScriptCache();
+    const key = KEY_PREFIX + 'cfgpush:' + office;
+    let ts = Number(cache.get(key) || 0);
+    const limit = now_() + 25000;
+    while(ts <= since && now_() < limit){
+      Utilities.sleep(1000);
+      ts = Number(cache.get(key) || 0);
+    }
+    const CONFIG_KEY = configKeyForOffice_(office);
+    let cfg;
+    try{ cfg = JSON.parse(prop.getProperty(CONFIG_KEY) || '') || defaultConfig_(); }
+    catch(_){ cfg = defaultConfig_(); }
+    const parsed = normalizeConfig_(cfg);
+    const out = `id: ${ts}\ndata: ${JSON.stringify(parsed)}\n\n`;
+    return ContentService.createTextOutput(out).setMimeType('text/event-stream');
+  }
+  return ContentService.createTextOutput('unsupported');
 }
