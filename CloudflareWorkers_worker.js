@@ -4,7 +4,7 @@
 // ・レスポンスは no-store。login/renewの role/office/officeName をそのまま転送
 export default {
   async fetch(req, env, ctx) {
-    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbxKm3ear7rGdyWvI6JJicLTW2AMThciyW0p5iDf2oTJ9gvdwUieOSsOnyLWjkFOfBLj/exec";
+    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbwh5BvyQmn14gU-OREIHULyaQ166zF6ByoOf9AlRDiGT10QVBttYPrWY78uQYjyo5ms/exec";
     const ORIGIN = new URL(req.url).origin;
     const origin = req.headers.get('origin') || '';
 
