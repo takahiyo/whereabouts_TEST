@@ -986,10 +986,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // 通常ログイン
     const res=await apiPost({ action:'login', office, password: pw });
-    if(res===null){ loginMsg.textContent="通信エラー"; return; }
-    if(res?.error==='unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
-    if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
-    if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
+    if(res===null){
+      loginMsg.textContent="通信エラー";
+      await logout();
+      loginEl.style.display='flex';
+      return;
+    }
+    if(res?.error==='unauthorized'){
+      loginMsg.textContent="拠点またはパスワードが違います";
+      await logout();
+      loginEl.style.display='flex';
+      return;
+    }
+    if(res?.ok===false){
+      loginMsg.textContent="通信エラー";
+      await logout();
+      loginEl.style.display='flex';
+      return;
+    }
+    if(!res?.token){
+      loginMsg.textContent="サーバ応答が不正です";
+      await logout();
+      loginEl.style.display='flex';
+      return;
+    }
         await afterLogin(res);
   });
 
@@ -1033,11 +1053,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(!me || !me.ok || me.error==='unauthorized'){
         console.error(me);
         await logout();
+		loginEl.style.display='flex';
         return;
       }
       if(me.ok){ CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=me.office||CURRENT_OFFICE_ID; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME; saveSessionMeta(); }
-    }catch(err){ console.error(err); await logout(); return; }
-    loginEl.style.display='none';
+      loginEl.style.display='none';
+    }catch(err){ console.error(err); await logout(); loginEl.style.display='flex'; return; }
     loadSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
     ensureAuthUI(); applyRoleToManual();
     (async()=>{
