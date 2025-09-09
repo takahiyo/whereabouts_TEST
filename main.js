@@ -576,7 +576,7 @@ function wireEvents(){
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
-function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
+function toBase64(b){ const s=typeof b==='string'?b:btoa(String.fromCharCode(...new Uint8Array(b))); return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
 async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(messageStr)); return sig; }
 async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
