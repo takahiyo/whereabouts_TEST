@@ -62,13 +62,13 @@ const CARD_BREAKPOINT_PX=760; // これより狭い幅ではカード表示を�
 function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
 function updateCols(){
   const w = getContainerWidth();
-  if (w < CARD_BREAKPOINT_PX) {
+  let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
+  if (n < 2) {
     board.classList.add('force-cards');
-    board.dataset.cols = '2'; // 1列レイアウトを回避
+    board.dataset.cols = '2';
+    board.style.removeProperty('--cols');
     return;
   }
-  let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
-  if (n < 2) n = 2;
   if (n > MAX_COLS) n = MAX_COLS;
   board.style.setProperty('--cols', String(n));
   board.dataset.cols = String(n);
