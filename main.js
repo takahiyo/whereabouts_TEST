@@ -23,7 +23,7 @@ const nameFilter=document.getElementById('nameFilter'), statusFilter=document.ge
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
-let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null, configWatchSource=null, configWatchSince=0;
+let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 
@@ -344,15 +344,11 @@ function defaultMenus(){
   return {
     timeStepMinutes: 30,
     statuses: [
-      { value: "在席",       class: "st-here",    clearOnSet: true  },
-      { value: "外出",       requireTime: true,   class: "st-out"   },
-      { value: "在宅勤務",   class: "st-remote",  clearOnSet: true  },
-      { value: "出張",       requireTime: true,   class: "st-trip"   },
-      { value: "研修",       requireTime: true,   class: "st-training" },
-      { value: "健康診断",   requireTime: true,   class: "st-health" },
-      { value: "コアドック", requireTime: true,   class: "st-coadoc" },
-      { value: "帰宅",       class: "st-home",    clearOnSet: true  },
-      { value: "休み",       class: "st-off",     clearOnSet: true  }
+      { value: "在席",         class: "st-here",    clearOnSet: true  },
+      { value: "外出",         requireTime: true,   class: "st-out"   },
+      { value: "会議",         requireTime: true,   class: "st-meeting" },
+      { value: "テレワーク",   class: "st-remote",  clearOnSet: true  },
+      { value: "休み",         class: "st-off",     clearOnSet: true  }
     ],
     noteOptions: ["直出","直帰","直出・直帰"]
   };
@@ -411,45 +407,11 @@ function startRemoteSync(immediate){
   }, REMOTE_POLL_MS);
 }
 function startConfigWatch(){
-  if(configWatchTimer){ clearTimeout(configWatchTimer); configWatchTimer=null; }
-  if(configWatchSource){ try{ configWatchSource.close(); }catch{} configWatchSource=null; }
-
-  const url = `${REMOTE_ENDPOINT.replace(/\/$/, '')}?action=watchConfig&token=${encodeURIComponent(SESSION_TOKEN)}&since=${configWatchSince}`;
-  if('EventSource' in window){
-    try{
-      configWatchSource = new EventSource(url);
-      configWatchSource.onmessage = ev=>{
-        try{
-          const cfg = JSON.parse(ev.data||'{}');
-          const updated = Number(cfg.updated||0);
-          if(updated && updated !== CONFIG_UPDATED){
-            GROUPS = normalizeConfigClient(cfg);
-            CONFIG_UPDATED = updated;
-            setupMenus(cfg.menus || null);
-            render();
-          }
-          configWatchSince = Number(ev.lastEventId||configWatchSince);
-        }catch(err){ console.error(err); }
-        if(configWatchSource){ try{ configWatchSource.close(); }catch{} configWatchSource=null; }
-        startConfigWatch();
-      };
-      configWatchSource.onerror = ()=>{
-        try{ configWatchSource.close(); }catch{}
-        configWatchSource=null;
-        startConfigPolling();
-      };
-      return;
-    }catch(err){ console.error(err); }
-  }
-  startConfigPolling();
-}
-
-function startConfigPolling(){
-  if(configWatchTimer){ clearTimeout(configWatchTimer); configWatchTimer=null; }
-  const poll = async ()=>{
+  if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
+  configWatchTimer = setInterval(async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
     if(cfg && !cfg.error){
-      const updated = Number(cfg.updated||0);
+      const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
       if(updated && updated !== CONFIG_UPDATED){
         GROUPS = normalizeConfigClient(cfg);
         CONFIG_UPDATED = updated;
@@ -457,9 +419,7 @@ function startConfigPolling(){
         render();
       }
     }
-    configWatchTimer = setTimeout(poll, CONFIG_POLL_MS);
-  };
-  poll();
+  }, CONFIG_POLL_MS);
 }
 function scheduleRenew(ttlMs){
   if(tokenRenewTimer) { clearTimeout(tokenRenewTimer); tokenRenewTimer = null; }
@@ -576,7 +536,7 @@ function wireEvents(){
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
-function toBase64(b){ const s=typeof b==='string'?b:btoa(String.fromCharCode(...new Uint8Array(b))); return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
 async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
 async function hmacSha256(keyBytes,messageStr){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(messageStr)); return sig; }
 async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,nonce); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
