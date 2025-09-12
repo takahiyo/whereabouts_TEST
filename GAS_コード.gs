@@ -45,7 +45,6 @@ const TOKEN_ROLE_PREFIX    = 'trole_';
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
-function b64_(bytes){ return Utilities.base64EncodeWebSafe(bytes, false); }
 function hexToBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2){ out.push(parseInt(hex.substr(i,2),16)); } return out; }
 
 /* ===== データ保存キー ===== */
@@ -137,7 +136,7 @@ function getOrInitSuperSalt_(){
 function setSuperPassword_(plain){
   const salt = getOrInitSuperSalt_();
   const keyBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + plain);
-  const b64 = b64_(keyBytes);
+  const b64 = Utilities.base64EncodeWebSafe(keyBytes);
   PropertiesService.getScriptProperties().setProperty(PROP_SUPER_KEY_B64, b64);
 }
 function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
@@ -147,7 +146,7 @@ function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
   const keyRaw = Utilities.base64DecodeWebSafe(keyB64);
   const msgBytes = hexToBytes_(nonceHex);
   const sig = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, msgBytes, keyRaw);
-  const sigB64 = b64_(sig);
+  const sigB64 = Utilities.base64EncodeWebSafe(sig);
   return sigB64 === hmacB64;
 }
 
