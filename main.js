@@ -536,7 +536,10 @@ function wireEvents(){
 
 /* 重要操作の再認証（HMAC+Nonce） */
 async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
-function toBase64(buf){ const bin=String.fromCharCode(...new Uint8Array(buf)); return btoa(bin); }
+function toBase64(buf){
+  const bin=String.fromCharCode(...new Uint8Array(buf));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
 function hexToBytes(hex){
   if(hex.length%2!==0) throw new Error('invalid_hex');
   const bytes=new Uint8Array(hex.length/2);
