@@ -19,24 +19,20 @@ function SET_SUPER_PASSWORD_ONCE() {
 
   const p = PropertiesService.getScriptProperties();
 
-  // 新しい salt を生成（Base64）
-  const saltBytes = Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256,
-    Utilities.newBlob(Utilities.getUuid()).getBytes()
-  );
-  const saltB64 = Utilities.base64EncodeWebSafe(saltBytes);
+  // 新しい salt を生成（hex）
+  const saltHex = Utilities.getUuid().replace(/-/g, '').slice(0, 32);
 
-  // key = SHA256( salt(Base64文字列のまま) + NEW_PLAIN ) を Base64 で保存
+  // key = SHA256( salt(hex文字列のまま) + NEW_PLAIN ) を Base64 で保存
   const keyBytes = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
-    Utilities.newBlob(saltB64 + NEW_PLAIN).getBytes()
+    Utilities.newBlob(saltHex + NEW_PLAIN).getBytes()
   );
   const keyB64 = Utilities.base64EncodeWebSafe(keyBytes);
 
-  p.setProperty(ADMIN_SUPER_PROP_SALT,   saltB64);
+  p.setProperty(ADMIN_SUPER_PROP_SALT,   saltHex);
   p.setProperty(ADMIN_SUPER_PROP_KEYB64, keyB64);
 
-  Logger.log('OK: super password rotated. salt=%s', saltB64);
+  Logger.log('OK: super password rotated. salt=%s', saltHex);
 }
 
 /**
@@ -48,14 +44,14 @@ function SET_SUPER_PASSWORD_KEEP_SALT() {
   if (!NEW_PLAIN) throw new Error('Empty password');
 
   const p = PropertiesService.getScriptProperties();
-  const saltB64 = p.getProperty(ADMIN_SUPER_PROP_SALT);
-  if (!saltB64) throw new Error('No salt exists. Run SET_SUPER_PASSWORD_ONCE first.');
-
-  const keyBytes = Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256,
-    Utilities.newBlob(saltB64 + NEW_PLAIN).getBytes()
-  );
-  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes);
+  const saltHex = p.getProperty(ADMIN_SUPER_PROP_SALT);
+  if (!saltHex) throw new Error('No salt exists. Run SET_SUPER_PASSWORD_ONCE first.');
+␊
+  const keyBytes = Utilities.computeDigest(␊
+    Utilities.DigestAlgorithm.SHA_256,␊
+    Utilities.newBlob(saltHex + NEW_PLAIN).getBytes()
+  );␊
+  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes);␊
 
   p.setProperty(ADMIN_SUPER_PROP_KEYB64, keyB64);
   Logger.log('OK: super password updated with existing salt.');
