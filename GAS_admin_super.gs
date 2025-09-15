@@ -46,12 +46,12 @@ function SET_SUPER_PASSWORD_KEEP_SALT() {
   const p = PropertiesService.getScriptProperties();
   const saltHex = p.getProperty(ADMIN_SUPER_PROP_SALT);
   if (!saltHex) throw new Error('No salt exists. Run SET_SUPER_PASSWORD_ONCE first.');
-␊
-  const keyBytes = Utilities.computeDigest(␊
-    Utilities.DigestAlgorithm.SHA_256,␊
+
+  const keyBytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
     Utilities.newBlob(saltHex + NEW_PLAIN).getBytes()
-  );␊
-  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes);␊
+  );
+  const keyB64 = Utilities.base64EncodeWebSafe(keyBytes);
 
   p.setProperty(ADMIN_SUPER_PROP_KEYB64, keyB64);
   Logger.log('OK: super password updated with existing salt.');

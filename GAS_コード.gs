@@ -11,20 +11,6 @@
  *  addOffice, deleteOffice, setOfficePassword, （任意）setSuperPassword
  */
 
-/** ユーザー関数
- * adminSetConfigFor(office, cfg)
- * 受け取った設定 cfg を正規化しタイムスタンプを付与、Script Properties とキャッシュへ保存したうえでクライアントに変更を通知します
- * 
- * syncStatuses()
- * 全オフィスの設定を巡回し、既定ステータス一覧と相違がある場合は adminSetConfigFor を介して最新のステータス構成に同期します
- * 
- * doPost(e)
- * 各種 POST アクションを受け付けるエントリーポイント。先に syncStatuses を呼び出して設定を最新化し、publicListOffices などの API 要求に応じたレスポンスを返します
- * 
- * doGet(e)
- * GET リクエストの入口。watchConfig アクションではサーバーサイド設定の更新を監視し、イベントストリームとしてクライアントへ送信します
- */
-
 /* ===== 設定 ===== */
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
@@ -45,6 +31,7 @@ const TOKEN_ROLE_PREFIX    = 'trole_';
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
+function b64_(bytes){ return Utilities.base64EncodeWebSafe(bytes, false); }
 function hexToBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2){ out.push(parseInt(hex.substr(i,2),16)); } return out; }
 
 /* ===== データ保存キー ===== */
@@ -136,7 +123,7 @@ function getOrInitSuperSalt_(){
 function setSuperPassword_(plain){
   const salt = getOrInitSuperSalt_();
   const keyBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + plain);
-  const b64 = Utilities.base64EncodeWebSafe(keyBytes);
+  const b64 = b64_(keyBytes);
   PropertiesService.getScriptProperties().setProperty(PROP_SUPER_KEY_B64, b64);
 }
 function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
@@ -146,7 +133,7 @@ function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
   const keyRaw = Utilities.base64DecodeWebSafe(keyB64);
   const msgBytes = hexToBytes_(nonceHex);
   const sig = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, msgBytes, keyRaw);
-  const sigB64 = Utilities.base64EncodeWebSafe(sig);
+  const sigB64 = b64_(sig);
   return sigB64 === hmacB64;
 }
 
@@ -165,7 +152,7 @@ function defaultMenus_(){
       { value: "帰宅",       class: "st-home",    clearOnSet: true  },
       { value: "休み",       class: "st-off",     clearOnSet: true  }
       ],
-    noteOptions: ["", "直出","直帰","直出・直帰"]
+    noteOptions: ["直出","直帰","直出・直帰"]
   };
 }
 function defaultConfig_(){
@@ -444,7 +431,7 @@ function doPost(e){
     let cfg;
     try{ cfg = JSON.parse(p_(e,'data','{}')); }catch(_){ return json_({ error:'bad_json' }); }
     const parsed = adminSetConfigFor(office, cfg);
-    return json_({ ok:true, config: parsed });
+    return json_(parsed);
   }
 
   if(action === 'setFor'){
