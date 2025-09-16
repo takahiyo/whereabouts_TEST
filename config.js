@@ -7,3 +7,9 @@ const REMOTE_ENDPOINT = "https://presence-proxy-test.taka-hiyo.workers.dev";
 const REMOTE_POLL_MS = 2000;
 const CONFIG_POLL_MS = 5000;
 const TOKEN_DEFAULT_TTL = 3600000;
+
+// publicListOffices が利用できない環境で使用する拠点一覧（id, name）
+const PUBLIC_OFFICE_FALLBACKS = [
+  { id: 'dev',  name: '開発用' },
+  { id: 'prod', name: '稼働用' }
+];
