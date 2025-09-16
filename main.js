@@ -881,13 +881,26 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       const hmac=toBase64(await hmacSha256(kBytes,hexToBytes(nonce)));
       const resSup=await apiPost({ action:'login', office, hmac, nonce });
       if(resSup && resSup.token && resSup.role==='superAdmin'){ await afterLogin(resSup); return; }
-      if(resSup?.error==='super_not_configured'){ loginMsg.textContent="スーパー管理者が設定されていません"; return; }
-    }catch{}
+      if(resSup?.error==='super_not_configured'){
+        loginMsg.textContent="スーパー管理者パスワードが設定されていないか、誤っています";
+        try{ await getNonce(); }catch{}
+        return;
+      }
+      if(resSup?.error==='unauthorized'){ superAuthError='unauthorized'; }
+	  }catch{}
 
     // 通常ログイン
     const res=await apiPost({ action:'login', office, password: pw });
     if(res===null){ loginMsg.textContent="通信エラー"; return; }
-    if(res?.error==='unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
+    if(res?.error==='unauthorized'){
+      if(superAuthError==='unauthorized'){
+        loginMsg.textContent="スーパー管理者パスワードが設定されていないか、誤っています";
+        try{ await getNonce(); }catch{}
+      }else{
+        loginMsg.textContent="拠点またはパスワードが違います";
+      }
+      return;
+    }
     if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
     if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
         await afterLogin(res);
