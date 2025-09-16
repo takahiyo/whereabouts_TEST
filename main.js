@@ -804,6 +804,8 @@ async function refreshPublicOfficeSelect(selectedId){
   }
   if(offices.length===0){
     offices=configuredOfficesFallback();
+	    // 管理者用拠点を常に追加する
+    normalizeOfficeEntry(offices,'admin','Administrator');
   }
   officeSel.textContent='';
   let found=false;
