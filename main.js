@@ -881,6 +881,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       const hmac=toBase64(await hmacSha256(kBytes,hexToBytes(nonce)));
       const resSup=await apiPost({ action:'login', office, hmac, nonce });
       if(resSup && resSup.token && resSup.role==='superAdmin'){ await afterLogin(resSup); return; }
+      if(resSup?.error==='super_not_configured'){ loginMsg.textContent="スーパー管理者が設定されていません"; return; }
     }catch{}
 
     // 通常ログイン
