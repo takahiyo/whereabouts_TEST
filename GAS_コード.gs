@@ -1,27 +1,24 @@
-/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定
- *  - 認証：ユーザー / 拠点管理者 / スーパー管理者（HMAC）
+/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定␊
+ *  - 認証：ユーザー / 拠点管理者
  *  - データ：ScriptProperties(JSON) に保存（既存データ互換）
  *  - キャッシュ：CacheService（短期）
  *  - 競合制御：各レコードに rev / serverUpdated を付与（厳格CASはプロパティでON）
  *  - 互換性：既存データに rev/serverUpdated が無くても返却時に補完
  *
- * フロントからの主API：
- *  publicListOffices, getNonce, login, renew, get, set, getConfig,
- *  listOffices, getFor, getConfigFor, setFor, renameOffice,
- *  addOffice, deleteOffice, setOfficePassword, （任意）setSuperPassword
- */
+ * フロントからの主API：␊
+ *  publicListOffices, login, renew, get, set, getConfig,
+ *  listOffices, getFor, getConfigFor, setFor, renameOffice,␊
+ *  setOfficePassword
+ */␊
 
 /* ===== 設定 ===== */
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
-const NONCE_TTL_SEC  = 60 * 3;          // 3分
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
 
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
 const OFFICES_KEY         = KEY_PREFIX + 'OFFICES_JSON';     // 拠点一覧（id→{name,password,adminPassword}）
-const PROP_SUPER_SALT     = KEY_PREFIX + 'SUPER_SALT';        // スーパー管理者 HMAC salt（hex）
-const PROP_SUPER_KEY_B64  = KEY_PREFIX + 'SUPER_KEY_B64';     // 上記 salt+pw のSHA256をBase64（キー素材）
 
 const TOKEN_PREFIX         = 'tok_';
 const TOKEN_OFFICE_PREFIX  = 'toff_';
@@ -31,8 +28,8 @@ const TOKEN_ROLE_PREFIX    = 'trole_';
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
-function b64_(bytes){ return Utilities.base64EncodeWebSafe(bytes, false); }
-function hexToBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2){ out.push(parseInt(hex.substr(i,2),16)); } return out; }
+
+
 
 /* ===== データ保存キー ===== */
 function dataKeyForOffice_(office){ return `presence-board-${office}`; }
@@ -75,10 +72,8 @@ function renewToken_(prop, token){
 }
 function getOfficeByToken_(prop, token){ return prop.getProperty(TOKEN_OFFICE_PREFIX + token) || ''; }
 function getRoleByToken_(prop, token){ return prop.getProperty(TOKEN_ROLE_PREFIX + token) || 'user'; }
-function roleIsSuper_(prop, token){ return getRoleByToken_(prop, token) === 'superAdmin'; }
 function roleIsOfficeAdmin_(prop, token){ return getRoleByToken_(prop, token) === 'officeAdmin'; }
 function canAdminOffice_(prop, token, office){
-  if(roleIsSuper_(prop, token)) return true;
   const own = getOfficeByToken_(prop, token);
   return roleIsOfficeAdmin_(prop, token) && own === office;
 }
@@ -94,48 +89,6 @@ function getCasEnforce_(){
   }catch(e){ return false; }
 }
 
-/* ===== スーパー管理者（HMAC） ===== */
-function randomNonceHex_(){
-  // 128bit を hex で
-  // Apps Scriptに安全な乱数の直接APIは無いのでUUIDから流用（用途はワンタイム認証用で十分）
-  return Utilities.getUuid().replace(/-/g,'').slice(0, 32);
-}
-function putNonce_(nonceHex){
-  CacheService.getScriptCache().put(KEY_PREFIX + 'nonce:' + nonceHex, '1', NONCE_TTL_SEC);
-}
-function consumeNonce_(nonceHex){
-  const c = CacheService.getScriptCache();
-  const k = KEY_PREFIX + 'nonce:' + nonceHex;
-  const hit = c.get(k);
-  if(!hit) return false;
-  c.remove(k);
-  return true;
-}
-function getOrInitSuperSalt_(){
-  const prop = PropertiesService.getScriptProperties();
-  let s = prop.getProperty(PROP_SUPER_SALT);
-  if(!s){
-    s = randomNonceHex_(); // 16bytes hex として使う
-    prop.setProperty(PROP_SUPER_SALT, s);
-  }
-  return s;
-}
-function setSuperPassword_(plain){
-  const salt = getOrInitSuperSalt_();
-  const keyBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + plain);
-  const b64 = b64_(keyBytes);
-  PropertiesService.getScriptProperties().setProperty(PROP_SUPER_KEY_B64, b64);
-}
-function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
-  const prop = PropertiesService.getScriptProperties();
-  const keyB64 = prop.getProperty(PROP_SUPER_KEY_B64);
-  if(!keyB64) return { error: 'super_not_configured' };
-  const keyRaw = Utilities.base64DecodeWebSafe(keyB64);
-  const msgBytes = hexToBytes_(nonceHex);
-  const sig = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, msgBytes, keyRaw);
-  const sigB64 = b64_(sig);
-  return sigB64 === hmacB64;
-}
 
 /* ===== 既定メニュー／設定 ===== */
 function defaultMenus_(){
@@ -226,37 +179,9 @@ function doPost(e){
     const offices = Object.keys(offs).map(id => ({ id, name: offs[id].name }));
     return json_({ offices });
   }
-  if(action === 'getNonce'){
-    const nonce = randomNonceHex_();
-    putNonce_(nonce);
-    const salt = getOrInitSuperSalt_();
-    return json_({ nonce, salt });
-  }
   if(action === 'login'){
     const office = p_(e,'office','');
     const offs = getOffices_();
-
-    // 1) スーパー管理者（HMAC）
-    const nonce = p_(e,'nonce','');
-    const hmac  = p_(e,'hmac','');
-    if(nonce && hmac){
-      const nonceConsumed = consumeNonce_(nonce);
-      if(nonceConsumed){
-        const hmacResult = hmacVerifyWithStoredKey_(nonce, hmac);
-        if(hmacResult && typeof hmacResult === 'object' && hmacResult.error === 'super_not_configured'){
-          return json_(hmacResult);
-        }
-        if(hmacResult === true){
-          const token = Utilities.getUuid().replace(/-/g,'');
-          const offId = office || 'dev';
-          setToken_(prop, token, offId, 'superAdmin');
-          const officeName = offs[offId] ? offs[offId].name : (offs.dev?.name || '');
-          return json_({ token, role:'superAdmin', office: offId, officeName, exp: TOKEN_TTL_MS });
-        }
-      }
-    }
-
-    // 2) 通常ログイン
     if(!office || !offs[office]) return json_({ error:'unauthorized' });
     const pw = p_(e,'password','');
     if(!pw) return json_({ error:'unauthorized' });
@@ -405,13 +330,8 @@ function doPost(e){
   /* ===== 管理API ===== */
   if(action === 'listOffices'){
     const offs = getOffices_();
-    if(roleIsSuper_(prop, token)){
-      const offices = Object.keys(offs).map(id => ({ id, name: offs[id].name }));
-      return json_({ offices });
-    }else{
-      const id = tokenOffice;
-      return json_({ offices: [{ id, name: offs[id].name }] });
-    }
+    const id = tokenOffice;
+    return json_({ offices: [{ id, name: offs[id].name }] });
   }
 
   if(action === 'getFor'){
@@ -495,32 +415,6 @@ function doPost(e){
     return json_({ ok:true });
   }
 
-  if(action === 'addOffice'){
-    if(!roleIsSuper_(prop, token)) return json_({ error:'forbidden' });
-    const id   = p_(e,'id','').trim();
-    const name = p_(e,'name','').trim();
-    const pw   = p_(e,'password','').trim();
-    const apw  = p_(e,'adminPassword','').trim();
-    if(!id || !name || !pw || !apw) return json_({ error:'bad_request' });
-    const offs = getOffices_();
-    if(offs[id]) return json_({ error:'exists' });
-    offs[id] = { name, password: pw, adminPassword: apw };
-    setOffices_(offs);
-    return json_({ ok:true });
-  }
-
-  if(action === 'deleteOffice'){
-    if(!roleIsSuper_(prop, token)) return json_({ error:'forbidden' });
-    const id = p_(e,'id','').trim();
-    if(!id) return json_({ error:'bad_request' });
-    const offs = getOffices_();
-    if(!offs[id]) return json_({ error:'not_found' });
-    delete offs[id];
-    setOffices_(offs);
-    try{ prop.deleteProperty(dataKeyForOffice_(id)); }catch(_){}
-    try{ prop.deleteProperty(configKeyForOffice_(id)); }catch(_){}
-    return json_({ ok:true });
-  }
 
   if(action === 'setOfficePassword'){
     const id = p_(e,'id', tokenOffice).trim();
@@ -533,14 +427,6 @@ function doPost(e){
     if(pw)  offs[id].password = pw;
     if(apw) offs[id].adminPassword = apw;
     setOffices_(offs);
-    return json_({ ok:true });
-  }
-
-  if(action === 'setSuperPassword'){
-    if(!roleIsSuper_(prop, token)) return json_({ error:'forbidden' });
-    const pw = p_(e,'password','').trim();
-    if(!pw) return json_({ error:'bad_request' });
-    setSuperPassword_(pw);
     return json_({ ok:true });
   }
 
