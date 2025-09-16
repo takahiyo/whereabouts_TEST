@@ -22,13 +22,32 @@ const nameFilter=document.getElementById('nameFilter'), statusFilter=document.ge
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
+let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
 const enc=new TextEncoder();
-
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    resumeRemoteSyncOnVisible = remotePullTimer != null;
+    resumeConfigWatchOnVisible = configWatchTimer != null;
+    clearInterval(remotePullTimer);
+    clearInterval(configWatchTimer);
+    remotePullTimer = null;
+    configWatchTimer = null;
+  }else{
+    if(resumeRemoteSyncOnVisible && SESSION_TOKEN){
+      startRemoteSync(true);
+    }
+    if(resumeConfigWatchOnVisible && SESSION_TOKEN){
+      startConfigWatch();
+    }
+    resumeRemoteSyncOnVisible = false;
+    resumeConfigWatchOnVisible = false;
+  }
+});
 function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin'; }
 
 /* ユーティリティ */

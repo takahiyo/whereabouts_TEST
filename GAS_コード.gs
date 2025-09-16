@@ -1,15 +1,15 @@
-/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定␊
+/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定
  *  - 認証：ユーザー / 拠点管理者
  *  - データ：ScriptProperties(JSON) に保存（既存データ互換）
  *  - キャッシュ：CacheService（短期）
  *  - 競合制御：各レコードに rev / serverUpdated を付与（厳格CASはプロパティでON）
  *  - 互換性：既存データに rev/serverUpdated が無くても返却時に補完
  *
- * フロントからの主API：␊
+ * フロントからの主API：
  *  publicListOffices, login, renew, get, set, getConfig,
- *  listOffices, getFor, getConfigFor, setFor, renameOffice,␊
+ *  listOffices, getFor, getConfigFor, setFor, renameOffice,
  *  setOfficePassword
- */␊
+ */
 
 /* ===== 設定 ===== */
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
@@ -37,6 +37,7 @@ function configKeyForOffice_(office){ return `presence-config-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
+  admin: { name: 'Administrator', adminPassword: '任意のPW' },
   dev:  { name: '開発用', password: 'dev',  adminPassword: 'dev'  },
   prod: { name: '稼働用', password: 'prod', adminPassword: 'prod' }
 };
@@ -72,10 +73,15 @@ function renewToken_(prop, token){
 }
 function getOfficeByToken_(prop, token){ return prop.getProperty(TOKEN_OFFICE_PREFIX + token) || ''; }
 function getRoleByToken_(prop, token){ return prop.getProperty(TOKEN_ROLE_PREFIX + token) || 'user'; }
-function roleIsOfficeAdmin_(prop, token){ return getRoleByToken_(prop, token) === 'officeAdmin'; }
+function roleIsOfficeAdmin_(prop, token){
+  const role = getRoleByToken_(prop, token);
+  return role === 'officeAdmin' || role === 'superAdmin';
+}
 function canAdminOffice_(prop, token, office){
+  const role = getRoleByToken_(prop, token);
+  if(role === 'superAdmin') return true;
   const own = getOfficeByToken_(prop, token);
-  return roleIsOfficeAdmin_(prop, token) && own === office;
+  return role === 'officeAdmin' && own === office;
 }
 
 /* ===== CAS厳格化スイッチ（Script Properties） =====
@@ -186,8 +192,9 @@ function doPost(e){
     const pw = p_(e,'password','');
     if(!pw) return json_({ error:'unauthorized' });
     let role = '';
-    if(pw === String(offs[office].adminPassword || '')) role = 'officeAdmin';
-    else if(pw === String(offs[office].password || '')) role = 'user';
+    if(pw === String(offs[office].adminPassword || '')){
+      role = (office === 'admin') ? 'superAdmin' : 'officeAdmin';
+    }else if(pw === String(offs[office].password || '')) role = 'user';
     else return json_({ error:'unauthorized' });
     const token = Utilities.getUuid().replace(/-/g,'');
     setToken_(prop, token, office, role);
@@ -330,6 +337,11 @@ function doPost(e){
   /* ===== 管理API ===== */
   if(action === 'listOffices'){
     const offs = getOffices_();
+    const role = getRoleByToken_(prop, token);
+    if(role === 'superAdmin'){
+      const offices = Object.keys(offs).map(id => ({ id, name: offs[id].name }));
+      return json_({ offices });
+    }
     const id = tokenOffice;
     return json_({ offices: [{ id, name: offs[id].name }] });
   }
