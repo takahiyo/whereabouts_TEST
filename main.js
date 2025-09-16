@@ -541,7 +541,7 @@ function toBase64(buf){
   return btoa(bin)
     .replace(/\+/g,'-')
     .replace(/\//g,'_')
-    .replace(/=+$/,'');   // 末尾パディングを削除
+    .replace(/=+$/,''); // 末尾パディングを削除
 }
 function hexToBytes(hex){
   if(hex.length%2!==0) throw new Error('invalid_hex');
