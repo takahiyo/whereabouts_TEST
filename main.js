@@ -874,6 +874,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(!pw||!pw.trim()){ loginMsg.textContent="パスワードを入力してください"; return; }
     loginMsg.textContent="認証中…";
 
+    let superAuthError='';
+    if(!window.crypto?.subtle){ loginMsg.textContent="このブラウザではスーパー管理者ログインが利用できません"; return; }
+
     // まずスーパー管理者（HMAC）試行
     try{
       const {nonce,salt}=await getNonce();
@@ -887,13 +890,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         return;
       }
       if(resSup?.error==='unauthorized'){ superAuthError='unauthorized'; }
-	  }catch{}
+    }catch(err){ superAuthError='internal'; loginMsg.textContent="スーパー管理者ログインに失敗しました。通常ログインを試行します"; }
 
     // 通常ログイン
     const res=await apiPost({ action:'login', office, password: pw });
     if(res===null){ loginMsg.textContent="通信エラー"; return; }
     if(res?.error==='unauthorized'){
-      if(superAuthError==='unauthorized'){
+      if(superAuthError){
         loginMsg.textContent="スーパー管理者パスワードが設定されていないか、誤っています";
         try{ await getNonce(); }catch{}
       }else{
