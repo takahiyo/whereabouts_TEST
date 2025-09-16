@@ -5,9 +5,7 @@
 export default {
   async fetch(req, env, ctx) {
     const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbztl-BbrdrpwW7C686wRIib9cReu2sRALZk5HG0CEn66zcH5B7ra4yiDStqgEXqdTQw/exec";
-    const ORIGIN = new URL(req.url).origin;
     const origin = req.headers.get('origin') || '';
-
     // CORS 許可元
     const ALLOW_ORIGINS = new Set([
       'https://takahiyo.github.io'
@@ -16,13 +14,26 @@ export default {
 
     // Preflight
     if (req.method === 'OPTIONS') {
+      if (!allowOrigin) {
+        return new Response(null, { status: 403 });
+      }
       return new Response(null, {
         status: 204,
         headers: {
-          'Access-Control-Allow-Origin': allowOrigin || '*',
+          'Access-Control-Allow-Origin': allowOrigin,
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'content-type',
           'Access-Control-Max-Age': '86400'
+        }
+      });
+    }
+
+    if (!allowOrigin) {
+      return new Response(JSON.stringify({ error: 'origin_not_allowed' }), {
+        status: 403,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store'
         }
       });
     }
@@ -56,7 +67,7 @@ export default {
         status: 502,
         headers: {
           'content-type': 'application/json; charset=utf-8',
-          'Access-Control-Allow-Origin': allowOrigin || '*',
+          'Access-Control-Allow-Origin': allowOrigin,
           'cache-control': 'no-store'
         }
       });
@@ -69,7 +80,7 @@ export default {
       status: 200,
       headers: {
         'content-type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': allowOrigin || '*',
+        'Access-Control-Allow-Origin': allowOrigin,
         'cache-control': 'no-store'
       }
     });

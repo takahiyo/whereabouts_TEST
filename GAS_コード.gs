@@ -129,7 +129,7 @@ function setSuperPassword_(plain){
 function hmacVerifyWithStoredKey_(nonceHex, hmacB64){
   const prop = PropertiesService.getScriptProperties();
   const keyB64 = prop.getProperty(PROP_SUPER_KEY_B64);
-  if(!keyB64) return false;
+  if(!keyB64) return { error: 'super_not_configured' };
   const keyRaw = Utilities.base64DecodeWebSafe(keyB64);
   const msgBytes = hexToBytes_(nonceHex);
   const sig = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, msgBytes, keyRaw);
@@ -239,12 +239,21 @@ function doPost(e){
     // 1) スーパー管理者（HMAC）
     const nonce = p_(e,'nonce','');
     const hmac  = p_(e,'hmac','');
-    if(nonce && hmac && consumeNonce_(nonce) && hmacVerifyWithStoredKey_(nonce, hmac)){
-      const token = Utilities.getUuid().replace(/-/g,'');
-      const offId = office || 'dev';
-      setToken_(prop, token, offId, 'superAdmin');
-      const officeName = offs[offId] ? offs[offId].name : (offs.dev?.name || '');
-      return json_({ token, role:'superAdmin', office: offId, officeName, exp: TOKEN_TTL_MS });
+    if(nonce && hmac){
+      const nonceConsumed = consumeNonce_(nonce);
+      if(nonceConsumed){
+        const hmacResult = hmacVerifyWithStoredKey_(nonce, hmac);
+        if(hmacResult && typeof hmacResult === 'object' && hmacResult.error === 'super_not_configured'){
+          return json_(hmacResult);
+        }
+        if(hmacResult === true){
+          const token = Utilities.getUuid().replace(/-/g,'');
+          const offId = office || 'dev';
+          setToken_(prop, token, offId, 'superAdmin');
+          const officeName = offs[offId] ? offs[offId].name : (offs.dev?.name || '');
+          return json_({ token, role:'superAdmin', office: offId, officeName, exp: TOKEN_TTL_MS });
+        }
+      }
     }
 
     // 2) 通常ログイン
