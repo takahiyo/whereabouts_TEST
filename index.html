@@ -44,12 +44,6 @@
         <h3>管理パネル</h3><button id="adminClose">閉じる</button>
       </div>
 
-      <div class="admin-row" id="adminOfficeRow">
-        <label for="adminOfficeSel">対象拠点：</label>
-        <select id="adminOfficeSel"></select>
-        <button id="refreshOffices">更新</button>
-        <span class="admin-note">（スーパー管理者は拠点選択可／拠点管理者は自拠点固定）</span>
-      </div>
 
       <div class="admin-grid">
         <div class="admin-box">
@@ -68,21 +62,6 @@
           <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
         </div>
 
-        <div class="admin-box" data-super-only="1">
-          <h4>拠点の追加</h4>
-          <div class="admin-row">
-            <input id="addOfficeId" placeholder="ID（半角英数_-）" />
-            <input id="addOfficeName" placeholder="拠点名" />
-            <input id="addOfficePw" placeholder="パスワード" />
-            <input id="addOfficeAdminPw" placeholder="管理者PW" />
-            <button id="btnAddOffice">追加</button>
-          </div>
-        </div>
-
-        <div class="admin-box" data-super-only="1">
-          <h4>拠点の削除</h4>
-          <div class="admin-row"><button id="btnDeleteOffice" style="background:#fee2e2;border-color:#fecaca;">この拠点を削除</button></div>
-        </div>
 
         <div class="admin-box">
           <h4>拠点パスワードの変更</h4>

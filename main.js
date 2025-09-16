@@ -11,12 +11,10 @@ const SESSION_OFFICE_NAME_KEY = "presence-office-name";
 const board=document.getElementById('board'), toastEl=document.getElementById('toast'), diag=document.getElementById('diag');
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
-const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
-const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel'), refreshOfficesBtn=document.getElementById('refreshOffices');
+const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementByI
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
-const addOfficeId=document.getElementById('addOfficeId'), addOfficeName=document.getElementById('addOfficeName'), addOfficePw=document.getElementById('addOfficePw'), addOfficeAdminPw=document.getElementById('addOfficeAdminPw'), btnAddOffice=document.getElementById('btnAddOffice');
-const btnDeleteOffice=document.getElementById('btnDeleteOffice'), setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
+const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
@@ -30,7 +28,7 @@ const PENDING_ROWS = new Set();
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
 const enc=new TextEncoder();
-function isSuper(){ return CURRENT_ROLE==='superAdmin'; }
+
 function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin'; }
 
 /* ユーティリティ */
@@ -534,26 +532,6 @@ function wireEvents(){
   });
 }
 
-/* 重要操作の再認証（HMAC+Nonce） */
-async function getNonce(){ const r=await apiPost({ action:'getNonce' }); if(!r||!r.nonce||!r.salt) throw new Error('nonce_failed'); return {nonce:r.nonce, salt:r.salt}; }
-function toBase64(buf){
-  const bin=String.fromCharCode(...new Uint8Array(buf));
-  return btoa(bin)
-    .replace(/\+/g,'-')
-    .replace(/\//g,'_')
-    .replace(/=+$/,''); // 末尾パディングを削除
-}
-function hexToBytes(hex){
-  if(hex.length%2!==0) throw new Error('invalid_hex');
-  const bytes=new Uint8Array(hex.length/2);
-  for(let i=0;i<bytes.length;i++){
-    bytes[i]=parseInt(hex.substr(i*2,2),16);
-  }
-  return bytes;
-}
-async function sha256Bytes(str){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); }
-async function hmacSha256(keyBytes,messageBytes){ const key=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,messageBytes); return sig; }
-async function superHmacFlow(title){ try{ const pw=window.prompt(title||'スーパー管理者パスワード'); if(!pw) return null; const {nonce,salt}=await getNonce(); const kBytes=await sha256Bytes(salt+pw); const sig=await hmacSha256(kBytes,hexToBytes(nonce)); return { hmac: toBase64(sig), nonce }; }catch{ toast('追加認証に失敗',false); return null; }}
 
 /* 管理UIイベント */
 btnExport.addEventListener('click', async ()=>{
@@ -575,11 +553,7 @@ btnImport.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const file=csvFile.files&&csvFile.files[0];
   if(!file){ toast('CSVを選択してください',false); return; }
-  let proof=null;
-  if(isSuper()){
-    proof=await superHmacFlow("CSVインポートを実行します。スーパー管理者パスワードを入力してください");
-    if(!proof) return;
-  }
+
   const text=await file.text();
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
@@ -605,7 +579,7 @@ btnImport.addEventListener('click', async ()=>{
   }
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
   const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
-  const r1=await adminSetConfigFor(office,cfgToSet,proof);
+  const r1=await adminSetConfigFor(office,cfgToSet);
   if(!(r1&&r1.ok)){ toast('名簿の設定に失敗',false); return; }
 
   const newCfg=await adminGetConfigFor(office);
@@ -621,7 +595,7 @@ btnImport.addEventListener('click', async ()=>{
     if(!id) continue;
     dataObj[id]={ ext:r.ext||'', status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
   }
-  const r2=await adminSetForChunked(office,dataObj,proof);
+  const r2=await adminSetForChunked(office,dataObj);
   if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
   toast('インポート完了',true);
 });
@@ -630,40 +604,16 @@ btnRenameOffice.addEventListener('click', async ()=>{
   const name=(renameOfficeName.value||'').trim();
   if(!name){ toast('新しい拠点名を入力',false); return; }
   const r=await adminRenameOffice(office,name);
-  if(r&&r.ok){ toast('拠点名を変更しました'); await populateAdminOffices(office); }
+  if(r&&r.ok){ toast('拠点名を変更しました'); }
   else toast('変更に失敗',false);
 });
-btnAddOffice.addEventListener('click', async ()=>{
-  const id=(addOfficeId.value||'').trim();
-  const name=(addOfficeName.value||'').trim();
-  const pw=(addOfficePw.value||'').trim();
-  const apw=(addOfficeAdminPw.value||'').trim();
-  if(!id||!name||!pw||!apw){ toast('すべて入力してください',false); return; }
-  const r=await adminAddOffice(id,name,pw,apw);
-  if(r&&r.ok){ toast('拠点を追加しました'); addOfficeId.value=''; addOfficeName.value=''; addOfficePw.value=''; addOfficeAdminPw.value=''; await populateAdminOffices(id); }
-  else toast('追加に失敗',false);
-});
-btnDeleteOffice.addEventListener('click', async ()=>{
-  if(!isSuper()){ toast('権限がありません',false); return; }
-  const office=adminOfficeSel.value;
-  const officeLabel=adminOfficeSel.options[adminOfficeSel.selectedIndex]?.text||office;
-  const proof=await superHmacFlow(`拠点を削除します。\n対象：${officeLabel}\nスーパー管理者パスワードを入力してください`);
-  if(!proof) return;
-  const r=await adminDeleteOffice(office,proof);
-  if(r&&r.ok){ toast('拠点を削除しました',true); await populateAdminOffices(); }
-  else toast('削除に失敗',false);
-});
+
 btnSetPw.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const pw=(setPw.value||'').trim();
   const apw=(setAdminPw.value||'').trim();
   if(!pw&&!apw){ toast('更新する項目を入力',false); return; }
-  let proof=null;
-  if(isSuper()){
-    proof=await superHmacFlow("拠点パスワードを変更します。スーパー管理者パスワードを入力してください");
-    if(!proof) return;
-  }
-  const r=await adminSetOfficePassword(office,pw,apw,proof);
+  const r=await adminSetOfficePassword(office,pw,apw);
   if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; }
   else toast('更新に失敗',false);
 });
@@ -678,13 +628,9 @@ btnSaveMenus.addEventListener('click', async ()=>{
   const office=selectedOfficeId();
   const cfg=await adminGetConfigFor(office);
   if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
-  let proof=null;
-  if(isSuper()){
-    proof=await superHmacFlow("メニュー設定を保存します。スーパー管理者パスワードを入力してください");
-    if(!proof) return;
-  }
+
   cfg.menus=obj;
-  const r=await adminSetConfigFor(office,cfg,proof);
+  const r=await adminSetConfigFor(office,cfg);
   if(r&&r.ok){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
   else toast('保存に失敗',false);
 });
@@ -735,59 +681,31 @@ async function logout(){
 }
 
 /* 認証UI + 管理UI + マニュアルUI */
-function ensureAuthUI(){
-  const loggedIn = !!SESSION_TOKEN;
-  const showAdmin = loggedIn && (isSuper() || isOfficeAdmin());
-  adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
-  logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
-  manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
-  nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
-  statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
-}
-function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
-function applyRoleToAdminPanel(){
-  adminOfficeRow.style.display = isSuper() ? '' : 'none';
-  document.querySelectorAll('.admin-box[data-super-only="1"]').forEach(el=>{ el.style.display = isSuper() ? '' : 'none'; });
-}
-async function populateAdminOffices(selected){
-        adminOfficeSel.textContent='';
-  if(isSuper()){
-    const res=await adminListOffices();
-    if(!(res&&res.offices)){ toast('拠点一覧の取得に失敗',false); return; }
-    res.offices.forEach(o=>{
-      if(!ID_RE.test(o.id)) return;
-      const opt=document.createElement('option');
-      opt.value=o.id;
-        const name=stripCtl(o.name);
-      opt.textContent=`${name}（${o.id}）`;
-      adminOfficeSel.appendChild(opt);
-    });
-    if(selected && ID_RE.test(selected)) adminOfficeSel.value=selected;
-  } else {
-    if(ID_RE.test(CURRENT_OFFICE_ID)){
-      const opt=document.createElement('option');
-      opt.value=CURRENT_OFFICE_ID;
-        const name=stripCtl(CURRENT_OFFICE_NAME);
-      opt.textContent=`${name}（${CURRENT_OFFICE_ID}）`;
-      adminOfficeSel.appendChild(opt);
-    }
+  function ensureAuthUI(){
+    const loggedIn = !!SESSION_TOKEN;
+    const showAdmin = loggedIn && isOfficeAdmin();
+    adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
+    logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+    manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+    nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
+    statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
   }
-}
-function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
-function applyRoleToManual(){
-  const isAdmin = (isSuper() || isOfficeAdmin());
-  manualUser.style.display = '';
-  manualAdmin.style.display = isAdmin ? '' : 'none';
-}
+  function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
+  function applyRoleToAdminPanel(){ }
+  function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
+  function applyRoleToManual(){
+    const isAdmin = isOfficeAdmin();
+    manualUser.style.display = '';
+    manualAdmin.style.display = isAdmin ? '' : 'none';
+  }
+
 
 /* 管理/マニュアルUIイベント */
 adminBtn.addEventListener('click', async ()=>{
   applyRoleToAdminPanel();
-  await populateAdminOffices();
   showAdminModal(true);
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
-refreshOfficesBtn.addEventListener('click', ()=> populateAdminOffices());
 logoutBtn.addEventListener('click', logout);
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
@@ -795,16 +713,14 @@ manualClose.addEventListener('click', ()=> showManualModal(false));
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal(false); showManualModal(false); closeMenu(); }});
 
 /* Admin API */
-function selectedOfficeId(){ return isSuper()?adminOfficeSel.value:CURRENT_OFFICE_ID; }
-async function adminListOffices(){ return await apiPost({ action:'listOffices', token:SESSION_TOKEN }); }
+function selectedOfficeId(){ return CURRENT_OFFICE_ID; }
 async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminSetConfigFor(office,cfgObj,proof){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
-async function adminSetForChunked(office,dataObjFull,proof){
+async function adminSetConfigFor(office,cfgObj){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; return await apiPost(q); }
+async function adminSetForChunked(office,dataObjFull){
   const entries=Object.entries(dataObjFull||{});
   if(entries.length===0){
     const base={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify({updated:Date.now(),data:{},full:true}) };
-    if(proof){ base.superHmac=proof.hmac; base.nonce=proof.nonce; }
     return await apiPost(base);
   }
   const chunkSize=100; let first=true, ok=true;
@@ -812,16 +728,13 @@ async function adminSetForChunked(office,dataObjFull,proof){
     const chunk=Object.fromEntries(entries.slice(i,i+chunkSize));
     const obj={updated:Date.now(),data:chunk,full:first};
     const q={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify(obj) };
-    if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; }
     const r=await apiPost(q);
     if(!(r&&r.ok)) ok=false; first=false;
   }
   return ok?{ok:true}:{error:'chunk_failed'};
 }
 async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
-async function adminAddOffice(id,name,pw,apw){ return await apiPost({ action:'addOffice', id, name, password:pw, adminPassword:apw, token:SESSION_TOKEN }); }
-async function adminDeleteOffice(office,proof){ const q={ action:'deleteOffice', id:office, token:SESSION_TOKEN }; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
-async function adminSetOfficePassword(office,pw,apw,proof){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; if(proof){ q.superHmac=proof.hmac; q.nonce=proof.nonce; } return await apiPost(q); }
+async function adminSetOfficePassword(office,pw,apw){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; return await apiPost(q); }}
 
 /* CSV（共通） */
 function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
@@ -868,46 +781,19 @@ function ensureAuthUIPublicError(){ setSelectMessage(officeSel,'取得できま�
 document.addEventListener('DOMContentLoaded', async ()=>{
   await refreshPublicOfficeSelect();
 
-  document.getElementById('btnLogin').addEventListener('click', async ()=>{
-    const pw=pwInput.value, office=officeSel.value;
-    if(!office){ loginMsg.textContent="拠点を選択してください"; return; }
-    if(!pw||!pw.trim()){ loginMsg.textContent="パスワードを入力してください"; return; }
-    loginMsg.textContent="認証中…";
+    document.getElementById('btnLogin').addEventListener('click', async ()=>{
+      const pw=pwInput.value, office=officeSel.value;
+      if(!office){ loginMsg.textContent="拠点を選択してください"; return; }
+      if(!pw||!pw.trim()){ loginMsg.textContent="パスワードを入力してください"; return; }
+      loginMsg.textContent="認証中…";
 
-    let superAuthError='';
-    if(!window.crypto?.subtle){ loginMsg.textContent="このブラウザではスーパー管理者ログインが利用できません"; return; }
-
-    // まずスーパー管理者（HMAC）試行
-    try{
-      const {nonce,salt}=await getNonce();
-      const kBytes=await sha256Bytes(salt+pw);
-      const hmac=toBase64(await hmacSha256(kBytes,hexToBytes(nonce)));
-      const resSup=await apiPost({ action:'login', office, hmac, nonce });
-      if(resSup && resSup.token && resSup.role==='superAdmin'){ await afterLogin(resSup); return; }
-      if(resSup?.error==='super_not_configured'){
-        loginMsg.textContent="スーパー管理者パスワードが設定されていないか、誤っています";
-        try{ await getNonce(); }catch{}
-        return;
-      }
-      if(resSup?.error==='unauthorized'){ superAuthError='unauthorized'; }
-    }catch(err){ superAuthError='internal'; loginMsg.textContent="スーパー管理者ログインに失敗しました。通常ログインを試行します"; }
-
-    // 通常ログイン
-    const res=await apiPost({ action:'login', office, password: pw });
-    if(res===null){ loginMsg.textContent="通信エラー"; return; }
-    if(res?.error==='unauthorized'){
-      if(superAuthError){
-        loginMsg.textContent="スーパー管理者パスワードが設定されていないか、誤っています";
-        try{ await getNonce(); }catch{}
-      }else{
-        loginMsg.textContent="拠点またはパスワードが違います";
-      }
-      return;
-    }
-    if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
-    if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
-        await afterLogin(res);
-  });
+      const res=await apiPost({ action:'login', office, password: pw });
+      if(res===null){ loginMsg.textContent="通信エラー"; return; }
+      if(res?.error==='unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
+      if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
+      if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
+      await afterLogin(res);
+    });
 
   async function afterLogin(res){
     SESSION_TOKEN=res.token; sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN);
