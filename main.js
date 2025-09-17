@@ -48,7 +48,7 @@ document.addEventListener('visibilitychange', ()=>{
     resumeConfigWatchOnVisible = false;
   }
 });
-function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin'; }
+function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin' || CURRENT_ROLE==='superAdmin'; }
 
 /* ユーティリティ */
 function toast(msg,ok=true){ toastEl.style.background=ok?'#334155':'#c53030'; toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000); }
@@ -444,8 +444,13 @@ function scheduleRenew(ttlMs){
   tokenRenewTimer = setTimeout(async ()=>{
     const me = await apiPost({ action: 'renew', token: SESSION_TOKEN });
     if(me && me.ok){
+		      const prevRole = CURRENT_ROLE;
       CURRENT_ROLE = me.role || CURRENT_ROLE;
       saveSessionMeta();
+	        if(CURRENT_ROLE !== prevRole){
+        ensureAuthUI();
+        applyRoleToManual();
+      }
       scheduleRenew(Number(me.exp) || TOKEN_DEFAULT_TTL);
     }
   }, delay);
