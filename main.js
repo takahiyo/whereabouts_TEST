@@ -599,7 +599,7 @@ btnImport.addEventListener('click', async ()=>{
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
   const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
   const r1=await adminSetConfigFor(office,cfgToSet);
-  if(!(r1&&r1.ok)){ toast('名簿の設定に失敗',false); return; }
+  if(!r1 || r1.error){ toast('名簿の設定に失敗',false); return; }
 
   const newCfg=await adminGetConfigFor(office);
   if(!(newCfg&&newCfg.groups)){ toast('名簿再取得に失敗',false); return; }
@@ -650,7 +650,7 @@ btnSaveMenus.addEventListener('click', async ()=>{
 
   cfg.menus=obj;
   const r=await adminSetConfigFor(office,cfg);
-  if(r&&r.ok){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
+  if(r && !r.error){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
   else toast('保存に失敗',false);
 });
 
