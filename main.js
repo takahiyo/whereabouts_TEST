@@ -703,7 +703,7 @@ async function logout(){
     adminSelectedOfficeId='';
   if(adminOfficeSel){ adminOfficeSel.textContent=''; adminOfficeSel.disabled=false; }
   if(adminOfficeRow){ adminOfficeRow.style.display='none'; }
-  titleBtn.textContent='在席確認表【開発用】';
+  titleBtn.textContent='在席確認表【開発用】【開発用】';
   ensureAuthUI();
   try{ await refreshPublicOfficeSelect(); }
   catch{ ensureAuthUIPublicError(); }
@@ -949,7 +949,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
 	    adminSelectedOfficeId='';
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
-    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】【開発用】`:'在席確認表【開発用】【開発用】');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
 
     // 役割確定（renewで上書き）
@@ -983,7 +983,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const existing=sessionStorage.getItem(SESSION_KEY);
   if(existing){
     SESSION_TOKEN=existing; loginEl.style.display='none';
-    loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】【開発用】`:'在席確認表【開発用】【開発用】');
     ensureAuthUI(); applyRoleToManual();
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });

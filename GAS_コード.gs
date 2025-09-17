@@ -1,4 +1,4 @@
-/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定
+/** 在席確認表【開発用】 API（Apps Script）CAS対応・拠点別メニュー設定
  *  - 認証：ユーザー / 拠点管理者
  *  - データ：ScriptProperties(JSON) に保存（既存データ互換）
  *  - キャッシュ：CacheService（短期）
