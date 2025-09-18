@@ -19,6 +19,7 @@ const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
 const OFFICES_KEY         = KEY_PREFIX + 'OFFICES_JSON';     // 拠点一覧（id→{name,password,adminPassword}）
+const SUPER_ADMIN_OFFICES_KEY = KEY_PREFIX + 'SUPER_ADMIN_OFFICES';
 
 const TOKEN_PREFIX         = 'tok_';
 const TOKEN_OFFICE_PREFIX  = 'toff_';
@@ -29,6 +30,35 @@ function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
 
+function getSuperAdminOfficeIds_(prop){
+  try{
+    const raw = (prop || PropertiesService.getScriptProperties()).getProperty(SUPER_ADMIN_OFFICES_KEY);
+    if(!raw) return [];
+    if(String(raw).trim().length === 0) return [];
+    let parsed;
+    try{
+      parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        return parsed.map(v => String(v || '').trim()).filter(Boolean);
+      }
+    }catch(_){ /* fallthrough */ }
+    return String(raw).split(',').map(v => v.trim()).filter(Boolean);
+  }catch(_){ return []; }
+}
+
+function officeIsSuperAdmin_(office, offs, prop){
+  if(!office) return false;
+  const propSvc = prop || PropertiesService.getScriptProperties();
+  const ids = getSuperAdminOfficeIds_(propSvc);
+  if(ids && ids.indexOf(office) >= 0) return true;
+  const offices = offs || getOffices_();
+  const info = offices && offices[office];
+  if(!info) return false;
+  const flag = info.superAdmin;
+  if(typeof flag === 'string'){ return flag === 'true' || flag === '1'; }
+  return Boolean(flag);
+}
+
 
 
 /* ===== データ保存キー ===== */
@@ -36,8 +66,8 @@ function dataKeyForOffice_(office){ return `presence-board-${office}`; }
 function configKeyForOffice_(office){ return `presence-config-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
-const DEFAULT_OFFICES = {
-  admin: { name: 'Administrator', adminPassword: '任意のPW' },
+const DEFAULT_OFFICES = {␊
+  admin: { name: 'Administrator', adminPassword: '任意のPW', superAdmin: true },
   dev:  { name: '開発用', password: 'dev',  adminPassword: 'dev'  },
   prod: { name: '稼働用', password: 'prod', adminPassword: 'prod' }
 };
@@ -192,8 +222,8 @@ function doPost(e){
     const pw = p_(e,'password','');
     if(!pw) return json_({ error:'unauthorized' });
     let role = '';
-    if(pw === String(offs[office].adminPassword || '')){
-      role = (office === 'admin') ? 'superAdmin' : 'officeAdmin';
+    if(pw === String(offs[office].adminPassword || '')){␊
+      role = officeIsSuperAdmin_(office, offs, prop) ? 'superAdmin' : 'officeAdmin';
     }else if(pw === String(offs[office].password || '')) role = 'user';
     else return json_({ error:'unauthorized' });
     const token = Utilities.getUuid().replace(/-/g,'');
