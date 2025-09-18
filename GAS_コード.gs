@@ -66,7 +66,7 @@ function dataKeyForOffice_(office){ return `presence-board-${office}`; }
 function configKeyForOffice_(office){ return `presence-config-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
-const DEFAULT_OFFICES = {␊
+const DEFAULT_OFFICES = {
   admin: { name: 'Administrator', adminPassword: '任意のPW', superAdmin: true },
   dev:  { name: '開発用', password: 'dev',  adminPassword: 'dev'  },
   prod: { name: '稼働用', password: 'prod', adminPassword: 'prod' }
@@ -222,7 +222,7 @@ function doPost(e){
     const pw = p_(e,'password','');
     if(!pw) return json_({ error:'unauthorized' });
     let role = '';
-    if(pw === String(offs[office].adminPassword || '')){␊
+    if(pw === String(offs[office].adminPassword || '')){
       role = officeIsSuperAdmin_(office, offs, prop) ? 'superAdmin' : 'officeAdmin';
     }else if(pw === String(offs[office].password || '')) role = 'user';
     else return json_({ error:'unauthorized' });
