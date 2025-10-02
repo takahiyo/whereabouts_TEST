@@ -419,9 +419,23 @@ async function fastFetchDataOnce(){
 }
 function startRemoteSync(immediate){
   if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer = null; }
-  if(immediate){ fastFetchDataOnce().then(r => { if(r && r.data) applyState(r.data); }).catch(()=>{}); }
+  if(immediate){
+    fastFetchDataOnce().then(async r => {
+      if(r?.error==='unauthorized'){
+        if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+        await logout();
+        return;
+      }
+      if(r && r.data) applyState(r.data);
+    }).catch(()=>{});
+  }
   remotePullTimer = setInterval(async ()=>{
     const r = await apiPost({ action:'get', token: SESSION_TOKEN });
+	      if(r?.error==='unauthorized'){
+      if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+      await logout();
+      return;
+    }
     if(r && r.data) applyState(r.data);
   }, REMOTE_POLL_MS);
 }
@@ -429,6 +443,11 @@ function startConfigWatch(){
   if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
   configWatchTimer = setInterval(async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
+	      if(cfg?.error==='unauthorized'){
+      if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
+      await logout();
+      return;
+    }
     if(cfg && !cfg.error){
       const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
       if(updated && updated !== CONFIG_UPDATED){
@@ -966,16 +985,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     const cfgP=(async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
+		      if(cfg?.error==='unauthorized'){
+        await logout();
+        return;
+      }
       if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); }
       else { setupMenus(null); }
     })();
-    const dataP=fastFetchDataOnce().catch(()=>null);
+    const dataP=fastFetchDataOnce().then(async data=>{
+      if(data?.error==='unauthorized'){
+        await logout();
+        return null;
+      }
+      return data;
+    }).catch(()=>null);
 
     await cfgP;
+	      if(!SESSION_TOKEN) return;
     render(); loadLocal();
-    const data=await dataP; if(data&&data.data) applyState(data.data);
-
+    if(!SESSION_TOKEN) return;
+    const data=await dataP; if(!SESSION_TOKEN) return; if(data&&data.data) applyState(data.data);
+    if(!SESSION_TOKEN) return;
+	  
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
+	      if(!SESSION_TOKEN) return;
     startRemoteSync(true); startConfigWatch();
   }
 
@@ -987,9 +1020,20 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     ensureAuthUI(); applyRoleToManual();
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
+		      if(cfg?.error==='unauthorized'){
+        await logout();
+        return;
+      }
       if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); render(); }
-      const d=await fastFetchDataOnce(); if(d&&d.data) applyState(d.data);
-      startRemoteSync(true); startConfigWatch();
+      if(!SESSION_TOKEN) return;
+      const d=await fastFetchDataOnce();
+      if(d?.error==='unauthorized'){
+        await logout();
+        return;
+      }
+      if(d&&d.data) applyState(d.data);
+      if(!SESSION_TOKEN) return;
+		startRemoteSync(true); startConfigWatch();
     })();
   }else{
     loginEl.style.display='flex';
