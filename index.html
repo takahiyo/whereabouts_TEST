@@ -49,6 +49,30 @@
         <select id="adminOfficeSel"></select>
       </div>
 
+                <div id="adminSuperSection" class="admin-grid admin-super" style="display:none;">
+        <div class="admin-box">
+          <h4>拠点の追加</h4>
+          <div class="admin-row">
+            <input id="createOfficeId" placeholder="拠点ID" />
+            <input id="createOfficeName" placeholder="名称" />
+          </div>
+          <div class="admin-row">
+            <input id="createOfficePw" type="password" placeholder="初期パスワード" />
+            <input id="createOfficeAdminPw" type="password" placeholder="管理者パスワード" />
+            <button id="btnCreateOffice">追加</button>
+          </div>
+        </div>
+
+        <div class="admin-box">
+          <h4>拠点の削除</h4>
+          <div class="admin-row">
+            <select id="deleteOfficeSel"></select>
+            <button id="btnDeleteOffice">削除</button>
+          </div>
+          <div class="admin-note">削除すると元に戻せません</div>
+        </div>
+      </div>
+
       <div class="admin-grid">
         <div class="admin-box">
           <h4>CSVエクスポート</h4>
