@@ -15,6 +15,7 @@
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
+const OFFICE_ID_RE   = /^[0-9A-Za-z_-]+$/;
 
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
@@ -107,9 +108,10 @@ function roleIsOfficeAdmin_(prop, token){
   const role = getRoleByToken_(prop, token);
   return role === 'officeAdmin' || role === 'superAdmin';
 }
-function canAdminOffice_(prop, token, office){
+function canAdminOffice_(prop, token, office, opts){
   const role = getRoleByToken_(prop, token);
   if(role === 'superAdmin') return true;
+  if(opts && opts.requireSuperAdmin) return false;
   const own = getOfficeByToken_(prop, token);
   return role === 'officeAdmin' && own === office;
 }
@@ -444,6 +446,56 @@ function doPost(e){
     } finally{
       try{ lock.releaseLock(); }catch(_){}
     }
+  }
+
+  if(action === 'createOffice'){
+    if(!canAdminOffice_(prop, token, '', { requireSuperAdmin: true })) return json_({ error:'forbidden' });
+    const id = p_(e,'id','').trim();
+    const name = p_(e,'name','').trim();
+    const password = p_(e,'password','');
+    const adminPassword = p_(e,'adminPassword','');
+    if(!id || !name || !password || !adminPassword) return json_({ error:'bad_request' });
+    if(!OFFICE_ID_RE.test(id)) return json_({ error:'bad_request' });
+    const offs = getOffices_();
+    if(offs[id]) return json_({ error:'duplicate' });
+    offs[id] = { name, password: String(password), adminPassword: String(adminPassword) };
+    setOffices_(offs);
+    try{ cache.remove(KEY_PREFIX + 'data:' + id); }catch(_){ }
+    try{ cache.remove(KEY_PREFIX + 'cfg:' + id); }catch(_){ }
+    try{ cache.remove(KEY_PREFIX + 'cfgpush:' + id); }catch(_){ }
+    return json_({ ok:true, office:{ id, name } });
+  }
+
+  if(action === 'deleteOffice'){
+    if(!canAdminOffice_(prop, token, '', { requireSuperAdmin: true })) return json_({ error:'forbidden' });
+    const id = p_(e,'id','').trim();
+    if(!id) return json_({ error:'bad_request' });
+    const offs = getOffices_();
+    if(!offs[id]) return json_({ error:'not_found' });
+    delete offs[id];
+    setOffices_(offs);
+
+    const dataKey = dataKeyForOffice_(id);
+    const configKey = configKeyForOffice_(id);
+    try{ prop.deleteProperty(dataKey); }catch(_){ }
+    try{ prop.deleteProperty(configKey); }catch(_){ }
+    try{ cache.remove(KEY_PREFIX + 'data:' + id); }catch(_){ }
+    try{ cache.remove(KEY_PREFIX + 'cfg:' + id); }catch(_){ }
+    try{ cache.remove(KEY_PREFIX + 'cfgpush:' + id); }catch(_){ }
+
+    const superIds = getSuperAdminOfficeIds_(prop);
+    if(Array.isArray(superIds)){
+      const filtered = superIds.filter(v => v && v !== id);
+      if(filtered.length !== superIds.length){
+        if(filtered.length){
+          prop.setProperty(SUPER_ADMIN_OFFICES_KEY, JSON.stringify(filtered));
+        }else{
+          try{ prop.deleteProperty(SUPER_ADMIN_OFFICES_KEY); }catch(_){ }
+        }
+      }
+    }
+
+    return json_({ ok:true });
   }
 
   if(action === 'renameOffice'){
