@@ -4,7 +4,7 @@
 // ・レスポンスは no-store。login/renewの role/office/officeName をそのまま転送
 export default {
   async fetch(req, env, ctx) {
-    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbypH3JEOM2t2b20GEtQyeEk9DgXAvvQzWVoletx5cfE-_OdYpfePVvNFWZ3jSLFa060/exec";
+    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbz8GWzqKI_W8jVAbL-KaF2C0ZgBT-5HDT3k7oFgilBzag1JQpuRifpiktAugKYgUQA/exec";
     const origin = req.headers.get('origin') || '';
     // CORS 許可元
     const ALLOW_ORIGINS = new Set([
@@ -86,3 +86,4 @@ export default {
     });
   }
 };
+
