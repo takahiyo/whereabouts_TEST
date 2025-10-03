@@ -20,7 +20,7 @@ const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=d
 const adminSuperSection=document.getElementById('adminSuperSection');
 const createOfficeId=document.getElementById('createOfficeId'), createOfficeName=document.getElementById('createOfficeName'), createOfficePw=document.getElementById('createOfficePw'), createOfficeAdminPw=document.getElementById('createOfficeAdminPw'), btnCreateOffice=document.getElementById('btnCreateOffice');
 const deleteOfficeSel=document.getElementById('deleteOfficeSel'), btnDeleteOffice=document.getElementById('btnDeleteOffice');
-const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
+const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin'), manualSuper=document.getElementById('manualSuper');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 
 /* 状態 */
@@ -964,9 +964,11 @@ async function logout(){
 }
   function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
   function applyRoleToManual(){
-    const isAdmin = isOfficeAdmin();
     manualUser.style.display = '';
-    manualAdmin.style.display = isAdmin ? '' : 'none';
+    manualAdmin.style.display = CURRENT_ROLE==='officeAdmin' ? '' : 'none';
+    if(manualSuper){
+      manualSuper.style.display = CURRENT_ROLE==='superAdmin' ? '' : 'none';
+    }
   }
 
 
