@@ -449,43 +449,55 @@ function doPost(e){
   }
 
   if(action === 'createOffice'){
-    if(!canAdminOffice_(prop, token, '', { requireSuperAdmin: true })) return json_({ error:'forbidden' });
-    const id = p_(e,'id','').trim();
+    if(getRoleByToken_(prop, token) !== 'superAdmin') return json_({ error:'forbidden' });
+    const rawId = p_(e,'id','');
+    const id = normalizeOfficeId_(rawId);
     const name = p_(e,'name','').trim();
     const password = p_(e,'password','');
     const adminPassword = p_(e,'adminPassword','');
     if(!id || !name || !password || !adminPassword) return json_({ error:'bad_request' });
     if(!OFFICE_ID_RE.test(id)) return json_({ error:'bad_request' });
     const offs = getOffices_();
-    if(offs[id]) return json_({ error:'duplicate' });
+    const conflictKey = Object.keys(offs || {}).find(k => normalizeOfficeId_(k) === id);
+    if(conflictKey) return json_({ error:'duplicate' });
     offs[id] = { name, password: String(password), adminPassword: String(adminPassword) };
     setOffices_(offs);
-    try{ cache.remove(KEY_PREFIX + 'data:' + id); }catch(_){ }
-    try{ cache.remove(KEY_PREFIX + 'cfg:' + id); }catch(_){ }
-    try{ cache.remove(KEY_PREFIX + 'cfgpush:' + id); }catch(_){ }
-    return json_({ ok:true, office:{ id, name } });
+    try{ cache.removeAll([
+      KEY_PREFIX + 'data:' + id,
+      KEY_PREFIX + 'cfg:' + id,
+      KEY_PREFIX + 'cfgpush:' + id,
+      KEY_PREFIX + 'offices',
+      KEY_PREFIX + 'publicOffices'
+    ]); }catch(_){ }
+    return json_({ ok:true });
   }
 
   if(action === 'deleteOffice'){
-    if(!canAdminOffice_(prop, token, '', { requireSuperAdmin: true })) return json_({ error:'forbidden' });
-    const id = p_(e,'id','').trim();
+    if(getRoleByToken_(prop, token) !== 'superAdmin') return json_({ error:'forbidden' });
+    const rawId = p_(e,'id','');
+    const id = normalizeOfficeId_(rawId);
     if(!id) return json_({ error:'bad_request' });
     const offs = getOffices_();
-    if(!offs[id]) return json_({ error:'not_found' });
-    delete offs[id];
+    const actualId = Object.keys(offs || {}).find(k => normalizeOfficeId_(k) === id);
+    if(!actualId) return json_({ error:'not_found' });
+    delete offs[actualId];
     setOffices_(offs);
 
-    const dataKey = dataKeyForOffice_(id);
-    const configKey = configKeyForOffice_(id);
+    const dataKey = dataKeyForOffice_(actualId);
+    const configKey = configKeyForOffice_(actualId);
     try{ prop.deleteProperty(dataKey); }catch(_){ }
     try{ prop.deleteProperty(configKey); }catch(_){ }
-    try{ cache.remove(KEY_PREFIX + 'data:' + id); }catch(_){ }
-    try{ cache.remove(KEY_PREFIX + 'cfg:' + id); }catch(_){ }
-    try{ cache.remove(KEY_PREFIX + 'cfgpush:' + id); }catch(_){ }
+    try{ cache.removeAll([
+      KEY_PREFIX + 'data:' + actualId,
+      KEY_PREFIX + 'cfg:' + actualId,
+      KEY_PREFIX + 'cfgpush:' + actualId,
+      KEY_PREFIX + 'offices',
+      KEY_PREFIX + 'publicOffices'
+    ]); }catch(_){ }
 
     const superIds = getSuperAdminOfficeIds_(prop);
     if(Array.isArray(superIds)){
-      const filtered = superIds.filter(v => v && v !== id);
+      const filtered = superIds.filter(v => v && normalizeOfficeId_(v) !== id);
       if(filtered.length !== superIds.length){
         if(filtered.length){
           prop.setProperty(SUPER_ADMIN_OFFICES_KEY, JSON.stringify(filtered));
@@ -553,3 +565,4 @@ function doGet(e){
   }
   return ContentService.createTextOutput('unsupported');
 }
+
