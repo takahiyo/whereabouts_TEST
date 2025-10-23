@@ -9,6 +9,7 @@ const SESSION_OFFICE_NAME_KEY = "presence-office-name";
 
 /* 要素 */
 const board=document.getElementById('board'), toastEl=document.getElementById('toast'), diag=document.getElementById('diag');
+const noticeArea=document.getElementById('noticeArea');
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
 const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
@@ -16,6 +17,7 @@ const btnExport=document.getElementById('btnExport'), csvFile=document.getElemen
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
+const adminNoticeText=document.getElementById('noticeText'), btnLoadNotice=document.getElementById('btnLoadNotice'), btnSaveNotice=document.getElementById('btnSaveNotice');
 const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel');
 const adminSuperSection=document.getElementById('adminSuperSection');
 const createOfficeId=document.getElementById('createOfficeId'), createOfficeName=document.getElementById('createOfficeName'), createOfficePw=document.getElementById('createOfficePw'), createOfficeAdminPw=document.getElementById('createOfficeAdminPw'), btnCreateOffice=document.getElementById('btnCreateOffice');
@@ -25,6 +27,7 @@ const nameFilter=document.getElementById('nameFilter'), statusFilter=document.ge
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
+let CURRENT_NOTICE={ message:'', links:[] };
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false;
 let storeKeyBase="presence-board-v4";
@@ -70,6 +73,7 @@ function sanitizeText(s){
 
   return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function isSafeHttpUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
 const ID_RE=/^[0-9A-Za-z_-]+$/;
 
 function el(tag,attrs={},children=[]){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k==='class') e.className=v; else if(k==='text') e.textContent=String(v); else e.setAttribute(k,String(v)); } (children||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c)); return e; }
@@ -418,6 +422,130 @@ function normalizeConfigClient(cfg){
     };
   });
 }
+function normalizeNoticeClient(cfg){
+  const raw = (cfg && (cfg.notice != null ? cfg.notice : cfg.noticeText));
+  const result = { message: '', links: [] };
+  if(raw == null){
+    return result;
+  }
+  if(typeof raw === 'string'){
+    result.message = raw.replace(/\r\n?/g,'\n');
+    return result;
+  }
+  if(typeof raw !== 'object'){
+    return result;
+  }
+  if(raw.message != null){
+    result.message = String(raw.message);
+  }else if(raw.text != null){
+    result.message = String(raw.text);
+  }
+  result.message = result.message.replace(/\r\n?/g,'\n');
+  if(Array.isArray(raw.links)){
+    result.links = raw.links.map(link => {
+      if(!link) return null;
+      if(typeof link === 'string'){
+        const url = link.trim();
+        if(!url || !isSafeHttpUrl(url)) return null;
+        return { url, label: url };
+      }
+      const url = String(link.url || '').trim();
+      if(!url || !isSafeHttpUrl(url)) return null;
+      const labelRaw = link.label != null ? String(link.label) : '';
+      const label = labelRaw.trim() || url;
+      return { url, label };
+    }).filter(Boolean);
+  }
+  return result;
+}
+function noticesAreEqual(a,b){
+  if(a === b) return true;
+  if(!a || !b) return false;
+  const msgA = (a.message || '');
+  const msgB = (b.message || '');
+  if(msgA !== msgB) return false;
+  const linksA = Array.isArray(a.links) ? a.links : [];
+  const linksB = Array.isArray(b.links) ? b.links : [];
+  if(linksA.length !== linksB.length) return false;
+  for(let i=0;i<linksA.length;i++){
+    const la = linksA[i] || {};
+    const lb = linksB[i] || {};
+    if((la.url || '') !== (lb.url || '')) return false;
+    if((la.label || '') !== (lb.label || '')) return false;
+  }
+  return true;
+}
+function updateNoticeArea(notice = CURRENT_NOTICE){
+  if(!noticeArea) return;
+  const message = (notice && typeof notice.message === 'string') ? notice.message : '';
+  const links = Array.isArray(notice?.links) ? notice.links.filter(l => l && l.url) : [];
+  const trimmedMessage = message.replace(/\r\n?/g,'\n');
+  const hasMessage = trimmedMessage.trim().length > 0;
+  const hasLinks = links.length > 0;
+  noticeArea.replaceChildren();
+  if(!hasMessage && !hasLinks){
+    noticeArea.hidden = true;
+    noticeArea.setAttribute('aria-hidden','true');
+    return;
+  }
+  noticeArea.hidden = false;
+  noticeArea.removeAttribute('aria-hidden');
+  if(hasMessage){
+    const lines = trimmedMessage.split('\n');
+    const urlRe = /https?:\/\/[^\s]+/g;
+    lines.forEach(line => {
+      const p = document.createElement('p');
+      p.className = 'notice-line';
+      if(line === ''){
+        p.appendChild(document.createElement('br'));
+      }else{
+        let lastIndex = 0;
+        urlRe.lastIndex = 0;
+        let match;
+        while((match = urlRe.exec(line)) !== null){
+          if(match.index > lastIndex){
+            p.appendChild(document.createTextNode(line.slice(lastIndex, match.index)));
+          }
+          const url = match[0];
+          if(isSafeHttpUrl(url)){
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = url;
+            p.appendChild(a);
+          }else{
+            p.appendChild(document.createTextNode(url));
+          }
+          lastIndex = match.index + url.length;
+        }
+        if(lastIndex < line.length){
+          p.appendChild(document.createTextNode(line.slice(lastIndex)));
+        }
+      }
+      noticeArea.appendChild(p);
+    });
+  }
+  if(hasLinks){
+    const list = document.createElement('ul');
+    list.className = 'notice-links';
+    links.forEach(link => {
+      const li = document.createElement('li');
+      if(isSafeHttpUrl(link.url)){
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = link.label || link.url;
+        li.appendChild(a);
+      }else{
+        li.appendChild(document.createTextNode(link.label || link.url));
+      }
+      list.appendChild(li);
+    });
+    noticeArea.appendChild(list);
+  }
+}
 async function fastFetchDataOnce(){
   return await apiPost({ action: 'get', token: SESSION_TOKEN, nocache: '1' });
 }
@@ -453,6 +581,11 @@ function startConfigWatch(){
       return;
     }
     if(cfg && !cfg.error){
+		      const nextNotice = normalizeNoticeClient(cfg);
+      if(!noticesAreEqual(nextNotice, CURRENT_NOTICE)){
+        CURRENT_NOTICE = nextNotice;
+        updateNoticeArea();
+      }
       const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
       if(updated && updated !== CONFIG_UPDATED){
         GROUPS = normalizeConfigClient(cfg);
@@ -628,7 +761,14 @@ btnImport.addEventListener('click', async ()=>{
     g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined});
   }
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
-  const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
+  const version = Number(cfg?.version || 0);
+  const cfgToSet={
+    version: version>=3?version:3,
+    updated:Date.now(),
+    groups,
+    menus: (cfg && cfg.menus) ? cfg.menus : (MENUS||undefined),
+    notice: cfg && cfg.notice ? cfg.notice : undefined
+  };
   const r1=await adminSetConfigFor(office,cfgToSet);
   if(!r1 || r1.error){ toast('名簿の設定に失敗',false); return; }
 
@@ -756,6 +896,51 @@ btnSaveMenus.addEventListener('click', async ()=>{
   if(r && !r.error){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
   else toast('保存に失敗',false);
 });
+if(btnLoadNotice){
+  btnLoadNotice.addEventListener('click', async ()=>{
+    const office=selectedOfficeId(); if(!office) return;
+    try{
+      const cfg=await adminGetConfigFor(office);
+      if(!cfg || cfg.error){ toast('周知文言の取得に失敗しました',false); return; }
+      const notice=normalizeNoticeClient(cfg);
+      if(adminNoticeText){ adminNoticeText.value = notice.message || ''; }
+      toast('現在の文言を読み込みました');
+    }catch(err){
+      console.error('loadNotice failed',err);
+      toast('周知文言の取得に失敗しました',false);
+    }
+  });
+}
+if(btnSaveNotice){
+  btnSaveNotice.addEventListener('click', async ()=>{
+    const office=selectedOfficeId(); if(!office) return;
+    if(!isOfficeAdmin()){ toast('権限がありません',false); return; }
+    btnSaveNotice.disabled = true;
+    try{
+      const cfg=await adminGetConfigFor(office);
+      if(!(cfg && cfg.groups)){ toast('周知文言の取得に失敗しました',false); return; }
+      const msg = (adminNoticeText?.value || '').replace(/\r\n?/g,'\n');
+      if(!cfg.notice || typeof cfg.notice !== 'object') cfg.notice = {};
+      cfg.notice.message = msg;
+      const res=await adminSetConfigFor(office,cfg);
+      if(res && !res.error){
+        toast('周知メッセージを保存しました');
+        if(office === CURRENT_OFFICE_ID){
+          const nextNotice = normalizeNoticeClient(res);
+          CURRENT_NOTICE = nextNotice;
+          updateNoticeArea();
+        }
+      }else{
+        toast('保存に失敗しました',false);
+      }
+    }catch(err){
+      console.error('saveNotice failed',err);
+      toast('保存に失敗しました',false);
+    }finally{
+      btnSaveNotice.disabled = false;
+    }
+  });
+}
 
 /* CSVパーサ */
 function parseCSV(text){
@@ -808,6 +993,9 @@ async function logout(){
   if(createOfficeAdminPw){ createOfficeAdminPw.value=''; }
   adminOfficeListCache=[];
   adminDeleteSelectedOfficeId='';
+	  if(adminNoticeText){ adminNoticeText.value=''; }
+  CURRENT_NOTICE = { message:'', links:[] };
+  updateNoticeArea();
   titleBtn.textContent='在席確認表【開発用】【開発用】';
   ensureAuthUI();
   try{ await refreshPublicOfficeSelect(); }
@@ -1148,8 +1336,19 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         await logout();
         return;
       }
-      if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); }
-      else { setupMenus(null); }
+      if(cfg&&!cfg.error){
+        GROUPS=normalizeConfigClient(cfg);
+        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
+        setupMenus(cfg.menus||null);
+        const nextNotice = normalizeNoticeClient(cfg);
+        CURRENT_NOTICE = nextNotice;
+        updateNoticeArea();
+      }
+      else {
+        setupMenus(null);
+        CURRENT_NOTICE = { message:'', links:[] };
+        updateNoticeArea();
+      }
     })();
     const dataP=fastFetchDataOnce().then(async data=>{
       if(data?.error==='unauthorized'){
@@ -1183,7 +1382,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         await logout();
         return;
       }
-      if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); render(); }
+      if(cfg&&!cfg.error){
+        GROUPS=normalizeConfigClient(cfg);
+        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
+        setupMenus(cfg.menus||null);
+        const nextNotice = normalizeNoticeClient(cfg);
+        CURRENT_NOTICE = nextNotice;
+        updateNoticeArea();
+        render();
+      }
       if(!SESSION_TOKEN) return;
       const d=await fastFetchDataOnce();
       if(d?.error==='unauthorized'){
