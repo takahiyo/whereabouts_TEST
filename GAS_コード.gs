@@ -176,6 +176,41 @@ function normalizeNotice_(notice){
   }
   out.message = out.message.replace(/\r\n?/g, '\n');
   return out;
+}
+function defaultConfig_(){
+  const notice = normalizeNotice_({});
+  return { version: 3, updated: 0, groups: [], menus: defaultMenus_(), notice, noticeText: notice.message };
+}
+function normalizeConfig_(cfg){
+  if(!cfg || typeof cfg !== 'object') return defaultConfig_();
+  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
+  const version = Number(cfg.version || 0);
+  const out = {
+    version: version >= 3 ? version : 3,
+    updated: Number(cfg.updated || 0),
+    groups: groups.map(g=>{
+      const members = Array.isArray(g.members) ? g.members : [];
+      return {
+        title: String(g.title || ''),
+        members: members.map(m=>({
+          id:   String(m.id || '').trim(),
+          name: String(m.name || ''),
+          ext:  String(m.ext || '')
+        })).filter(m=>m.id || m.name)
+      };
+    }),
+    menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_(),
+    notice: normalizeNotice_(cfg.notice != null ? cfg.notice : cfg.noticeText)
+  };
+  out.noticeText = out.notice.message;
+  return out;
+}
+        }).filter(Boolean);
+      }
+    }
+  }
+  out.message = out.message.replace(/\r\n?/g, '\n');
+  return out;
 function adminSetConfigFor(office, cfg){
   const prop = PropertiesService.getScriptProperties();
   const parsed = normalizeConfig_(cfg);
@@ -599,6 +634,7 @@ function doGet(e){
   }
   return ContentService.createTextOutput('unsupported');
 }
+
 
 
 
