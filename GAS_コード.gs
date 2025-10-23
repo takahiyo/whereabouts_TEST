@@ -146,14 +146,46 @@ function defaultMenus_(){
     noteOptions: ["直出","直帰","直出・直帰"]
   };
 }
+function normalizeNotice_(notice){
+  const out = { message: '', links: [] };
+  if(notice){
+    if(typeof notice === 'string'){
+      out.message = String(notice);
+    }else if(typeof notice === 'object'){
+      if(notice.message != null){
+        out.message = String(notice.message);
+      }else if(notice.text != null){
+        out.message = String(notice.text);
+      }
+      if(Array.isArray(notice.links)){
+        out.links = notice.links.map(link => {
+          if(!link) return null;
+          if(typeof link === 'string'){
+            const url = String(link).trim();
+            if(!url) return null;
+            return { url, label: url };
+          }
+          const url = String(link.url || '').trim();
+          if(!url) return null;
+          const labelRaw = link.label != null ? String(link.label) : '';
+          const label = labelRaw.trim() || url;
+          return { url, label };
+        }).filter(Boolean);
+      }
+    }
+  }
+  out.message = out.message.replace(/\r\n?/g, '\n');
+  return out;
+}
 function defaultConfig_(){
-  return { version: 2, updated: 0, groups: [], menus: defaultMenus_() };
+  return { version: 3, updated: 0, groups: [], menus: defaultMenus_(), notice: normalizeNotice_({}) };
 }
 function normalizeConfig_(cfg){
   if(!cfg || typeof cfg !== 'object') return defaultConfig_();
   const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
+  const version = Number(cfg.version || 0);
   const out = {
-    version: 2,
+    version: version >= 3 ? version : 3,
     updated: Number(cfg.updated || 0),
     groups: groups.map(g=>{
       const members = Array.isArray(g.members) ? g.members : [];
@@ -166,7 +198,8 @@ function normalizeConfig_(cfg){
         })).filter(m=>m.id || m.name)
       };
     }),
-    menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_()
+    menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_(),
+    notice: normalizeNotice_(cfg.notice != null ? cfg.notice : cfg.noticeText)
   };
   return out;
 }
@@ -565,4 +598,5 @@ function doGet(e){
   }
   return ContentService.createTextOutput('unsupported');
 }
+
 
