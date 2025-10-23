@@ -176,13 +176,14 @@ function normalizeNotice_(notice){
   }
   out.message = out.message.replace(/\r\n?/g, '\n');
   return out;
-}
-function defaultConfig_(){
-  return { version: 3, updated: 0, groups: [], menus: defaultMenus_(), notice: normalizeNotice_({}) };
-}
-function normalizeConfig_(cfg){
-  if(!cfg || typeof cfg !== 'object') return defaultConfig_();
-  const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
+function adminSetConfigFor(office, cfg){
+  const prop = PropertiesService.getScriptProperties();
+  const parsed = normalizeConfig_(cfg);
+  parsed.updated = now_();
+  parsed.noticeText = parsed.notice.message;
+  const CONFIG_KEY = configKeyForOffice_(office);
+  const out = JSON.stringify(parsed);
+  prop.setProperty(CONFIG_KEY, out);
   const version = Number(cfg.version || 0);
   const out = {
     version: version >= 3 ? version : 3,
@@ -598,5 +599,6 @@ function doGet(e){
   }
   return ContentService.createTextOutput('unsupported');
 }
+
 
 
