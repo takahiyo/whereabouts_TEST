@@ -423,11 +423,11 @@ function normalizeConfigClient(cfg){
   });
 }
 function normalizeNoticeClient(cfg){
-  const raw = (cfg && (cfg.notice != null ? cfg.notice : cfg.noticeText));
   const result = { message: '', links: [] };
-  if(raw == null){
+  if(!cfg){
     return result;
   }
+	  const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
   if(typeof raw === 'string'){
     result.message = raw.replace(/\r\n?/g,'\n');
     return result;
@@ -455,6 +455,10 @@ function normalizeNoticeClient(cfg){
       const label = labelRaw.trim() || url;
       return { url, label };
     }).filter(Boolean);
+  }
+	  const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
+  if((result.message || '').trim().length === 0 && fallbackText.trim().length > 0){
+    result.message = fallbackText;
   }
   return result;
 }
