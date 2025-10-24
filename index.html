@@ -38,8 +38,6 @@
   </header>
   <div id="noticeArea" class="notice-area" role="region" aria-live="polite" aria-label="周知" hidden></div>
 
-        <div id="noticeArea" class="notice-area" role="region" aria-live="polite" aria-label="周知" hidden></div>
-
   <!-- 管理モーダル -->
   <div id="adminModal" class="admin-modal" aria-modal="true" role="dialog">
     <div class="admin-card">
@@ -106,13 +104,6 @@
         <div class="admin-box">
           <h4>メニュー設定（JSON）</h4>
           <div class="admin-row"><textarea id="menusJson" placeholder='{"statuses":[...], "noteOptions":[...], "timeStepMinutes":30}'></textarea></div>
-              
-        <div class="admin-box">
-          <h4>周知メッセージ</h4>
-          <div class="admin-row"><textarea id="noticeText" placeholder="タイトル下に表示する周知メッセージ（改行可）"></textarea></div>
-          <div class="admin-row"><button id="btnLoadNotice">現在の文言を読み込み</button><button id="btnSaveNotice">保存</button></div>
-          <div class="admin-note">URLは自動でリンク表示されます。空欄で保存すると周知エリアは非表示になります。</div>
-        </div>
           <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
         </div>
             
