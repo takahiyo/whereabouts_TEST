@@ -1,0 +1,42 @@
+name: Apply Patch
+on:
+  workflow_dispatch:        # 手動実行トリガー
+    inputs:
+      patch_text:
+        description: "ここに .patch の内容を貼り付けます"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Save patch
+        run: |
+          echo "${{ github.event.inputs.patch_text }}" > change.patch
+
+      - name: Dry-run check
+        run: git apply --check change.patch
+
+      - name: Apply patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b apply/$(date +%Y%m%d-%H%M%S)
+          git apply --3way change.patch
+          git add -A
+          git commit -m "Apply patch via Actions"
+
+      - name: Push branch and create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push -u origin HEAD
+          gh pr create --title "Apply patch via Actions" --body "Patch applied automatically." || true
