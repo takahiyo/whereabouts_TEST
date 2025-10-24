@@ -20,9 +20,9 @@ const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getE
 const adminNoticeText=document.getElementById('noticeText'), btnLoadNotice=document.getElementById('btnLoadNotice'), btnSaveNotice=document.getElementById('btnSaveNotice');
 const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel');
 const adminSuperSection=document.getElementById('adminSuperSection');
-const createOfficeId=document.getElementById('createOfficeId'), createOfficeName=document.getElementById('createOfficeName'), createOfficePw=document.getElementById('createOfficePw'), createOfficeAdminPw=document.getElementById('createOfficeAdminPw'), btnCreateOffice=document.getElementById('btnCreateOffice');
+const createOfficeId=document.getElementById('createOfficeId'), createOfficeName=document.getElementById('createOfficeName'), createOfficePw=document.getElementById('createOfficePw'), createOfficeAdmi[...]
 const deleteOfficeSel=document.getElementById('deleteOfficeSel'), btnDeleteOffice=document.getElementById('btnDeleteOffice');
-const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin'), manualSuper=document.getElementById('manualSuper');
+const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manual[...]
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 
 /* 状態 */
@@ -282,7 +282,7 @@ function buildPanel(group, idx){
     el('col',{class:'col-time'}),
     el('col',{class:'col-note'})
   ]));
-  const thead=el('thead'); const thr=el('tr'); ['氏名','内線','ステータス','戻り時間','備考'].forEach(h=>thr.appendChild(el('th',{text:h}))); thead.appendChild(thr); table.appendChild(thead);
+  const thead=el('thead'); const thr=el('tr'); ['氏名','内線','ステータス','戻り時間','備考'].forEach(h=>thr.appendChild(el('th',{text:h}))); thead.appendChild(thr); table.appendChild(t[...]
   const tbody=el('tbody'); group.members.forEach(m=>{ const r=buildRow(m); tbody.appendChild(r); }); table.appendChild(tbody);
   sec.appendChild(table); return sec;
 }
@@ -312,8 +312,8 @@ function buildGroupMenu(){
   const total = (GROUPS||[]).reduce((s,g)=> s+((g.members&&g.members.length)||0),0);
   menuTitle.textContent='グループにジャンプ';
   menuList.appendChild(el('li',{},[el('button',{class:'grp-item','role':'menuitem','data-target':'top',text:`全体（合計：${total}名）`})]));
-  GROUPS.forEach((g,i)=>{ const title=fallbackGroupTitle(g,i); const sub=(g&&g.members&&g.members.length)?`（${g.members.length}名）`:'（0名）'; menuList.appendChild(el('li',{},[el('button',{class:'grp-item','role':'menuitem','data-target':`grp-${i}`},[title,el('span',{class:'muted',text:` ${sub}`})])]))});
-  menuList.querySelectorAll('button.grp-item').forEach(btn=> btn.addEventListener('click',()=>{ const id=btn.getAttribute('data-target'); closeMenu(); if(id==='top'){ window.scrollTo({top:0,behavior:'smooth'}); return; } const sec=document.getElementById(id); if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'}); }));
+  GROUPS.forEach((g,i)=>{ const title=fallbackGroupTitle(g,i); const sub=(g&&g.members&&g.members.length)?`（${g.members.length}名）`:'（0名）'; menuList.appendChild(el('li',{},[el('button',{cla[...]
+  menuList.querySelectorAll('button.grp-item').forEach(btn=> btn.addEventListener('click',()=>{ const id=btn.getAttribute('data-target'); closeMenu(); if(id==='top'){ window.scrollTo({top:0,behavior:'[...]
 }
 function openMenu(){ menuEl.classList.add('show'); titleBtn.setAttribute('aria-expanded','true'); }
 function closeMenu(){ menuEl.classList.remove('show'); titleBtn.setAttribute('aria-expanded','false'); }
@@ -361,7 +361,7 @@ function applyState(data){
   updateStatusFilterCounts();
   applyFilters();
 }
-function recolor(){ board.querySelectorAll("tbody tr").forEach(tr=>{ const st=tr.querySelector('select[name="status"]')?.value||""; statusClassMap.forEach(cls=>tr.classList.remove(cls)); const cls=statusClassMap.get(st); if(cls) tr.classList.add(cls); tr.dataset.status=st; }); }
+function recolor(){ board.querySelectorAll("tbody tr").forEach(tr=>{ const st=tr.querySelector('select[name="status"]')?.value||""; statusClassMap.forEach(cls=>tr.classList.remove(cls)); const cls=sta[...]
 function toggleTimeEnable(statusEl,timeEl){ const needsTime=requiresTimeSet.has(statusEl.value); if(timeEl) timeEl.disabled=!needsTime; }
 function ensureTimePrompt(tr){
   if(!tr) return;
@@ -390,7 +390,7 @@ function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) a
 
 /* 同期（行ごとデバウンス送信） */
 const noteTimers=new Map();
-function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
+function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key)[...]
 
 /* ===== メニュー・正規化・通信・同期 ===== */
 function defaultMenus(){
@@ -947,6 +947,10 @@ if(btnLoadNotice){
       if(!cfg || cfg.error){ toast('周知文言の取得に失敗しました',false); return; }
       const notice=normalizeNoticeClient(cfg);
       if(adminNoticeText){ adminNoticeText.value = notice.message || ''; }
+      if(office === CURRENT_OFFICE_ID){
+        CURRENT_NOTICE = notice;
+        updateNoticeArea();
+      }
       toast('現在の文言を読み込みました');
     }catch(err){
       console.error('loadNotice failed',err);
@@ -963,21 +967,35 @@ if(btnSaveNotice){
       const cfg=await adminGetConfigFor(office);
       if(!(cfg && cfg.groups)){ toast('周知文言の取得に失敗しました',false); return; }
       const msg = (adminNoticeText?.value || '').replace(/\r\n?/g,'\n');
-      const prevNotice = (cfg && typeof cfg.notice === 'object') ? cfg.notice : null;
-      const existingLinks = normalizeNoticeLinksRaw(prevNotice?.links || []);
-      cfg.notice = {
-        message: msg,
-        text: msg,
-        links: existingLinks
-      };
+      const prevNotice = (cfg && typeof cfg.notice === 'object' && !Array.isArray(cfg.notice)) ? cfg.notice : {};
+      const nextNotice = { ...prevNotice, message: msg, text: msg };
+      cfg.notice = nextNotice;
       cfg.noticeText = msg;
       const res=await adminSetConfigFor(office,cfg);
       if(res && !res.error){
         toast('周知メッセージを保存しました');
+        let appliedNotice = null;
+        if(res && typeof res === 'object' && (res.notice != null || res.noticeText != null)){
+          appliedNotice = normalizeNoticeClient(res);
+        }
+        if(!appliedNotice){
+          try{
+            const latestCfg = await adminGetConfigFor(office);
+            if(latestCfg && !latestCfg.error){
+              appliedNotice = normalizeNoticeClient(latestCfg);
+            }
+          }catch(err){
+            console.error('refreshNotice failed', err);
+          }
+        }
+        if(!appliedNotice){
+          appliedNotice = normalizeNoticeClient({ notice: nextNotice, noticeText: msg });
+        }
+        if(adminNoticeText){
+          adminNoticeText.value = appliedNotice.message || '';
+        }
         if(office === CURRENT_OFFICE_ID){
-          const nextNoticeSource = (res && typeof res === 'object' && (res.notice != null || res.noticeText != null)) ? res : cfg;
-          const nextNotice = normalizeNoticeClient(nextNoticeSource);
-          CURRENT_NOTICE = nextNotice;
+          CURRENT_NOTICE = appliedNotice;
           updateNoticeArea();
         }
       }else{
