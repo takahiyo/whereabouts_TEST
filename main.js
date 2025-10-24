@@ -198,6 +198,7 @@ function updateStatusFilterCounts(){
 }
 
 /* === 時刻メニュー（07:00〜22:00） === */
+/* === 時刻メニュー（07:00〜22:00） === */
 const TIME_RANGE_START_MIN = 7*60;  // 07:00
 const TIME_RANGE_END_MIN   = 22*60; // 22:00
 function buildTimeOptions(stepMin){
@@ -390,7 +391,7 @@ function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) a
 /* 同期（行ごとデバウンス送信） */
 const noteTimers=new Map();
 function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
-      
+
 /* ===== メニュー・正規化・通信・同期 ===== */
 function defaultMenus(){
   return {
@@ -447,12 +448,34 @@ function normalizeConfigClient(cfg){
     };
   });
 }
+function normalizeNoticeLinkEntry(link){
+  if(!link) return null;
+  if(typeof link === 'string'){
+    const urlRaw = link.trim();
+    if(!isSafeNoticeUrl(urlRaw)) return null;
+    const href = buildNoticeHref(urlRaw);
+    if(!href) return null;
+    return { url: href, label: urlRaw || href };
+  }
+  if(typeof link !== 'object') return null;
+  const urlRaw = String(link.url || '').trim();
+  if(!isSafeNoticeUrl(urlRaw)) return null;
+  const href = buildNoticeHref(urlRaw);
+  if(!href) return null;
+  const labelRaw = link.label != null ? String(link.label) : '';
+  const label = labelRaw.trim() || urlRaw || href;
+  return { url: href, label };
+}
+function normalizeNoticeLinksRaw(rawLinks){
+  if(!Array.isArray(rawLinks)) return [];
+  return rawLinks.map(normalizeNoticeLinkEntry).filter(Boolean);
+}
 function normalizeNoticeClient(cfg){
   const result = { message: '', links: [] };
   if(!cfg){
     return result;
   }
-	  const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
+          const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
   if(typeof raw === 'string'){
     result.message = raw.replace(/\r\n?/g,'\n');
     return result;
@@ -466,26 +489,8 @@ function normalizeNoticeClient(cfg){
     result.message = String(raw.text);
   }
   result.message = result.message.replace(/\r\n?/g,'\n');
-  if(Array.isArray(raw.links)){
-    result.links = raw.links.map(link => {
-      if(!link) return null;
-      if(typeof link === 'string'){
-        const urlRaw = link.trim();
-        if(!isSafeNoticeUrl(urlRaw)) return null;
-        const href = buildNoticeHref(urlRaw);
-        if(!href) return null;
-        return { url: href, label: urlRaw || href };
-      }
-      const urlRaw = String(link.url || '').trim();
-      if(!isSafeNoticeUrl(urlRaw)) return null;
-      const href = buildNoticeHref(urlRaw);
-      if(!href) return null;
-      const labelRaw = link.label != null ? String(link.label) : '';
-      const label = labelRaw.trim() || urlRaw || href;
-      return { url: href, label };
-    }).filter(Boolean);
-  }
-	  const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
+  result.links = normalizeNoticeLinksRaw(raw.links);
+          const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
   if((result.message || '').trim().length === 0 && fallbackText.trim().length > 0){
     result.message = fallbackText;
   }
@@ -601,7 +606,7 @@ function startRemoteSync(immediate){
   }
   remotePullTimer = setInterval(async ()=>{
     const r = await apiPost({ action:'get', token: SESSION_TOKEN });
-	      if(r?.error==='unauthorized'){
+              if(r?.error==='unauthorized'){
       if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
       await logout();
       return;
@@ -613,13 +618,13 @@ function startConfigWatch(){
   if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer = null; }
   configWatchTimer = setInterval(async ()=>{
     const cfg = await apiPost({ action:'getConfig', token: SESSION_TOKEN, nocache:'1' });
-	      if(cfg?.error==='unauthorized'){
+              if(cfg?.error==='unauthorized'){
       if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
       await logout();
       return;
     }
     if(cfg && !cfg.error){
-		      const nextNotice = normalizeNoticeClient(cfg);
+                      const nextNotice = normalizeNoticeClient(cfg);
       if(!noticesAreEqual(nextNotice, CURRENT_NOTICE)){
         CURRENT_NOTICE = nextNotice;
         updateNoticeArea();
@@ -640,10 +645,10 @@ function scheduleRenew(ttlMs){
   tokenRenewTimer = setTimeout(async ()=>{
     const me = await apiPost({ action: 'renew', token: SESSION_TOKEN });
     if(me && me.ok){
-		      const prevRole = CURRENT_ROLE;
+                      const prevRole = CURRENT_ROLE;
       CURRENT_ROLE = me.role || CURRENT_ROLE;
       saveSessionMeta();
-	        if(CURRENT_ROLE !== prevRole){
+                if(CURRENT_ROLE !== prevRole){
         ensureAuthUI();
         applyRoleToManual();
       }
@@ -679,7 +684,7 @@ async function pushRowDelta(key){
       }
       return;
     }
-        
+
     if(!r.error){
       const rev = Number((r.rev && r.rev[key]) || 0);
       const ts  = Number((r.serverUpdated && r.serverUpdated[key]) || 0);
@@ -958,13 +963,20 @@ if(btnSaveNotice){
       const cfg=await adminGetConfigFor(office);
       if(!(cfg && cfg.groups)){ toast('周知文言の取得に失敗しました',false); return; }
       const msg = (adminNoticeText?.value || '').replace(/\r\n?/g,'\n');
-      if(!cfg.notice || typeof cfg.notice !== 'object') cfg.notice = {};
-      cfg.notice.message = msg;
+      const prevNotice = (cfg && typeof cfg.notice === 'object') ? cfg.notice : null;
+      const existingLinks = normalizeNoticeLinksRaw(prevNotice?.links || []);
+      cfg.notice = {
+        message: msg,
+        text: msg,
+        links: existingLinks
+      };
+      cfg.noticeText = msg;
       const res=await adminSetConfigFor(office,cfg);
       if(res && !res.error){
         toast('周知メッセージを保存しました');
         if(office === CURRENT_OFFICE_ID){
-          const nextNotice = normalizeNoticeClient(res);
+          const nextNoticeSource = (res && typeof res === 'object' && (res.notice != null || res.noticeText != null)) ? res : cfg;
+          const nextNotice = normalizeNoticeClient(nextNoticeSource);
           CURRENT_NOTICE = nextNotice;
           updateNoticeArea();
         }
@@ -1021,7 +1033,7 @@ async function logout(){
     adminSelectedOfficeId='';
   if(adminOfficeSel){ adminOfficeSel.textContent=''; adminOfficeSel.disabled=false; }
   if(adminOfficeRow){ adminOfficeRow.style.display='none'; }
-	  if(adminSuperSection){ adminSuperSection.style.display='none'; }
+          if(adminSuperSection){ adminSuperSection.style.display='none'; }
   if(deleteOfficeSel){ deleteOfficeSel.textContent=''; deleteOfficeSel.disabled=true; }
   if(btnDeleteOffice){ btnDeleteOffice.disabled=false; }
   if(btnCreateOffice){ btnCreateOffice.disabled=false; }
@@ -1031,7 +1043,7 @@ async function logout(){
   if(createOfficeAdminPw){ createOfficeAdminPw.value=''; }
   adminOfficeListCache=[];
   adminDeleteSelectedOfficeId='';
-	  if(adminNoticeText){ adminNoticeText.value=''; }
+          if(adminNoticeText){ adminNoticeText.value=''; }
   CURRENT_NOTICE = { message:'', links:[] };
   updateNoticeArea();
   titleBtn.textContent='在席確認表【開発用】';
@@ -1145,7 +1157,7 @@ async function logout(){
       deleteOfficeSel.appendChild(none);
       deleteOfficeSel.disabled=true;
     }
-	      if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
+              if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
     return;
   }
 
@@ -1187,259 +1199,3 @@ async function logout(){
   }else if(btnDeleteOffice){
     btnDeleteOffice.disabled=false;
   }
-}
-  function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
-  function applyRoleToManual(){
-    manualUser.style.display = '';
-    manualAdmin.style.display = CURRENT_ROLE==='officeAdmin' ? '' : 'none';
-    if(manualSuper){
-      manualSuper.style.display = CURRENT_ROLE==='superAdmin' ? '' : 'none';
-    }
-  }
-
-
-/* 管理/マニュアルUIイベント */
-adminBtn.addEventListener('click', async ()=>{
-  applyRoleToAdminPanel();
-  showAdminModal(true);
-});
-adminClose.addEventListener('click', ()=> showAdminModal(false));
-logoutBtn.addEventListener('click', logout);
-
-manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
-manualClose.addEventListener('click', ()=> showManualModal(false));
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal(false); showManualModal(false); closeMenu(); }});
-
-/* Admin API */
-
-function selectedOfficeId(){
-  let office=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  if(CURRENT_ROLE==='superAdmin' && office && Array.isArray(adminOfficeListCache)){
-    const exists=adminOfficeListCache.some(o=>o && String(o.id||'').trim()===office);
-    if(!exists) office='';
-  }
-  if(!office){ toast('操作対象拠点を選択してください',false); }
-  return office;
-}
-
-async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
-async function adminSetConfigFor(office,cfgObj){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; return await apiPost(q); }
-async function adminSetForChunked(office,dataObjFull){
-  const entries=Object.entries(dataObjFull||{});
-  if(entries.length===0){
-    const base={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify({updated:Date.now(),data:{},full:true}) };
-    return await apiPost(base);
-  }
-  const chunkSize=100; let first=true, ok=true;
-  for(let i=0;i<entries.length;i+=chunkSize){
-    const chunk=Object.fromEntries(entries.slice(i,i+chunkSize));
-    const obj={updated:Date.now(),data:chunk,full:first};
-    const q={ action:'setFor', office, token:SESSION_TOKEN, data:JSON.stringify(obj) };
-    const r=await apiPost(q);
-    if(!(r&&r.ok)) ok=false; first=false;
-  }
-  return ok?{ok:true}:{error:'chunk_failed'};
-}
-async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
-async function adminSetOfficePassword(office,pw,apw){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; return await apiPost(q); }
-async function adminCreateOffice(id,name,password,adminPassword){ const q={ action:'createOffice', token:SESSION_TOKEN, id, name, password, adminPassword }; return await apiPost(q); }
-async function adminDeleteOffice(id){ return await apiPost({ action:'deleteOffice', token:SESSION_TOKEN, id }); }
-
-/* CSV（共通） */
-function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
-function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
-function makeNormalizedCSV(cfg,data){
-  const rows=[];
-  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
-  (cfg.groups||[]).forEach((g,gi)=>{
-    (g.members||[]).forEach((m,mi)=>{
-      const id=m.id||''; const rec=(data&&data[id])||{};
-      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
-    });
-  });
-  return rows.join('\n');
-}
-
-/* 認証UI（公開オフィス一覧） */
-function setSelectMessage(sel,msg){
-  sel.textContent='';
-  const opt=document.createElement('option');
-  opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent=msg;
-  sel.appendChild(opt);
-}
-function ensureAuthUIPublicError(){ setSelectMessage(officeSel,'取得できませんでした。再読込してください'); }
-function normalizeOfficeEntry(out,id,name){
-  const officeId=String(id||'').trim();
-  if(!ID_RE.test(officeId)) return;
-  if(out.some(o=>o.id===officeId)) return;
-  const officeName=stripCtl(name==null?'':String(name));
-  out.push({ id:officeId, name:officeName||officeId });
-}
-function configuredOfficesFallback(){
-  const result=[];
-  const sources=[];
-  if(typeof PUBLIC_OFFICE_FALLBACKS!=='undefined') sources.push(PUBLIC_OFFICE_FALLBACKS);
-  if(typeof STATIC_OFFICES!=='undefined') sources.push(STATIC_OFFICES);
-  if(typeof PUBLIC_OFFICES!=='undefined') sources.push(PUBLIC_OFFICES);
-  sources.forEach(src=>{
-    if(!src) return;
-    if(Array.isArray(src)){
-      src.forEach(entry=>{
-        if(!entry) return;
-        if(Array.isArray(entry)){
-          normalizeOfficeEntry(result,entry[0],entry[1]);
-        }else if(typeof entry==='object'){
-          normalizeOfficeEntry(result,entry.id,entry.name);
-        }
-      });
-    }else if(typeof src==='object'){
-      Object.entries(src).forEach(([key,val])=>{
-        if(val&&typeof val==='object') normalizeOfficeEntry(result,key,val.name);
-      });
-    }
-  });
-  return result;
-}
-async function refreshPublicOfficeSelect(selectedId){
-  setSelectMessage(officeSel,'読込中…');
-  let offices=[];
-  try{
-    const res=await apiPost({ action:'publicListOffices' });
-    if(res&&Array.isArray(res.offices)){
-      res.offices.forEach(o=>normalizeOfficeEntry(offices,o&&o.id,o&&o.name));
-    }
-  }catch(err){
-    console.error('publicListOffices failed',err);
-  }
-  if(offices.length===0){
-    offices=configuredOfficesFallback();
-	    // 管理者用拠点を常に追加する
-    normalizeOfficeEntry(offices,'admin','Administrator');
-  }
-  officeSel.textContent='';
-  let found=false;
-  offices.forEach(o=>{
-    const opt=document.createElement('option');
-    opt.value=o.id;
-    opt.textContent=o.name;
-    officeSel.appendChild(opt);
-    if(selectedId && o.id===selectedId) found=true;
-  });
-  if(officeSel.options.length===0){ ensureAuthUIPublicError(); return; }
-  if(selectedId && found) officeSel.value=selectedId; else officeSel.selectedIndex=0;
-}
-
-/* 起動 */
-document.addEventListener('DOMContentLoaded', async ()=>{
-  await refreshPublicOfficeSelect();
-
-    document.getElementById('btnLogin').addEventListener('click', async ()=>{
-      const pw=pwInput.value, office=officeSel.value;
-      if(!office){ loginMsg.textContent="拠点を選択してください"; return; }
-      if(!pw||!pw.trim()){ loginMsg.textContent="パスワードを入力してください"; return; }
-      loginMsg.textContent="認証中…";
-
-      const res=await apiPost({ action:'login', office, password: pw });
-      if(res===null){ loginMsg.textContent="通信エラー"; return; }
-      if(res?.error==='unauthorized'){ loginMsg.textContent="拠点またはパスワードが違います"; return; }
-      if(res?.ok===false){ loginMsg.textContent="通信エラー"; return; }
-      if(!res?.token){ loginMsg.textContent="サーバ応答が不正です"; return; }
-      await afterLogin(res);
-    });
-
-  async function afterLogin(res){
-    SESSION_TOKEN=res.token; sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN);
-    CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
-	    adminSelectedOfficeId='';
-    CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
-    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
-    loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
-
-    // 役割確定（renewで上書き）
-    try{
-      const me=await apiPost({ action:'renew', token:SESSION_TOKEN });
-      if(me&&me.ok){
-        const prevOfficeId=CURRENT_OFFICE_ID;
-        const nextOfficeId=me.office||prevOfficeId;
-        CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=nextOfficeId; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME;
-        if(nextOfficeId!==prevOfficeId){ adminSelectedOfficeId=''; }
-        saveSessionMeta(); ensureAuthUI(); applyRoleToManual();
-      }
-    }catch{}
-
-    const cfgP=(async()=>{
-      const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
-		      if(cfg?.error==='unauthorized'){
-        await logout();
-        return;
-      }
-      if(cfg&&!cfg.error){
-        GROUPS=normalizeConfigClient(cfg);
-        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
-        setupMenus(cfg.menus||null);
-        const nextNotice = normalizeNoticeClient(cfg);
-        CURRENT_NOTICE = nextNotice;
-        updateNoticeArea();
-      }
-      else {
-        setupMenus(null);
-        CURRENT_NOTICE = { message:'', links:[] };
-        updateNoticeArea();
-      }
-    })();
-    const dataP=fastFetchDataOnce().then(async data=>{
-      if(data?.error==='unauthorized'){
-        await logout();
-        return null;
-      }
-      return data;
-    }).catch(()=>null);
-
-    await cfgP;
-	      if(!SESSION_TOKEN) return;
-    render(); loadLocal();
-    if(!SESSION_TOKEN) return;
-    const data=await dataP; if(!SESSION_TOKEN) return; if(data&&data.data) applyState(data.data);
-    if(!SESSION_TOKEN) return;
-	  
-    scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
-	      if(!SESSION_TOKEN) return;
-    startRemoteSync(true); startConfigWatch();
-  }
-
-  // 既存セッション
-  const existing=sessionStorage.getItem(SESSION_KEY);
-  if(existing){
-    SESSION_TOKEN=existing; loginEl.style.display='none';
-    loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
-    ensureAuthUI(); applyRoleToManual();
-    (async()=>{
-      const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
-		      if(cfg?.error==='unauthorized'){
-        await logout();
-        return;
-      }
-      if(cfg&&!cfg.error){
-        GROUPS=normalizeConfigClient(cfg);
-        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
-        setupMenus(cfg.menus||null);
-        const nextNotice = normalizeNoticeClient(cfg);
-        CURRENT_NOTICE = nextNotice;
-        updateNoticeArea();
-        render();
-      }
-      if(!SESSION_TOKEN) return;
-      const d=await fastFetchDataOnce();
-      if(d?.error==='unauthorized'){
-        await logout();
-        return;
-      }
-      if(d&&d.data) applyState(d.data);
-      if(!SESSION_TOKEN) return;
-		startRemoteSync(true); startConfigWatch();
-    })();
-  }else{
-    loginEl.style.display='flex';
-  }
-});
