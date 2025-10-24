@@ -4,8 +4,9 @@
 // ・レスポンスは no-store。login/renewの role/office/officeName をそのまま転送
 export default {
   async fetch(req, env, ctx) {
-    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbz8GWzqKI_W8jVAbL-KaF2C0ZgBT-5HDT3k7oFgilBzag1JQpuRifpiktAugKYgUQA/exec";
+    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbzrTX4WmxnHP-hzBE_-ZA4zdfIUty4JEcQ1-mZJIpwvoCzJI7m0m2q0fQ5hCeB2jWCV/exec";
     const origin = req.headers.get('origin') || '';
+
     // CORS 許可元
     const ALLOW_ORIGINS = new Set([
       'https://takahiyo.github.io'
@@ -86,4 +87,3 @@ export default {
     });
   }
 };
-
