@@ -73,7 +73,32 @@ function sanitizeText(s){
 
   return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function isSafeHttpUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
+function isSafeNoticeUrl(url){
+  const s = String(url||'').trim();
+  if(/^https?:\/\//i.test(s)) return true;
+  if(/^smb:\/\//i.test(s)) return true;
+  if(/^\\\\[^\s]/.test(s)) return true;
+  return false;
+}
+function buildNoticeHref(url){
+  const raw = String(url||'').trim();
+  if(!raw) return '';
+  if(/^\\\\/.test(raw)){
+    const path = raw.replace(/^\\\\+/,'');
+    if(!path) return '';
+    return `smb://${encodeURI(path.replace(/\\/g,'/'))}`;
+  }
+  if(/^smb:\/\//i.test(raw)){
+    const path = raw.replace(/^smb:\/\//i,'');
+    if(!path) return '';
+    return `smb://${encodeURI(path)}`;
+  }
+  if(/^https?:\/\//i.test(raw)){
+    return raw;
+  }
+  return '';
+}
+function isHttpUrl(url){ return /^https?:\/\//i.test(String(url||'').trim()); }
 const ID_RE=/^[0-9A-Za-z_-]+$/;
 
 function el(tag,attrs={},children=[]){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k==='class') e.className=v; else if(k==='text') e.textContent=String(v); else e.setAttribute(k,String(v)); } (children||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c)); return e; }
@@ -445,15 +470,19 @@ function normalizeNoticeClient(cfg){
     result.links = raw.links.map(link => {
       if(!link) return null;
       if(typeof link === 'string'){
-        const url = link.trim();
-        if(!url || !isSafeHttpUrl(url)) return null;
-        return { url, label: url };
+        const urlRaw = link.trim();
+        if(!isSafeNoticeUrl(urlRaw)) return null;
+        const href = buildNoticeHref(urlRaw);
+        if(!href) return null;
+        return { url: href, label: urlRaw || href };
       }
-      const url = String(link.url || '').trim();
-      if(!url || !isSafeHttpUrl(url)) return null;
+      const urlRaw = String(link.url || '').trim();
+      if(!isSafeNoticeUrl(urlRaw)) return null;
+      const href = buildNoticeHref(urlRaw);
+      if(!href) return null;
       const labelRaw = link.label != null ? String(link.label) : '';
-      const label = labelRaw.trim() || url;
-      return { url, label };
+      const label = labelRaw.trim() || urlRaw || href;
+      return { url: href, label };
     }).filter(Boolean);
   }
 	  const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
@@ -496,7 +525,6 @@ function updateNoticeArea(notice = CURRENT_NOTICE){
   noticeArea.removeAttribute('aria-hidden');
   if(hasMessage){
     const lines = trimmedMessage.split('\n');
-    const urlRe = /https?:\/\/[^\s]+/g;
     lines.forEach(line => {
       const p = document.createElement('p');
       p.className = 'notice-line';
@@ -504,24 +532,27 @@ function updateNoticeArea(notice = CURRENT_NOTICE){
         p.appendChild(document.createElement('br'));
       }else{
         let lastIndex = 0;
-        urlRe.lastIndex = 0;
+        const linkRe = /(https?:\/\/[^\s<>"']+|smb:\/\/[^\s<>"']+|\\\\[^\s<>"']+)/gi;
         let match;
-        while((match = urlRe.exec(line)) !== null){
+        while((match = linkRe.exec(line)) !== null){
           if(match.index > lastIndex){
             p.appendChild(document.createTextNode(line.slice(lastIndex, match.index)));
           }
-          const url = match[0];
-          if(isSafeHttpUrl(url)){
+          const rawUrl = match[0];
+          const href = buildNoticeHref(rawUrl);
+          if(href){
             const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.textContent = url;
+            a.href = href;
+            if(isHttpUrl(href)){
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+            }
+            a.textContent = rawUrl;
             p.appendChild(a);
           }else{
-            p.appendChild(document.createTextNode(url));
+            p.appendChild(document.createTextNode(rawUrl));
           }
-          lastIndex = match.index + url.length;
+          lastIndex = match.index + rawUrl.length;
         }
         if(lastIndex < line.length){
           p.appendChild(document.createTextNode(line.slice(lastIndex)));
@@ -535,15 +566,18 @@ function updateNoticeArea(notice = CURRENT_NOTICE){
     list.className = 'notice-links';
     links.forEach(link => {
       const li = document.createElement('li');
-      if(isSafeHttpUrl(link.url)){
+      const href = buildNoticeHref(link.url);
+      if(href){
         const a = document.createElement('a');
-        a.href = link.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.textContent = link.label || link.url;
+        a.href = href;
+        if(isHttpUrl(href)){
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        }
+        a.textContent = link.label || link.url || href;
         li.appendChild(a);
       }else{
-        li.appendChild(document.createTextNode(link.label || link.url));
+        li.appendChild(document.createTextNode(link.label || link.url || ''));
       }
       list.appendChild(li);
     });
