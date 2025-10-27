@@ -1,10 +1,6 @@
 name: Apply Patch
 on:
-  workflow_dispatch:        # 手動実行トリガー
-    inputs:
-      patch_text:
-        description: "ここに .patch の内容を貼り付けます"
-        required: true
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -18,9 +14,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Save patch
+      - name: Load patch from repository
         run: |
-          echo "${{ github.event.inputs.patch_text }}" > change.patch
+          if [ ! -f patch ]; then
+            echo "patch file not found" >&2
+            exit 1
+          fi
+          cp patch change.patch
 
       - name: Dry-run check
         run: git apply --check change.patch
