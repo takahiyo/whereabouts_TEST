@@ -1,0 +1,420 @@
+diff --git a/main.js b/main.js
+index f87196c29f559d96d9632d2a1d9444e29c65122d..eb0f764c3a87c042cf6f7de6859ee66a9ce3131a 100644
+--- a/main.js
++++ b/main.js
+@@ -51,51 +51,76 @@ document.addEventListener('visibilitychange', ()=>{
+       startRemoteSync(true);
+     }
+     if(resumeConfigWatchOnVisible && SESSION_TOKEN){
+       startConfigWatch();
+     }
+     resumeRemoteSyncOnVisible = false;
+     resumeConfigWatchOnVisible = false;
+   }
+ });
+ function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin' || CURRENT_ROLE==='superAdmin'; }
+ 
+ /* ユーティリティ */
+ function toast(msg,ok=true){ toastEl.style.background=ok?'#334155':'#c53030'; toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000); }
+ function diagAdd(line){
+   diag.classList.add('show');
+   const div=document.createElement('div');
+   div.textContent=line;
+   diag.appendChild(div);
+ }
+ function stripCtl(s){ return (s==null?'':String(s)).replace(/[\u0000-\u001F\u007F]/g,''); }
+ function sanitizeText(s){
+   s = stripCtl(s);
+ 
+   return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ }
+-function isSafeHttpUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
++function isSafeNoticeUrl(url){
++  const s = String(url||'').trim();
++  if(/^https?:\/\//i.test(s)) return true;
++  if(/^smb:\/\//i.test(s)) return true;
++  if(/^\\\\[^\s]/.test(s)) return true;
++  return false;
++}
++function buildNoticeHref(url){
++  const raw = String(url||'').trim();
++  if(!raw) return '';
++  if(/^\\\\/.test(raw)){
++    const path = raw.replace(/^\\\\+/,'');
++    if(!path) return '';
++    return `smb://${encodeURI(path.replace(/\\/g,'/'))}`;
++  }
++  if(/^smb:\/\//i.test(raw)){
++    const path = raw.replace(/^smb:\/\//i,'');
++    if(!path) return '';
++    return `smb://${encodeURI(path)}`;
++  }
++  if(/^https?:\/\//i.test(raw)){
++    return raw;
++  }
++  return '';
++}
++function isHttpUrl(url){ return /^https?:\/\//i.test(String(url||'').trim()); }
+ const ID_RE=/^[0-9A-Za-z_-]+$/;
+ 
+ function el(tag,attrs={},children=[]){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k==='class') e.className=v; else if(k==='text') e.textContent=String(v); else e.setAttribute(k,String(v)); } (children||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c)); return e; }
+ function qsEncode(obj){ const p=new URLSearchParams(); Object.entries(obj||{}).forEach(([k,v])=>{ if(v==null) return; p.append(k,String(v)); }); return p.toString(); }
+ async function apiPost(params,timeout=20000){ const controller=new AbortController(); const t=setTimeout(()=>controller.abort(),timeout); try{ const res=await fetch(REMOTE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:qsEncode(params),signal:controller.signal,credentials:'omit',cache:'no-store'}); const ct=(res.headers.get('content-type')||'').toLowerCase(); if(!ct.includes('application/json')) return {ok:false,error:'invalid_content_type'}; return await res.json(); }catch(err){ console.error(err); return {ok:false,error:err}; } finally{ clearTimeout(t); }}
+ /* セッションメタ(F5耐性) */
+ function saveSessionMeta(){ try{ sessionStorage.setItem(SESSION_ROLE_KEY,CURRENT_ROLE||'user'); sessionStorage.setItem(SESSION_OFFICE_KEY,CURRENT_OFFICE_ID||''); sessionStorage.setItem(SESSION_OFFICE_NAME_KEY,CURRENT_OFFICE_NAME||''); }catch{} }
+ function loadSessionMeta(){ try{ CURRENT_ROLE=sessionStorage.getItem(SESSION_ROLE_KEY)||'user'; CURRENT_OFFICE_ID=sessionStorage.getItem(SESSION_OFFICE_KEY)||''; CURRENT_OFFICE_NAME=sessionStorage.getItem(SESSION_OFFICE_NAME_KEY)||''; }catch{} }
+ 
+ /* レイアウト（JS + CSS両方で冗長に制御） */
+ const PANEL_MIN_PX=760,GAP_PX=20,MAX_COLS=3;
+ const CARD_BREAKPOINT_PX=760; // これより狭い幅ではカード表示を強制
+ function getContainerWidth(){ const elc=board.parentElement||document.body; const r=elc.getBoundingClientRect(); return Math.max(0,Math.round(r.width)); }
+ function updateCols(){
+   const w = getContainerWidth();
+   let n = Math.floor((w + GAP_PX) / (PANEL_MIN_PX + GAP_PX));
+   if (n < 2) {
+     board.classList.add('force-cards');
+     board.dataset.cols = '1';
+     board.style.removeProperty('--cols');
+     return;
+   }
+   if (n > MAX_COLS) n = MAX_COLS;
+   board.style.setProperty('--cols', String(n));
+   board.dataset.cols = String(n);
+@@ -400,172 +425,185 @@ function setupMenus(m){
+ }
+ function isNotePresetValue(val){
+   const v=(val==null?"":String(val)).trim();
+   if(v==="") return true;
+   const set = new Set((MENUS?.noteOptions||[]).map(x=>String(x)));
+   return set.has(v);
+ }
+ function fallbackGroupTitle(g, idx){
+   const t = (g && g.title != null) ? String(g.title).trim() : "";
+   return t || `グループ${idx + 1}`;
+ }
+ function normalizeConfigClient(cfg){
+   const groups = (cfg && Array.isArray(cfg.groups)) ? cfg.groups : [];
+   return groups.map(g => {
+     const members = Array.isArray(g.members) ? g.members : [];
+     return {
+       title: g.title || "",
+       members: members.map(m => ({
+         id:    String(m.id ?? "").trim(),
+         name:  String(m.name ?? ""),
+         ext:   String(m.ext  ?? "")
+       })).filter(m => m.id || m.name)
+     };
+   });
+ }
++function normalizeNoticeLinkEntry(link){
++  if(!link) return null;
++  if(typeof link === 'string'){
++    const urlRaw = link.trim();
++    if(!isSafeNoticeUrl(urlRaw)) return null;
++    const href = buildNoticeHref(urlRaw);
++    if(!href) return null;
++    return { url: href, label: urlRaw || href };
++  }
++  if(typeof link !== 'object') return null;
++  const urlRaw = String(link.url || '').trim();
++  if(!isSafeNoticeUrl(urlRaw)) return null;
++  const href = buildNoticeHref(urlRaw);
++  if(!href) return null;
++  const labelRaw = link.label != null ? String(link.label) : '';
++  const label = labelRaw.trim() || urlRaw || href;
++  return { url: href, label };
++}
++function normalizeNoticeLinksRaw(rawLinks){
++  if(!Array.isArray(rawLinks)) return [];
++  return rawLinks.map(normalizeNoticeLinkEntry).filter(Boolean);
++}
+ function normalizeNoticeClient(cfg){
+   const result = { message: '', links: [] };
+   if(!cfg){
+     return result;
+   }
+-	  const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
++          const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
+   if(typeof raw === 'string'){
+     result.message = raw.replace(/\r\n?/g,'\n');
+     return result;
+   }
+   if(typeof raw !== 'object'){
+     return result;
+   }
+   if(raw.message != null){
+     result.message = String(raw.message);
+   }else if(raw.text != null){
+     result.message = String(raw.text);
+   }
+   result.message = result.message.replace(/\r\n?/g,'\n');
+-  if(Array.isArray(raw.links)){
+-    result.links = raw.links.map(link => {
+-      if(!link) return null;
+-      if(typeof link === 'string'){
+-        const url = link.trim();
+-        if(!url || !isSafeHttpUrl(url)) return null;
+-        return { url, label: url };
+-      }
+-      const url = String(link.url || '').trim();
+-      if(!url || !isSafeHttpUrl(url)) return null;
+-      const labelRaw = link.label != null ? String(link.label) : '';
+-      const label = labelRaw.trim() || url;
+-      return { url, label };
+-    }).filter(Boolean);
+-  }
+-	  const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
++  result.links = normalizeNoticeLinksRaw(raw.links);
++          const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
+   if((result.message || '').trim().length === 0 && fallbackText.trim().length > 0){
+     result.message = fallbackText;
+   }
+   return result;
+ }
+ function noticesAreEqual(a,b){
+   if(a === b) return true;
+   if(!a || !b) return false;
+   const msgA = (a.message || '');
+   const msgB = (b.message || '');
+   if(msgA !== msgB) return false;
+   const linksA = Array.isArray(a.links) ? a.links : [];
+   const linksB = Array.isArray(b.links) ? b.links : [];
+   if(linksA.length !== linksB.length) return false;
+   for(let i=0;i<linksA.length;i++){
+     const la = linksA[i] || {};
+     const lb = linksB[i] || {};
+     if((la.url || '') !== (lb.url || '')) return false;
+     if((la.label || '') !== (lb.label || '')) return false;
+   }
+   return true;
+ }
+ function updateNoticeArea(notice = CURRENT_NOTICE){
+   if(!noticeArea) return;
+   const message = (notice && typeof notice.message === 'string') ? notice.message : '';
+   const links = Array.isArray(notice?.links) ? notice.links.filter(l => l && l.url) : [];
+   const trimmedMessage = message.replace(/\r\n?/g,'\n');
+   const hasMessage = trimmedMessage.trim().length > 0;
+   const hasLinks = links.length > 0;
+   noticeArea.replaceChildren();
+   if(!hasMessage && !hasLinks){
+     noticeArea.hidden = true;
+     noticeArea.setAttribute('aria-hidden','true');
+     return;
+   }
+   noticeArea.hidden = false;
+   noticeArea.removeAttribute('aria-hidden');
+   if(hasMessage){
+     const lines = trimmedMessage.split('\n');
+-    const urlRe = /https?:\/\/[^\s]+/g;
+     lines.forEach(line => {
+       const p = document.createElement('p');
+       p.className = 'notice-line';
+       if(line === ''){
+         p.appendChild(document.createElement('br'));
+       }else{
+         let lastIndex = 0;
+-        urlRe.lastIndex = 0;
++        const linkRe = /(https?:\/\/[^\s<>"']+|smb:\/\/[^\s<>"']+|\\\\[^\s<>"']+)/gi;
+         let match;
+-        while((match = urlRe.exec(line)) !== null){
++        while((match = linkRe.exec(line)) !== null){
+           if(match.index > lastIndex){
+             p.appendChild(document.createTextNode(line.slice(lastIndex, match.index)));
+           }
+-          const url = match[0];
+-          if(isSafeHttpUrl(url)){
++          const rawUrl = match[0];
++          const href = buildNoticeHref(rawUrl);
++          if(href){
+             const a = document.createElement('a');
+-            a.href = url;
+-            a.target = '_blank';
+-            a.rel = 'noopener noreferrer';
+-            a.textContent = url;
++            a.href = href;
++            if(isHttpUrl(href)){
++              a.target = '_blank';
++              a.rel = 'noopener noreferrer';
++            }
++            a.textContent = rawUrl;
+             p.appendChild(a);
+           }else{
+-            p.appendChild(document.createTextNode(url));
++            p.appendChild(document.createTextNode(rawUrl));
+           }
+-          lastIndex = match.index + url.length;
++          lastIndex = match.index + rawUrl.length;
+         }
+         if(lastIndex < line.length){
+           p.appendChild(document.createTextNode(line.slice(lastIndex)));
+         }
+       }
+       noticeArea.appendChild(p);
+     });
+   }
+   if(hasLinks){
+     const list = document.createElement('ul');
+     list.className = 'notice-links';
+     links.forEach(link => {
+       const li = document.createElement('li');
+-      if(isSafeHttpUrl(link.url)){
++      const href = buildNoticeHref(link.url);
++      if(href){
+         const a = document.createElement('a');
+-        a.href = link.url;
+-        a.target = '_blank';
+-        a.rel = 'noopener noreferrer';
+-        a.textContent = link.label || link.url;
++        a.href = href;
++        if(isHttpUrl(href)){
++          a.target = '_blank';
++          a.rel = 'noopener noreferrer';
++        }
++        a.textContent = link.label || link.url || href;
+         li.appendChild(a);
+       }else{
+-        li.appendChild(document.createTextNode(link.label || link.url));
++        li.appendChild(document.createTextNode(link.label || link.url || ''));
+       }
+       list.appendChild(li);
+     });
+     noticeArea.appendChild(list);
+   }
+ }
+ async function fastFetchDataOnce(){
+   return await apiPost({ action: 'get', token: SESSION_TOKEN, nocache: '1' });
+ }
+ function startRemoteSync(immediate){
+   if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer = null; }
+   if(immediate){
+     fastFetchDataOnce().then(async r => {
+       if(r?.error==='unauthorized'){
+         if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+         await logout();
+         return;
+       }
+       if(r && r.data) applyState(r.data);
+     }).catch(()=>{});
+   }
+   remotePullTimer = setInterval(async ()=>{
+     const r = await apiPost({ action:'get', token: SESSION_TOKEN });
+ 	      if(r?.error==='unauthorized'){
+       if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+@@ -884,76 +922,110 @@ btnSetPw.addEventListener('click', async ()=>{
+   else toast('更新に失敗',false);
+ });
+ btnLoadMenus.addEventListener('click', async ()=>{
+   const office=selectedOfficeId(); if(!office) return;
+   const cfg=await adminGetConfigFor(office);
+   menusJson.value=JSON.stringify((cfg&&cfg.menus)||defaultMenus(),null,2);
+ });
+ btnSaveMenus.addEventListener('click', async ()=>{
+   let obj;
+   try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; }
+   const office=selectedOfficeId(); if(!office) return;
+   const cfg=await adminGetConfigFor(office);
+   if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
+ 
+   cfg.menus=obj;
+   const r=await adminSetConfigFor(office,cfg);
+   if(r && !r.error){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
+   else toast('保存に失敗',false);
+ });
+ if(btnLoadNotice){
+   btnLoadNotice.addEventListener('click', async ()=>{
+     const office=selectedOfficeId(); if(!office) return;
+     try{
+       const cfg=await adminGetConfigFor(office);
+       if(!cfg || cfg.error){ toast('周知文言の取得に失敗しました',false); return; }
+-      const notice=normalizeNoticeClient(cfg);
+-      if(adminNoticeText){ adminNoticeText.value = notice.message || ''; }
++      const appliedNotice=normalizeNoticeClient(cfg);
++      if(adminNoticeText){ adminNoticeText.value = appliedNotice.message || ''; }
++      if(office === CURRENT_OFFICE_ID){
++        CURRENT_NOTICE = appliedNotice;
++        updateNoticeArea();
++      }
+       toast('現在の文言を読み込みました');
+     }catch(err){
+       console.error('loadNotice failed',err);
+       toast('周知文言の取得に失敗しました',false);
+     }
+   });
+ }
+ if(btnSaveNotice){
+   btnSaveNotice.addEventListener('click', async ()=>{
+     const office=selectedOfficeId(); if(!office) return;
+     if(!isOfficeAdmin()){ toast('権限がありません',false); return; }
+     btnSaveNotice.disabled = true;
+     try{
+       const cfg=await adminGetConfigFor(office);
+       if(!(cfg && cfg.groups)){ toast('周知文言の取得に失敗しました',false); return; }
+       const msg = (adminNoticeText?.value || '').replace(/\r\n?/g,'\n');
+-      if(!cfg.notice || typeof cfg.notice !== 'object') cfg.notice = {};
+-      cfg.notice.message = msg;
++      const prevNotice = (cfg && typeof cfg.notice === 'object' && !Array.isArray(cfg.notice)) ? cfg.notice : null;
++      const baseNotice = prevNotice ? { ...prevNotice } : {};
++      const normalizedLinks = normalizeNoticeLinksRaw(baseNotice.links);
++      if(normalizedLinks.length>0){
++        baseNotice.links = normalizedLinks;
++      }else if('links' in baseNotice){
++        delete baseNotice.links;
++      }
++      baseNotice.message = msg;
++      baseNotice.text = msg;
++      cfg.notice = baseNotice;
++      cfg.noticeText = msg;
+       const res=await adminSetConfigFor(office,cfg);
+-      if(res && !res.error){
++      if(res && res.error == null && res.ok !== false){
+         toast('周知メッセージを保存しました');
++        let appliedSource = null;
++        if(res && typeof res === 'object' && (res.notice != null || res.noticeText != null)){
++          appliedSource = res;
++        }
++        if(!appliedSource){
++          try{
++            const latestCfg = await adminGetConfigFor(office);
++            if(latestCfg && latestCfg.error == null && latestCfg.ok !== false){
++              appliedSource = latestCfg;
++            }
++          }catch(err){
++            console.error('refreshNotice failed', err);
++          }
++        }
++        if(!appliedSource){
++          appliedSource = { notice: baseNotice, noticeText: msg };
++        }
++        const appliedNotice = normalizeNoticeClient(appliedSource);
++        if(adminNoticeText){
++          adminNoticeText.value = appliedNotice.message || msg;
++        }
+         if(office === CURRENT_OFFICE_ID){
+-          const nextNotice = normalizeNoticeClient(res);
+-          CURRENT_NOTICE = nextNotice;
++          CURRENT_NOTICE = appliedNotice;
+           updateNoticeArea();
+         }
+       }else{
+         toast('保存に失敗しました',false);
+       }
+     }catch(err){
+       console.error('saveNotice failed',err);
+       toast('保存に失敗しました',false);
+     }finally{
+       btnSaveNotice.disabled = false;
+     }
+   });
+ }
+ 
+ /* CSVパーサ */
+ function parseCSV(text){
+   const out=[]; let i=0,row=[],field='',inq=false;
+   function pushField(){ row.push(field); field=''; }
+   function pushRow(){ out.push(row); row=[]; }
+   while(i<text.length){
+     const c=text[i++];
+     if(inq){
+       if(c=='"'&&text[i]=='"'){ field+='"'; i++; }
+       else if(c=='"'){ inq=false; }
+       else field+=c;
