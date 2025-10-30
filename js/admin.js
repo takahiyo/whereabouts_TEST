@@ -24,15 +24,70 @@ btnImport.addEventListener('click', async ()=>{
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());
-  const mustEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
-  const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
+  const mustEn=['group_index','group_title','member_order','id','name','ext','workHours','status','time','note'];
+  const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','業務時間','ステータス','戻り時間','備考'];
+  const legacyEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
+  const legacyJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
   const okEn = mustEn.every((h,i)=>hdr[i]===h);
   const okJa = mustJa.every((h,i)=>hdr[i]===h);
-  if(!okEn && !okJa){ toast('CSVヘッダが不正です',false); return; }
+  const okLegacyEn = legacyEn.every((h,i)=>hdr[i]===h);
+  const okLegacyJa = legacyJa.every((h,i)=>hdr[i]===h);
+  if(!(okEn || okJa || okLegacyEn || okLegacyJa)){ toast('CSVヘッダが不正です',false); return; }
+  const hasWorkHoursColumn = okEn || okJa;
+  const keyOf=(gi,gt,mi,name,ext)=>[String(gi),String(gt||''),String(mi),String(name||''),String(ext||'')].join('|');
+
+  const fallbackById=new Map();
+  const fallbackByKey=new Map();
+  if(!hasWorkHoursColumn){
+    try{
+      const currentCfg=await adminGetConfigFor(office);
+      if(currentCfg && currentCfg.groups){
+        (currentCfg.groups||[]).forEach((g,gi0)=>{
+          (g.members||[]).forEach((m,mi0)=>{
+            const val=sanitizeWorkHoursValue(m.workHours);
+            if(!val) return;
+            if(m.id) fallbackById.set(String(m.id), val);
+            fallbackByKey.set(keyOf(gi0+1,g.title||'',mi0+1,m.name||'',m.ext||''), val);
+          });
+        });
+      }
+    }catch{}
+  }
 
   const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
-    const [gi,gt,mi,id,name,ext,status,time,note]=r;
-    return {gi:Number(gi)||0,gt:(gt||''),mi:Number(mi)||0,id:(id||''),name:(name||''),ext:(ext||''),status:(status||(STATUSES[0]?.value||'在席')),time:(time||''),note:(note||'')};
+    if(hasWorkHoursColumn){
+      const [gi,gt,mi,id,name,ext,workHours,status,time,note]=r;
+      const workHoursSanitized = sanitizeWorkHoursValue(workHours);
+      return {
+        gi:Number(gi)||0,
+        gt:(gt||''),
+        mi:Number(mi)||0,
+        id:(id||''),
+        name:(name||''),
+        ext:(ext||''),
+        workHours:workHoursSanitized,
+        status:(status||(STATUSES[0]?.value||'在席')),
+        time:(time||''),
+        note:(note||'')
+      };
+    } else {
+      const [gi,gt,mi,id,name,ext,status,time,note]=r;
+      const key=keyOf(gi,gt,mi,name,ext||'');
+      const fallback=(id&&fallbackById.get(id))||fallbackByKey.get(key)||'';
+      const workHoursSanitized = sanitizeWorkHoursValue(fallback);
+      return {
+        gi:Number(gi)||0,
+        gt:(gt||''),
+        mi:Number(mi)||0,
+        id:(id||''),
+        name:(name||''),
+        ext:(ext||''),
+        workHours:workHoursSanitized,
+        status:(status||(STATUSES[0]?.value||'在席')),
+        time:(time||''),
+        note:(note||'')
+      };
+    }
   });
 
   const groupsMap=new Map();
@@ -41,7 +96,7 @@ btnImport.addEventListener('click', async ()=>{
     if(!groupsMap.has(r.gi)) groupsMap.set(r.gi,{title:r.gt||'',members:[]});
     const g=groupsMap.get(r.gi);
     g.title=r.gt||'';
-    g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined});
+    g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',workHours:r.workHours||'',id:r.id||undefined});
   }
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
   const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
@@ -51,7 +106,6 @@ btnImport.addEventListener('click', async ()=>{
   const newCfg=await adminGetConfigFor(office);
   if(!(newCfg&&newCfg.groups)){ toast('名簿再取得に失敗',false); return; }
 
-  const keyOf=(gi,gt,mi,name,ext)=>[String(gi),String(gt||''),String(mi),String(name||''),String(ext||'')].join('|');
   const idIndex=new Map();
   (newCfg.groups||[]).forEach((g,gi0)=>{ (g.members||[]).forEach((m,mi0)=>{ idIndex.set(keyOf(gi0+1,g.title||'',mi0+1,m.name||'',m.ext||''),m.id); }); });
 
@@ -59,7 +113,8 @@ btnImport.addEventListener('click', async ()=>{
   for(const r of recs){
     const id=r.id || idIndex.get(keyOf(r.gi,r.gt,r.mi,r.name,r.ext||'')) || null;
     if(!id) continue;
-    dataObj[id]={ ext:r.ext||'', status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
+    const workHours=r.workHours||'';
+    dataObj[id]={ ext:r.ext||'', workHours, status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
   }
   const r2=await adminSetForChunked(office,dataObj);
   if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
@@ -158,11 +213,12 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
-  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考']));
+  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','業務時間','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{
       const id=m.id||''; const rec=(data&&data[id])||{};
-      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
+      const workHours = rec.workHours || m.workHours || '';
+      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',workHours,rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
     });
   });
   return rows.join('\n');
