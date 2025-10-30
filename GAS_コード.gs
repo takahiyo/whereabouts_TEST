@@ -1,4 +1,4 @@
-/** 在席確認表【開発用】 API（Apps Script）CAS対応・拠点別メニュー設定
+/** 在席確認表 API（Apps Script）CAS対応・拠点別メニュー設定
  *  - 認証：ユーザー / 拠点管理者
  *  - データ：ScriptProperties(JSON) に保存（既存データ互換）
  *  - キャッシュ：CacheService（短期）
@@ -15,12 +15,10 @@
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
-const OFFICE_ID_RE   = /^[0-9A-Za-z_-]+$/;
 
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
 const OFFICES_KEY         = KEY_PREFIX + 'OFFICES_JSON';     // 拠点一覧（id→{name,password,adminPassword}）
-const SUPER_ADMIN_OFFICES_KEY = KEY_PREFIX + 'SUPER_ADMIN_OFFICES';
 
 const TOKEN_PREFIX         = 'tok_';
 const TOKEN_OFFICE_PREFIX  = 'toff_';
@@ -31,35 +29,6 @@ function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
 
-function getSuperAdminOfficeIds_(prop){
-  try{
-    const raw = (prop || PropertiesService.getScriptProperties()).getProperty(SUPER_ADMIN_OFFICES_KEY);
-    if(!raw) return [];
-    if(String(raw).trim().length === 0) return [];
-    let parsed;
-    try{
-      parsed = JSON.parse(raw);
-      if(Array.isArray(parsed)){
-        return parsed.map(v => String(v || '').trim()).filter(Boolean);
-      }
-    }catch(_){ /* fallthrough */ }
-    return String(raw).split(',').map(v => v.trim()).filter(Boolean);
-  }catch(_){ return []; }
-}
-
-function officeIsSuperAdmin_(office, offs, prop){
-  if(!office) return false;
-  const propSvc = prop || PropertiesService.getScriptProperties();
-  const ids = getSuperAdminOfficeIds_(propSvc);
-  if(ids && ids.indexOf(office) >= 0) return true;
-  const offices = offs || getOffices_();
-  const info = offices && offices[office];
-  if(!info) return false;
-  const flag = info.superAdmin;
-  if(typeof flag === 'string'){ return flag === 'true' || flag === '1'; }
-  return Boolean(flag);
-}
-
 
 
 /* ===== データ保存キー ===== */
@@ -68,7 +37,7 @@ function configKeyForOffice_(office){ return `presence-config-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
-  admin: { name: 'Administrator', adminPassword: '任意のPW', superAdmin: true },
+  admin: { name: 'Administrator', adminPassword: '任意のPW' },
   dev:  { name: '開発用', password: 'dev',  adminPassword: 'dev'  },
   prod: { name: '稼働用', password: 'prod', adminPassword: 'prod' }
 };
@@ -108,10 +77,9 @@ function roleIsOfficeAdmin_(prop, token){
   const role = getRoleByToken_(prop, token);
   return role === 'officeAdmin' || role === 'superAdmin';
 }
-function canAdminOffice_(prop, token, office, opts){
+function canAdminOffice_(prop, token, office){
   const role = getRoleByToken_(prop, token);
   if(role === 'superAdmin') return true;
-  if(opts && opts.requireSuperAdmin) return false;
   const own = getOfficeByToken_(prop, token);
   return role === 'officeAdmin' && own === office;
 }
@@ -146,46 +114,14 @@ function defaultMenus_(){
     noteOptions: ["直出","直帰","直出・直帰"]
   };
 }
-function normalizeNotice_(notice){
-  const out = { message: '', links: [] };
-  if(notice){
-    if(typeof notice === 'string'){
-      out.message = String(notice);
-    }else if(typeof notice === 'object'){
-      if(notice.message != null){
-        out.message = String(notice.message);
-      }else if(notice.text != null){
-        out.message = String(notice.text);
-      }
-      if(Array.isArray(notice.links)){
-        out.links = notice.links.map(link => {
-          if(!link) return null;
-          if(typeof link === 'string'){
-            const url = String(link).trim();
-            if(!url) return null;
-            return { url, label: url };
-          }
-          const url = String(link.url || '').trim();
-          if(!url) return null;
-          const labelRaw = link.label != null ? String(link.label) : '';
-          const label = labelRaw.trim() || url;
-          return { url, label };
-        }).filter(Boolean);
-      }
-    }
-  }
-  out.message = out.message.replace(/\r\n?/g, '\n');
-  return out;
-}
 function defaultConfig_(){
-  return { version: 3, updated: 0, groups: [], menus: defaultMenus_(), notice: normalizeNotice_({}) };
+  return { version: 2, updated: 0, groups: [], menus: defaultMenus_() };
 }
 function normalizeConfig_(cfg){
   if(!cfg || typeof cfg !== 'object') return defaultConfig_();
   const groups = Array.isArray(cfg.groups) ? cfg.groups : [];
-  const version = Number(cfg.version || 0);
   const out = {
-    version: version >= 3 ? version : 3,
+    version: 2,
     updated: Number(cfg.updated || 0),
     groups: groups.map(g=>{
       const members = Array.isArray(g.members) ? g.members : [];
@@ -198,8 +134,7 @@ function normalizeConfig_(cfg){
         })).filter(m=>m.id || m.name)
       };
     }),
-    menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_(),
-    notice: normalizeNotice_(cfg.notice != null ? cfg.notice : cfg.noticeText)
+    menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_()
   };
   return out;
 }
@@ -258,7 +193,7 @@ function doPost(e){
     if(!pw) return json_({ error:'unauthorized' });
     let role = '';
     if(pw === String(offs[office].adminPassword || '')){
-      role = officeIsSuperAdmin_(office, offs, prop) ? 'superAdmin' : 'officeAdmin';
+      role = (office === 'admin') ? 'superAdmin' : 'officeAdmin';
     }else if(pw === String(offs[office].password || '')) role = 'user';
     else return json_({ error:'unauthorized' });
     const token = Utilities.getUuid().replace(/-/g,'');
@@ -481,68 +416,6 @@ function doPost(e){
     }
   }
 
-  if(action === 'createOffice'){
-    if(getRoleByToken_(prop, token) !== 'superAdmin') return json_({ error:'forbidden' });
-    const rawId = p_(e,'id','');
-    const id = normalizeOfficeId_(rawId);
-    const name = p_(e,'name','').trim();
-    const password = p_(e,'password','');
-    const adminPassword = p_(e,'adminPassword','');
-    if(!id || !name || !password || !adminPassword) return json_({ error:'bad_request' });
-    if(!OFFICE_ID_RE.test(id)) return json_({ error:'bad_request' });
-    const offs = getOffices_();
-    const conflictKey = Object.keys(offs || {}).find(k => normalizeOfficeId_(k) === id);
-    if(conflictKey) return json_({ error:'duplicate' });
-    offs[id] = { name, password: String(password), adminPassword: String(adminPassword) };
-    setOffices_(offs);
-    try{ cache.removeAll([
-      KEY_PREFIX + 'data:' + id,
-      KEY_PREFIX + 'cfg:' + id,
-      KEY_PREFIX + 'cfgpush:' + id,
-      KEY_PREFIX + 'offices',
-      KEY_PREFIX + 'publicOffices'
-    ]); }catch(_){ }
-    return json_({ ok:true });
-  }
-
-  if(action === 'deleteOffice'){
-    if(getRoleByToken_(prop, token) !== 'superAdmin') return json_({ error:'forbidden' });
-    const rawId = p_(e,'id','');
-    const id = normalizeOfficeId_(rawId);
-    if(!id) return json_({ error:'bad_request' });
-    const offs = getOffices_();
-    const actualId = Object.keys(offs || {}).find(k => normalizeOfficeId_(k) === id);
-    if(!actualId) return json_({ error:'not_found' });
-    delete offs[actualId];
-    setOffices_(offs);
-
-    const dataKey = dataKeyForOffice_(actualId);
-    const configKey = configKeyForOffice_(actualId);
-    try{ prop.deleteProperty(dataKey); }catch(_){ }
-    try{ prop.deleteProperty(configKey); }catch(_){ }
-    try{ cache.removeAll([
-      KEY_PREFIX + 'data:' + actualId,
-      KEY_PREFIX + 'cfg:' + actualId,
-      KEY_PREFIX + 'cfgpush:' + actualId,
-      KEY_PREFIX + 'offices',
-      KEY_PREFIX + 'publicOffices'
-    ]); }catch(_){ }
-
-    const superIds = getSuperAdminOfficeIds_(prop);
-    if(Array.isArray(superIds)){
-      const filtered = superIds.filter(v => v && normalizeOfficeId_(v) !== id);
-      if(filtered.length !== superIds.length){
-        if(filtered.length){
-          prop.setProperty(SUPER_ADMIN_OFFICES_KEY, JSON.stringify(filtered));
-        }else{
-          try{ prop.deleteProperty(SUPER_ADMIN_OFFICES_KEY); }catch(_){ }
-        }
-      }
-    }
-
-    return json_({ ok:true });
-  }
-
   if(action === 'renameOffice'){
     const office = p_(e,'office', tokenOffice);
     if(!canAdminOffice_(prop, token, office)) return json_({ error:'forbidden' });
@@ -598,4 +471,3 @@ function doGet(e){
   }
   return ContentService.createTextOutput('unsupported');
 }
-

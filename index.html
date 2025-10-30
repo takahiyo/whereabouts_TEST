@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>在席確認表【開発用】</title>
+<title>在席確認表</title>
 
 <!-- 強めのキャッシュ抑止（HTMLに効く） -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<!-- CSP：Worker への POST を許可（本番＝-test を指す） -->
+<!-- CSP：Worker への POST を許可（本番＝-prod を指す） -->
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'self';
                script-src 'self';
-               connect-src 'self' https://presence-proxy-test.taka-hiyo.workers.dev;
+               connect-src 'self' https://presence-proxy-prod.taka-hiyo.workers.dev;
                style-src 'self';
                img-src 'self' data:;
                object-src 'none'">
@@ -24,7 +24,7 @@
 <body>
 <header>
     <div class="title-wrap">
-      <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表【開発用】</button>
+      <button id="titleBtn" class="title-btn" aria-haspopup="true" aria-expanded="false" aria-controls="groupMenu">在席確認表</button>
       <div id="groupMenu" class="grp-menu" role="menu" aria-labelledby="titleBtn">
         <h4 id="groupMenuTitle">グループにジャンプ</h4>
         <ul id="groupMenuList"></ul>
@@ -36,7 +36,6 @@
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
-  <div id="noticeArea" class="notice-area" role="region" aria-live="polite" aria-label="周知" hidden></div>
 
   <!-- 管理モーダル -->
   <div id="adminModal" class="admin-modal" aria-modal="true" role="dialog">
@@ -45,34 +44,6 @@
         <h3>管理パネル</h3><button id="adminClose">閉じる</button>
       </div>
 
-      <div class="admin-row" id="adminOfficeRow" style="display:none;">
-        <label for="adminOfficeSel">操作対象拠点</label>
-        <select id="adminOfficeSel"></select>
-      </div>
-
-                <div id="adminSuperSection" class="admin-grid admin-super" style="display:none;">
-        <div class="admin-box">
-          <h4>拠点の追加</h4>
-          <div class="admin-row">
-            <input id="createOfficeId" placeholder="拠点ID" />
-            <input id="createOfficeName" placeholder="名称" />
-          </div>
-          <div class="admin-row">
-            <input id="createOfficePw" type="password" placeholder="初期パスワード" />
-            <input id="createOfficeAdminPw" type="password" placeholder="管理者パスワード" />
-            <button id="btnCreateOffice">追加</button>
-          </div>
-        </div>
-
-        <div class="admin-box">
-          <h4>拠点の削除</h4>
-          <div class="admin-row">
-            <select id="deleteOfficeSel"></select>
-            <button id="btnDeleteOffice">削除</button>
-          </div>
-          <div class="admin-note">削除すると元に戻せません</div>
-        </div>
-      </div>
 
       <div class="admin-grid">
         <div class="admin-box">
@@ -106,13 +77,6 @@
           <div class="admin-row"><textarea id="menusJson" placeholder='{"statuses":[...], "noteOptions":[...], "timeStepMinutes":30}'></textarea></div>
           <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
         </div>
-            
-        <div class="admin-box">
-          <h4>周知メッセージ</h4>
-          <div class="admin-row"><textarea id="noticeText" placeholder="タイトル下に表示する周知メッセージ（改行可）"></textarea></div>
-          <div class="admin-row"><button id="btnLoadNotice">現在の文言を読み込み</button><button id="btnSaveNotice">保存</button></div>
-          <div class="admin-note">URLは自動でリンク表示されます。空欄で保存すると周知エリアは非表示になります。</div>
-        </div>
       </div>
     </div>
   </div>
@@ -133,16 +97,16 @@
               <li>営業所を選び、パスワードを入力してください</li>
             </ul>
           </li>
-          <li><strong>在席確認表【開発用】</strong>
+          <li><strong>在席確認表</strong>
             <ul>
               <li>パネルはチーム（グループ）ごとです。</li>
               <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
               <li>縦スクロールが長い場合、タイトルをクリックでジャンプメニューから目的のグループへ移動できます。</li>
               <li><strong>検索/絞り込み</strong>：ヘッダの氏名検索・ステータス絞りで即時に反映。該当行ゼロのパネルは非表示。</li>
-              <li><strong>色分け</strong>：在席（無色）、外出（橙）、在宅勤務（紫）、出張（緑）、研修（黄）、健康診断（水色）、コアドック（桃）、帰宅（灰）、休み（赤）。外出・出張・研修・健康診断・コアドックでは戻り時間の入力が必須です。在席・在宅勤務・帰宅・休みを選ぶと戻り時間と備考は自動的にクリアされます。</li>
-              <li><strong>戻り時間</strong>：外出/出張/研修/健康診断/コアドックで有効（07:00〜22:00、既定30分刻み）。未入力時は赤枠で促します。</li>
+              <li><strong>色分け</strong>：在席（無色）、外出（橙）、会議（青）、テレワーク（紫）、休み（赤）。</li>
+              <li><strong>戻り時間</strong>：外出/会議で有効（07:00〜22:00、既定30分刻み）。未入力時は赤枠で促します。</li>
               <li><strong>備考</strong>：自由入力＋候補（空白/直出/直帰/直出・直帰）。入力中は自動更新を保留。</li>
-              <li><strong>反映速度</strong>：サーバーの状態を10秒間隔で自動取得します。自身の更新は即時送信され、他端末には最長で約10秒後に反映されます。反映が遅いと感じる場合はブラウザの再読み込みなどで手動更新してください。競合時はサーバ時刻が優先され、CAS設定により上書きが拒否される場合があります。</li>
+              <li><strong>反映速度</strong>：約2秒で他端末に反映。競合はサーバ時刻採用（CAS設定に依存）。</li>
             </ul>
           </li>
         </ol>
@@ -151,42 +115,7 @@
       <section id="manualAdmin" class="manual-section">
         <h4>管理者マニュアル</h4>
         <ol>
-          <li><strong>対象</strong>：ログイン中の拠点に紐づく管理者（officeAdmin）。</li>
-          <li><strong>日常運用</strong>
-            <ul>
-              <li>CSVの入出力でメンバー一覧を更新できます（形式：グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考）。</li>
-              <li>「拠点名の変更」「拠点パスワードの変更」で現在の拠点のみを更新できます。</li>
-              <li>「メニュー設定（JSON）」ではステータスや備考候補、戻り時間の刻みを調整できます。</li>
-            </ul>
-          </li>
-          <li>管理パネル上の「拠点の追加」「拠点の削除」はスーパ管理者のみ操作可能です。</li>
-        </ol>
-      </section>
-
-      <section id="manualSuper" class="manual-section">
-        <h4>スーパ管理者マニュアル</h4>
-        <ol>
-          <li><strong>対象</strong>：複数拠点を統括するスーパ管理者（superAdmin）。通常の在席パネル操作は不要で、管理パネルの運用が中心です。</li>
-          <li><strong>拠点の追加</strong>
-            <ul>
-              <li>管理パネルの「拠点の追加」から各項目を入力し、「追加」を押下します。</li>
-              <li>拠点IDは半角英数字・ハイフン・アンダースコアのみ。入力値の前後の空白のみ自動で除去され、大文字小文字は入力どおり保持されます。</li>
-              <li>既存IDと重複する場合はエラーになります。新規拠点がログインに利用する識別子となるため、運用ルールに沿った命名を行ってください。</li>
-              <li>初期パスワード／管理者パスワードは拠点ごとに控えを残し、安全に共有してください。</li>
-            </ul>
-          </li>
-          <li><strong>拠点の削除</strong>
-            <ul>
-              <li>削除対象の拠点を選択し「削除」を押下します。削除後は元に戻せません。</li>
-              <li>削除時には関連データ（在席データや設定）が自動的に消去されます。不要なデータが残らないことを確認してください。</li>
-            </ul>
-          </li>
-          <li><strong>作業後の確認</strong>
-            <ul>
-              <li>拠点の追加／削除直後はキャッシュが無効化され、拠点一覧が即時に更新されます。想定どおり反映されているか確認してください。</li>
-              <li>不明点や想定外の挙動があれば開発担当へ連絡し、ログ情報（トースト表示など）を共有してください。</li>
-            </ul>
-          </li>
+          <li>CSV入出力、拠点名変更、パスワード変更、メニュー設定（JSON：statuses / noteOptions / timeStepMinutes）に対応。</li>
         </ol>
       </section>
     </div>
@@ -195,7 +124,7 @@
   <!-- ログイン -->
   <div id="login" class="login" style="display:none">
     <div class="card">
-      <h2>在席確認表【開発用】</h2>
+      <h2>在席確認表</h2>
       <p>拠点を選び、パスワードを入力してください</p>
       <select id="officeSel" aria-label="拠点"></select>
       <input type="password" id="pw" placeholder="Password" autocomplete="current-password" />

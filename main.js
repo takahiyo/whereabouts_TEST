@@ -9,7 +9,6 @@ const SESSION_OFFICE_NAME_KEY = "presence-office-name";
 
 /* 要素 */
 const board=document.getElementById('board'), toastEl=document.getElementById('toast'), diag=document.getElementById('diag');
-const noticeArea=document.getElementById('noticeArea');
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
 const adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
@@ -17,23 +16,17 @@ const btnExport=document.getElementById('btnExport'), csvFile=document.getElemen
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
 const menusJson=document.getElementById('menusJson'), btnLoadMenus=document.getElementById('btnLoadMenus'), btnSaveMenus=document.getElementById('btnSaveMenus');
-const adminNoticeText=document.getElementById('noticeText'), btnLoadNotice=document.getElementById('btnLoadNotice'), btnSaveNotice=document.getElementById('btnSaveNotice');
 const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=document.getElementById('adminOfficeSel');
-const adminSuperSection=document.getElementById('adminSuperSection');
-const createOfficeId=document.getElementById('createOfficeId'), createOfficeName=document.getElementById('createOfficeName'), createOfficePw=document.getElementById('createOfficePw'), createOfficeAdminPw=document.getElementById('createOfficeAdminPw'), btnCreateOffice=document.getElementById('btnCreateOffice');
-const deleteOfficeSel=document.getElementById('deleteOfficeSel'), btnDeleteOffice=document.getElementById('btnDeleteOffice');
-const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin'), manualSuper=document.getElementById('manualSuper');
+const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
-let CURRENT_NOTICE={ message:'', links:[] };
 let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
 let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 let adminSelectedOfficeId='';
-let adminOfficeListCache=[], adminDeleteSelectedOfficeId='';
 
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
@@ -73,32 +66,6 @@ function sanitizeText(s){
 
   return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function isSafeNoticeUrl(url){
-  const s = String(url||'').trim();
-  if(/^https?:\/\//i.test(s)) return true;
-  if(/^smb:\/\//i.test(s)) return true;
-  if(/^\\\\[^\s]/.test(s)) return true;
-  return false;
-}
-function buildNoticeHref(url){
-  const raw = String(url||'').trim();
-  if(!raw) return '';
-  if(/^\\\\/.test(raw)){
-    const path = raw.replace(/^\\\\+/,'');
-    if(!path) return '';
-    return `smb://${encodeURI(path.replace(/\\/g,'/'))}`;
-  }
-  if(/^smb:\/\//i.test(raw)){
-    const path = raw.replace(/^smb:\/\//i,'');
-    if(!path) return '';
-    return `smb://${encodeURI(path)}`;
-  }
-  if(/^https?:\/\//i.test(raw)){
-    return raw;
-  }
-  return '';
-}
-function isHttpUrl(url){ return /^https?:\/\//i.test(String(url||'').trim()); }
 const ID_RE=/^[0-9A-Za-z_-]+$/;
 
 function el(tag,attrs={},children=[]){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k==='class') e.className=v; else if(k==='text') e.textContent=String(v); else e.setAttribute(k,String(v)); } (children||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c)); return e; }
@@ -447,167 +414,6 @@ function normalizeConfigClient(cfg){
     };
   });
 }
-function normalizeNoticeLinkEntry(link){
-  if(!link) return null;
-  if(typeof link === 'string'){
-    const urlRaw = link.trim();
-    if(!isSafeNoticeUrl(urlRaw)) return null;
-    const href = buildNoticeHref(urlRaw);
-    if(!href) return null;
-    return { url: href, label: urlRaw || href };
-  }
-  if(typeof link !== 'object') return null;
-  const urlRaw = String(link.url || '').trim();
-  if(!isSafeNoticeUrl(urlRaw)) return null;
-  const href = buildNoticeHref(urlRaw);
-  if(!href) return null;
-  const labelRaw = link.label != null ? String(link.label) : '';
-  const label = labelRaw.trim() || urlRaw || href;
-  return { url: href, label };
-}
-function normalizeNoticeLinksRaw(rawLinks){
-  if(!Array.isArray(rawLinks)) return [];
-  return rawLinks.map(normalizeNoticeLinkEntry).filter(Boolean);
-}
-function normalizeNoticeClient(cfg){
-  const result = { message: '', links: [] };
-  if(!cfg){
-    return result;
-  }
-          const raw = (cfg.notice != null ? cfg.notice : cfg.noticeText);
-  if(typeof raw === 'string'){
-    result.message = raw.replace(/\r\n?/g,'\n');
-    return result;
-  }
-  if(typeof raw !== 'object'){
-    return result;
-  }
-  if(raw.message != null){
-    result.message = String(raw.message);
-  }else if(raw.text != null){
-    result.message = String(raw.text);
-  }
-  result.message = result.message.replace(/\r\n?/g,'\n');
-  result.links = normalizeNoticeLinksRaw(raw.links);
-          const fallbackText = typeof cfg.noticeText === 'string' ? cfg.noticeText.replace(/\r\n?/g,'\n') : '';
-  if((result.message || '').trim().length === 0 && fallbackText.trim().length > 0){
-    result.message = fallbackText;
-  }
-  return result;
-}
-function noticesAreEqual(a,b){
-  if(a === b) return true;
-  if(!a || !b) return false;
-  const msgA = (a.message || '');
-  const msgB = (b.message || '');
-  if(msgA !== msgB) return false;
-  const linksA = Array.isArray(a.links) ? a.links : [];
-  const linksB = Array.isArray(b.links) ? b.links : [];
-  if(linksA.length !== linksB.length) return false;
-  for(let i=0;i<linksA.length;i++){
-    const la = linksA[i] || {};
-    const lb = linksB[i] || {};
-    if((la.url || '') !== (lb.url || '')) return false;
-    if((la.label || '') !== (lb.label || '')) return false;
-  }
-  return true;
-}
-function cloneNoticeForState(notice){
-  if(!notice || typeof notice !== 'object'){
-    return { message:'', links:[] };
-  }
-  const message = typeof notice.message === 'string' ? notice.message : '';
-  const links = Array.isArray(notice.links)
-    ? notice.links.map(link => {
-        if(!link || typeof link !== 'object') return null;
-        const url = link.url != null ? String(link.url) : '';
-        if(!url) return null;
-        const label = link.label != null ? String(link.label) : '';
-        return { url, label };
-      }).filter(Boolean)
-    : [];
-  return { message, links };
-}
-function applyCurrentNotice(notice){
-  CURRENT_NOTICE = cloneNoticeForState(notice);
-  updateNoticeArea();
-}
-function updateNoticeArea(notice = CURRENT_NOTICE){
-  if(!noticeArea) return;
-  const message = (notice && typeof notice.message === 'string') ? notice.message : '';
-  const links = Array.isArray(notice?.links) ? notice.links.filter(l => l && l.url) : [];
-  const trimmedMessage = message.replace(/\r\n?/g,'\n');
-  const hasMessage = trimmedMessage.trim().length > 0;
-  const hasLinks = links.length > 0;
-  noticeArea.replaceChildren();
-  if(!hasMessage && !hasLinks){
-    noticeArea.hidden = true;
-    noticeArea.setAttribute('aria-hidden','true');
-    return;
-  }
-  noticeArea.hidden = false;
-  noticeArea.removeAttribute('aria-hidden');
-  if(hasMessage){
-    const lines = trimmedMessage.split('\n');
-    lines.forEach(line => {
-      const p = document.createElement('p');
-      p.className = 'notice-line';
-      if(line === ''){
-        p.appendChild(document.createElement('br'));
-      }else{
-        let lastIndex = 0;
-        const linkRe = /(https?:\/\/[^\s<>"']+|smb:\/\/[^\s<>"']+|\\\\[^\s<>"']+)/gi;
-        let match;
-        while((match = linkRe.exec(line)) !== null){
-          if(match.index > lastIndex){
-            p.appendChild(document.createTextNode(line.slice(lastIndex, match.index)));
-          }
-          const rawUrl = match[0];
-          const href = buildNoticeHref(rawUrl);
-          if(href){
-            const a = document.createElement('a');
-            a.href = href;
-            if(isHttpUrl(href)){
-              a.target = '_blank';
-              a.rel = 'noopener noreferrer';
-            }
-            a.textContent = rawUrl;
-            p.appendChild(a);
-          }else{
-            p.appendChild(document.createTextNode(rawUrl));
-          }
-          lastIndex = match.index + rawUrl.length;
-        }
-        if(lastIndex < line.length){
-          p.appendChild(document.createTextNode(line.slice(lastIndex)));
-        }
-      }
-      noticeArea.appendChild(p);
-    });
-  }
-  if(hasLinks){
-    const list = document.createElement('ul');
-    list.className = 'notice-links';
-    links.forEach(link => {
-      const li = document.createElement('li');
-      const href = buildNoticeHref(link.url);
-      if(href){
-        const a = document.createElement('a');
-        a.href = href;
-        if(isHttpUrl(href)){
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-        }
-        a.textContent = link.label || link.url || href;
-        li.appendChild(a);
-      }else{
-        li.appendChild(document.createTextNode(link.label || link.url || ''));
-      }
-      list.appendChild(li);
-    });
-    noticeArea.appendChild(list);
-  }
-}
 async function fastFetchDataOnce(){
   return await apiPost({ action: 'get', token: SESSION_TOKEN, nocache: '1' });
 }
@@ -643,10 +449,6 @@ function startConfigWatch(){
       return;
     }
     if(cfg && !cfg.error){
-		      const nextNotice = normalizeNoticeClient(cfg);
-      if(!noticesAreEqual(nextNotice, CURRENT_NOTICE)){
-        applyCurrentNotice(nextNotice);
-      }
       const updated = (typeof cfg.updated === 'number') ? cfg.updated : 0;
       if(updated && updated !== CONFIG_UPDATED){
         GROUPS = normalizeConfigClient(cfg);
@@ -822,14 +624,7 @@ btnImport.addEventListener('click', async ()=>{
     g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',id:r.id||undefined});
   }
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
-  const version = Number(cfg?.version || 0);
-  const cfgToSet={
-    version: version>=3?version:3,
-    updated:Date.now(),
-    groups,
-    menus: (cfg && cfg.menus) ? cfg.menus : (MENUS||undefined),
-    notice: cfg && cfg.notice ? cfg.notice : undefined
-  };
+  const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
   const r1=await adminSetConfigFor(office,cfgToSet);
   if(!r1 || r1.error){ toast('名簿の設定に失敗',false); return; }
 
@@ -850,78 +645,6 @@ btnImport.addEventListener('click', async ()=>{
   if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
   toast('インポート完了',true);
 });
-
-if(deleteOfficeSel){
-  deleteOfficeSel.addEventListener('change', ()=>{ adminDeleteSelectedOfficeId=deleteOfficeSel.value||''; });
-}
-if(btnCreateOffice){
-  btnCreateOffice.addEventListener('click', async ()=>{
-    if(CURRENT_ROLE!=='superAdmin'){ toast('権限がありません',false); return; }
-    const id=((createOfficeId&&createOfficeId.value)||'').trim();
-    const name=((createOfficeName&&createOfficeName.value)||'').trim();
-    const pw=((createOfficePw&&createOfficePw.value)||'').trim();
-    const adminPw=((createOfficeAdminPw&&createOfficeAdminPw.value)||'').trim();
-    if(!id||!name||!pw||!adminPw){ toast('全ての項目を入力してください',false); return; }
-    if(!ID_RE.test(id)){ toast('拠点IDは半角英数字・-_のみ使用できます',false); return; }
-    btnCreateOffice.disabled=true;
-    try{
-      const res=await adminCreateOffice(id,name,pw,adminPw);
-      if(res && res.ok){
-        toast('拠点を追加しました',true);
-        if(createOfficeId) createOfficeId.value='';
-        if(createOfficeName) createOfficeName.value='';
-        if(createOfficePw) createOfficePw.value='';
-        if(createOfficeAdminPw) createOfficeAdminPw.value='';
-        adminSelectedOfficeId=id;
-        adminDeleteSelectedOfficeId=id;
-        await applyRoleToAdminPanel();
-      }else{
-        const msg=(res && res.error==='duplicate')?'同じIDの拠点が既に存在します':'拠点の追加に失敗しました';
-        toast(msg,false);
-      }
-    }catch(err){
-      console.error('createOffice failed',err);
-      toast('拠点の追加に失敗しました',false);
-    }finally{
-      btnCreateOffice.disabled=false;
-    }
-  });
-}
-if(btnDeleteOffice){
-  btnDeleteOffice.addEventListener('click', async ()=>{
-    if(CURRENT_ROLE!=='superAdmin'){ toast('権限がありません',false); return; }
-    if(!deleteOfficeSel){ toast('削除する拠点を選択してください',false); return; }
-    const target=(deleteOfficeSel.value||'').trim();
-    if(!target){ toast('削除する拠点を選択してください',false); return; }
-    const info=Array.isArray(adminOfficeListCache)?adminOfficeListCache.find(o=>o && String(o.id||'').trim()===target):null;
-    const label=stripCtl(info && info.name!=null?String(info.name):target)||target;
-    if(!window.confirm(`拠点「${label}」を削除します。よろしいですか？`)) return;
-    btnDeleteOffice.disabled=true;
-    deleteOfficeSel.disabled=true;
-    let refreshed=false;
-    try{
-      const res=await adminDeleteOffice(target);
-      if(res && res.ok){
-        toast('拠点を削除しました',true);
-        if(adminSelectedOfficeId===target) adminSelectedOfficeId='';
-        if(adminDeleteSelectedOfficeId===target) adminDeleteSelectedOfficeId='';
-        refreshed=true;
-        await applyRoleToAdminPanel();
-      }else{
-        const msg=(res && res.error==='not_found')?'指定した拠点が見つかりません':'拠点の削除に失敗しました';
-        toast(msg,false);
-      }
-    }catch(err){
-      console.error('deleteOffice failed',err);
-      toast('拠点の削除に失敗しました',false);
-    }finally{
-      if(!refreshed){
-        btnDeleteOffice.disabled=false;
-        deleteOfficeSel.disabled=false;
-      }
-    }
-  });
-}
 btnRenameOffice.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); if(!office) return;
   const name=(renameOfficeName.value||'').trim();
@@ -957,83 +680,6 @@ btnSaveMenus.addEventListener('click', async ()=>{
   if(r && !r.error){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
   else toast('保存に失敗',false);
 });
-if(btnLoadNotice){
-  btnLoadNotice.addEventListener('click', async ()=>{
-    const office=selectedOfficeId(); if(!office) return;
-    try{
-      const cfg=await adminGetConfigFor(office);
-      if(!cfg || cfg.error){ toast('周知文言の取得に失敗しました',false); return; }
-      const appliedNotice=normalizeNoticeClient(cfg);
-      if(adminNoticeText){ adminNoticeText.value = appliedNotice.message || ''; }
-      if(office === CURRENT_OFFICE_ID){
-        applyCurrentNotice(appliedNotice);
-      }
-      toast('現在の文言を読み込みました');
-    }catch(err){
-      console.error('loadNotice failed',err);
-      toast('周知文言の取得に失敗しました',false);
-    }
-  });
-}
-if(btnSaveNotice){
-  btnSaveNotice.addEventListener('click', async ()=>{
-    const office=selectedOfficeId(); if(!office) return;
-    if(!isOfficeAdmin()){ toast('権限がありません',false); return; }
-    btnSaveNotice.disabled = true;
-    try{
-      const cfg=await adminGetConfigFor(office);
-      if(!(cfg && cfg.groups)){ toast('周知文言の取得に失敗しました',false); return; }
-      const msg = (adminNoticeText?.value || '').replace(/\r\n?/g,'\n');
-      const prevNotice = (cfg && typeof cfg.notice === 'object' && !Array.isArray(cfg.notice)) ? cfg.notice : null;
-      const baseNotice = prevNotice ? { ...prevNotice } : {};
-      const normalizedLinks = normalizeNoticeLinksRaw(baseNotice.links);
-      if(normalizedLinks.length>0){
-        baseNotice.links = normalizedLinks;
-      }else if('links' in baseNotice){
-        delete baseNotice.links;
-      }
-      baseNotice.message = msg;
-      baseNotice.text = msg;
-      cfg.notice = baseNotice;
-      cfg.noticeText = msg;
-      const res=await adminSetConfigFor(office,cfg);
-      if(res && res.error == null && res.ok !== false){
-        toast('周知メッセージを保存しました');
-        let appliedSource = null;
-        if(res && typeof res === 'object' && (res.notice != null || res.noticeText != null)){
-          appliedSource = res;
-        }
-        if(!appliedSource){
-          try{
-            const latestCfg = await adminGetConfigFor(office);
-            if(latestCfg && latestCfg.error == null && latestCfg.ok !== false){
-              appliedSource = latestCfg;
-            }
-          }catch(err){
-            console.error('refreshNotice failed', err);
-          }
-        }
-        if(!appliedSource){
-          appliedSource = { notice: baseNotice, noticeText: msg };
-        }
-        const appliedNotice = normalizeNoticeClient(appliedSource);
-        if(adminNoticeText){
-          adminNoticeText.value = appliedNotice.message || msg;
-        }
-        if(office === CURRENT_OFFICE_ID){
-          applyCurrentNotice(appliedNotice);
-        }
-      }else{
-        toast('保存に失敗しました',false);
-      }
-    }catch(err){
-      console.error('saveNotice failed',err);
-      toast('保存に失敗しました',false);
-    }finally{
-      btnSaveNotice.disabled = false;
-    }
-  });
-}
 
 /* CSVパーサ */
 function parseCSV(text){
@@ -1076,19 +722,7 @@ async function logout(){
     adminSelectedOfficeId='';
   if(adminOfficeSel){ adminOfficeSel.textContent=''; adminOfficeSel.disabled=false; }
   if(adminOfficeRow){ adminOfficeRow.style.display='none'; }
-	  if(adminSuperSection){ adminSuperSection.style.display='none'; }
-  if(deleteOfficeSel){ deleteOfficeSel.textContent=''; deleteOfficeSel.disabled=true; }
-  if(btnDeleteOffice){ btnDeleteOffice.disabled=false; }
-  if(btnCreateOffice){ btnCreateOffice.disabled=false; }
-  if(createOfficeId){ createOfficeId.value=''; }
-  if(createOfficeName){ createOfficeName.value=''; }
-  if(createOfficePw){ createOfficePw.value=''; }
-  if(createOfficeAdminPw){ createOfficeAdminPw.value=''; }
-  adminOfficeListCache=[];
-  adminDeleteSelectedOfficeId='';
-          if(adminNoticeText){ adminNoticeText.value=''; }
-  applyCurrentNotice(null);
-  titleBtn.textContent='在席確認表【開発用】';
+  titleBtn.textContent='在席確認表';
   ensureAuthUI();
   try{ await refreshPublicOfficeSelect(); }
   catch{ ensureAuthUIPublicError(); }
@@ -1106,149 +740,84 @@ async function logout(){
     statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
   }
   function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
-
-
   async function applyRoleToAdminPanel(){
-  if(!(adminOfficeRow&&adminOfficeSel)) return;
-  if(CURRENT_ROLE!=='superAdmin'){
-    adminOfficeRow.style.display='none';
-    adminOfficeSel.disabled=false;
+    if(!(adminOfficeRow&&adminOfficeSel)) return;
+    if(CURRENT_ROLE!=='superAdmin'){
+      adminOfficeRow.style.display='none';
+      adminOfficeSel.disabled=false;
+      adminOfficeSel.textContent='';
+      adminSelectedOfficeId='';
+      return;
+    }
+
+    adminOfficeRow.style.display='';
+    adminOfficeSel.disabled=true;
     adminOfficeSel.textContent='';
-    adminSelectedOfficeId='';
-    adminOfficeListCache=[];
-    adminDeleteSelectedOfficeId='';
-    if(adminSuperSection){ adminSuperSection.style.display='none'; }
-    if(deleteOfficeSel){ deleteOfficeSel.textContent=''; deleteOfficeSel.disabled=true; }
-    if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
-    return;
-  }
+    const loadingOpt=document.createElement('option');
+    loadingOpt.value=''; loadingOpt.disabled=true; loadingOpt.selected=true; loadingOpt.textContent='読込中…';
+    adminOfficeSel.appendChild(loadingOpt);
 
-  adminOfficeRow.style.display='';
-  adminOfficeSel.disabled=true;
-  adminOfficeSel.textContent='';
-  if(adminSuperSection){ adminSuperSection.style.display=''; }
-  if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
-  if(deleteOfficeSel){
-    deleteOfficeSel.disabled=true;
-    deleteOfficeSel.textContent='';
-    const loadingDel=document.createElement('option');
-    loadingDel.value=''; loadingDel.disabled=true; loadingDel.selected=true; loadingDel.textContent='読込中…';
-    deleteOfficeSel.appendChild(loadingDel);
-  }
-  const loadingOpt=document.createElement('option');
-  loadingOpt.value=''; loadingOpt.disabled=true; loadingOpt.selected=true; loadingOpt.textContent='読込中…';
-  adminOfficeSel.appendChild(loadingOpt);
-
-  let offices=[];
-  try{
-    const res=await apiPost({ action:'listOffices', token:SESSION_TOKEN });
-    if(res && res.ok!==false && Array.isArray(res.offices)){
-      offices=res.offices;
-    }else{
-      throw new Error(res&&res.error?String(res.error):'unexpected_response');
+    let offices=[];
+    try{
+      const res=await apiPost({ action:'listOffices', token:SESSION_TOKEN });
+      if(res && res.ok!==false && Array.isArray(res.offices)){
+        offices=res.offices;
+      }else{
+        throw new Error(res&&res.error?String(res.error):'unexpected_response');
+      }
+    }catch(err){
+      console.error('listOffices failed',err);
+      adminOfficeSel.textContent='';
+      const opt=document.createElement('option');
+      opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent='取得に失敗しました';
+      adminOfficeSel.appendChild(opt);
+      adminSelectedOfficeId='';
+      adminOfficeSel.disabled=false;
+      toast('拠点一覧の取得に失敗しました',false);
+      return;
     }
-  }catch(err){
-    console.error('listOffices failed',err);
+
     adminOfficeSel.textContent='';
-    const opt=document.createElement('option');
-    opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent='取得に失敗しました';
-    adminOfficeSel.appendChild(opt);
-    adminSelectedOfficeId='';
-    adminOfficeSel.disabled=false;
-    adminOfficeListCache=[];
-    if(deleteOfficeSel){
-      deleteOfficeSel.textContent='';
-      const opt2=document.createElement('option');
-      opt2.value=''; opt2.disabled=true; opt2.selected=true; opt2.textContent='取得に失敗しました';
-      deleteOfficeSel.appendChild(opt2);
-      deleteOfficeSel.disabled=true;
-    }
-    if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
-    toast('拠点一覧の取得に失敗しました',false);
-    return;
-  }
+    const seen=new Set();
+    let desiredId=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
+    let hasDesired=false;
 
-  adminOfficeListCache=Array.isArray(offices)?offices.slice():[];
-  adminOfficeSel.textContent='';
-  const seen=new Set();
-  let desiredId=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  let hasDesired=false;
-
-  adminOfficeListCache.forEach(o=>{
-    if(!o) return;
-    const id=String(o.id||'').trim();
-    if(!id||seen.has(id)) return;
-    seen.add(id);
-    const opt=document.createElement('option');
-    opt.value=id;
-    opt.textContent=stripCtl(o.name==null?id:String(o.name))||id;
-    adminOfficeSel.appendChild(opt);
-    if(id===desiredId) hasDesired=true;
-  });
-
-  if(adminOfficeSel.options.length===0){
-    const opt=document.createElement('option');
-    opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent='拠点がありません';
-    adminOfficeSel.appendChild(opt);
-    adminSelectedOfficeId='';
-    adminOfficeSel.disabled=false;
-    if(deleteOfficeSel){
-      deleteOfficeSel.textContent='';
-      const none=document.createElement('option');
-      none.value=''; none.disabled=true; none.selected=true; none.textContent='削除可能な拠点がありません';
-      deleteOfficeSel.appendChild(none);
-      deleteOfficeSel.disabled=true;
-    }
-	      if(btnDeleteOffice){ btnDeleteOffice.disabled=true; }
-    return;
-  }
-
-  if(!hasDesired){
-    if(CURRENT_OFFICE_ID && seen.has(CURRENT_OFFICE_ID)) desiredId=CURRENT_OFFICE_ID;
-    else desiredId=adminOfficeSel.options[0].value||'';
-  }
-
-  if(desiredId){ adminOfficeSel.value=desiredId; }
-  if(adminOfficeSel.selectedIndex<0){ adminOfficeSel.selectedIndex=0; desiredId=adminOfficeSel.value||''; }
-  adminSelectedOfficeId=desiredId||'';
-  adminOfficeSel.disabled=false;
-
-  if(deleteOfficeSel){
-    deleteOfficeSel.textContent='';
-    const placeholder=document.createElement('option');
-    placeholder.value=''; placeholder.disabled=true; placeholder.selected=true; placeholder.textContent='削除対象の拠点を選択';
-    deleteOfficeSel.appendChild(placeholder);
-    let hasDeleteSelection=false;
-    adminOfficeListCache.forEach(o=>{
+    offices.forEach(o=>{
       if(!o) return;
       const id=String(o.id||'').trim();
-      if(!id) return;
+      if(!id||seen.has(id)) return;
+      seen.add(id);
       const opt=document.createElement('option');
       opt.value=id;
       opt.textContent=stripCtl(o.name==null?id:String(o.name))||id;
-      deleteOfficeSel.appendChild(opt);
-      if(id===adminDeleteSelectedOfficeId) hasDeleteSelection=true;
+      adminOfficeSel.appendChild(opt);
+      if(id===desiredId) hasDesired=true;
     });
-    if(hasDeleteSelection){
-      deleteOfficeSel.value=adminDeleteSelectedOfficeId;
-      placeholder.selected=false;
-    }else{
-      deleteOfficeSel.selectedIndex=0;
-      adminDeleteSelectedOfficeId='';
+
+    if(adminOfficeSel.options.length===0){
+      const opt=document.createElement('option');
+      opt.value=''; opt.disabled=true; opt.selected=true; opt.textContent='拠点がありません';
+      adminOfficeSel.appendChild(opt);
+      adminSelectedOfficeId='';
+      adminOfficeSel.disabled=false;
+      return;
     }
-    deleteOfficeSel.disabled=deleteOfficeSel.options.length<=1;
-    if(btnDeleteOffice){ btnDeleteOffice.disabled=deleteOfficeSel.disabled; }
-  }else if(btnDeleteOffice){
-    btnDeleteOffice.disabled=false;
+
+    if(!hasDesired){
+      if(CURRENT_OFFICE_ID && seen.has(CURRENT_OFFICE_ID)) desiredId=CURRENT_OFFICE_ID;
+      else desiredId=adminOfficeSel.options[0].value||'';
+    }
+
+    if(desiredId){ adminOfficeSel.value=desiredId; }
+    if(adminOfficeSel.selectedIndex<0){ adminOfficeSel.selectedIndex=0; desiredId=adminOfficeSel.value||''; }
+    adminSelectedOfficeId=desiredId||'';
+    adminOfficeSel.disabled=false;
   }
-}
   function showManualModal(yes){ manualModal.classList.toggle('show', !!yes); }
   function applyRoleToManual(){
+    const isAdmin = isOfficeAdmin();
     manualUser.style.display = '';
-    manualAdmin.style.display = CURRENT_ROLE==='officeAdmin' ? '' : 'none';
-    if(manualSuper){
-      manualSuper.style.display = CURRENT_ROLE==='superAdmin' ? '' : 'none';
-    }
+    manualAdmin.style.display = isAdmin ? '' : 'none';
   }
 
 
@@ -1265,17 +834,11 @@ manualClose.addEventListener('click', ()=> showManualModal(false));
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal(false); showManualModal(false); closeMenu(); }});
 
 /* Admin API */
-
 function selectedOfficeId(){
-  let office=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  if(CURRENT_ROLE==='superAdmin' && office && Array.isArray(adminOfficeListCache)){
-    const exists=adminOfficeListCache.some(o=>o && String(o.id||'').trim()===office);
-    if(!exists) office='';
-  }
+  const office=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
   if(!office){ toast('操作対象拠点を選択してください',false); }
   return office;
 }
-
 async function adminGetFor(office){ return await apiPost({ action:'getFor', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminGetConfigFor(office){ return await apiPost({ action:'getConfigFor', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminSetConfigFor(office,cfgObj){ const q={ action:'setConfigFor', token:SESSION_TOKEN, office, data:JSON.stringify(cfgObj) }; return await apiPost(q); }
@@ -1297,8 +860,6 @@ async function adminSetForChunked(office,dataObjFull){
 }
 async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
 async function adminSetOfficePassword(office,pw,apw){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; return await apiPost(q); }
-async function adminCreateOffice(id,name,password,adminPassword){ const q={ action:'createOffice', token:SESSION_TOKEN, id, name, password, adminPassword }; return await apiPost(q); }
-async function adminDeleteOffice(id){ return await apiPost({ action:'deleteOffice', token:SESSION_TOKEN, id }); }
 
 /* CSV（共通） */
 function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return (/^[=\+\-@\t]/.test(v))?"'"+v:v; }
@@ -1407,7 +968,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     CURRENT_OFFICE_NAME=res.officeName||""; CURRENT_OFFICE_ID=res.office||"";
 	    adminSelectedOfficeId='';
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
-    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
 
     // 役割確定（renewで上書き）
@@ -1428,17 +989,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         await logout();
         return;
       }
-      if(cfg&&!cfg.error){
-        GROUPS=normalizeConfigClient(cfg);
-        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
-        setupMenus(cfg.menus||null);
-        const nextNotice = normalizeNoticeClient(cfg);
-        applyCurrentNotice(nextNotice);
-      }
-      else {
-        setupMenus(null);
-        applyCurrentNotice(null);
-      }
+      if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); }
+      else { setupMenus(null); }
     })();
     const dataP=fastFetchDataOnce().then(async data=>{
       if(data?.error==='unauthorized'){
@@ -1464,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const existing=sessionStorage.getItem(SESSION_KEY);
   if(existing){
     SESSION_TOKEN=existing; loginEl.style.display='none';
-    loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表【開発用】`:'在席確認表【開発用】');
+    loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     ensureAuthUI(); applyRoleToManual();
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
@@ -1472,14 +1024,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         await logout();
         return;
       }
-      if(cfg&&!cfg.error){
-        GROUPS=normalizeConfigClient(cfg);
-        CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0;
-        setupMenus(cfg.menus||null);
-        const nextNotice = normalizeNoticeClient(cfg);
-        applyCurrentNotice(nextNotice);
-        render();
-      }
+      if(cfg&&!cfg.error){ GROUPS=normalizeConfigClient(cfg); CONFIG_UPDATED=(typeof cfg.updated==='number')?cfg.updated:0; setupMenus(cfg.menus||null); render(); }
       if(!SESSION_TOKEN) return;
       const d=await fastFetchDataOnce();
       if(d?.error==='unauthorized'){
