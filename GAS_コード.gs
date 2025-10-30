@@ -291,6 +291,7 @@ function doPost(e){
         const rec = {
           ext:   client.ext   == null ? '' : String(client.ext),
           status:client.status== null ? '' : String(client.status),
+          workHours: sanitizeWorkHoursValue_(client.workHours),
           time:  client.time  == null ? '' : String(client.time),
           note:  client.note  == null ? '' : String(client.note),
           rev: nextRev,
@@ -470,4 +471,5 @@ function doGet(e){
     return ContentService.createTextOutput(out).setMimeType('text/event-stream');
   }
   return ContentService.createTextOutput('unsupported');
+
 }
