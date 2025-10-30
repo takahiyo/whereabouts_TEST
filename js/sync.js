@@ -1,4 +1,31 @@
 /* ===== メニュー・正規化・通信・同期 ===== */
+const DEFAULT_BUSINESS_HOURS = [
+  "07:30-16:30",
+  "08:00-17:00",
+  "08:30-17:30",
+  "09:00-18:00",
+  "09:30-18:30",
+  "10:00-19:00",
+  "10:30-19:30",
+  "11:00-20:00",
+  "11:30-20:30",
+  "12:00-21:00",
+  "12:30-21:30",
+  "13:00-22:00"
+];
+
+const WORK_RANGE_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+
+function sanitizeWorkHoursValue(value){
+  const s = String(stripCtl(value ?? "")).trim();
+  if(!s) return "";
+  if(!WORK_RANGE_RE.test(s)) return "";
+  const [startStr, endStr] = s.split('-');
+  const start = toMinutes(startStr);
+  const end = toMinutes(endStr);
+  return (start < end) ? s : "";
+}
+
 function defaultMenus(){
   return {
     timeStepMinutes: 30,
@@ -9,12 +36,86 @@ function defaultMenus(){
       { value: "テレワーク",   class: "st-remote",  clearOnSet: true  },
       { value: "休み",         class: "st-off",     clearOnSet: true  }
     ],
-    noteOptions: ["直出","直帰","直出・直帰"]
+    noteOptions: ["直出","直帰","直出・直帰"],
+    businessHours: DEFAULT_BUSINESS_HOURS.slice()
   };
 }
+
+function normalizeBusinessHours(arr){
+  const list = Array.isArray(arr) ? arr : [];
+  const uniq = new Set();
+  const cleaned = [];
+  list.forEach(v => {
+    const s = sanitizeWorkHoursValue(v);
+    if(!s || uniq.has(s)) return;
+    uniq.add(s);
+    cleaned.push(s);
+  });
+  return cleaned.length ? cleaned : DEFAULT_BUSINESS_HOURS.slice();
+}
+
+function toMinutes(hhmm){
+  const [h,m] = hhmm.split(":").map(Number);
+  return (Number.isFinite(h)?h:0)*60 + (Number.isFinite(m)?m:0);
+}
+
+function formatRange(startMin,endMin){
+  const h1 = String(Math.floor(startMin/60)).padStart(2,'0');
+  const m1 = String(startMin%60).padStart(2,'0');
+  const h2 = String(Math.floor(endMin/60)).padStart(2,'0');
+  const m2 = String(endMin%60).padStart(2,'0');
+  return `${h1}:${m1}-${h2}:${m2}`;
+}
+
+function buildWorkHourOptions(){
+  const manual = normalizeBusinessHours(MENUS?.businessHours);
+  const uniq = new Set();
+  const results = [];
+  const manualParsed = manual.map(v => {
+    const [startStr, endStr] = v.split('-');
+    return {
+      value: v,
+      start: toMinutes(startStr),
+      end: toMinutes(endStr)
+    };
+  });
+  manualParsed.forEach(item => {
+    if(uniq.has(item.value)) return;
+    uniq.add(item.value);
+    results.push(item);
+  });
+
+  const STEP = 30;
+  const START_MIN = 6*60;
+  const END_MIN = 22*60;
+  const generated = [];
+  for(let start=START_MIN; start<=END_MIN-STEP; start+=STEP){
+    for(let end=start+STEP; end<=END_MIN; end+=STEP){
+      const val = formatRange(start,end);
+      if(uniq.has(val)) continue;
+      generated.push({ value: val, start, end });
+    }
+  }
+  generated.sort((a,b)=> (a.start-b.start) || (a.end-b.end));
+  generated.forEach(item => {
+    if(uniq.has(item.value)) return;
+    uniq.add(item.value);
+    results.push(item);
+  });
+
+  const frag=document.createDocumentFragment();
+  results.forEach(item => {
+    frag.appendChild(el('option',{value:item.value,text:item.value}));
+  });
+  return frag;
+}
 function setupMenus(m){
-  MENUS = m || defaultMenus();
-  const sts = Array.isArray(MENUS.statuses) ? MENUS.statuses : defaultMenus().statuses;
+  const base = defaultMenus();
+  MENUS = (m && typeof m === 'object') ? Object.assign({}, base, m) : base;
+  if(!Array.isArray(MENUS.statuses)) MENUS.statuses = base.statuses;
+  if(!Array.isArray(MENUS.noteOptions)) MENUS.noteOptions = base.noteOptions;
+  MENUS.businessHours = normalizeBusinessHours(MENUS.businessHours);
+  const sts = Array.isArray(MENUS.statuses) ? MENUS.statuses : base.statuses;
 
   STATUSES = sts.map(s => ({ value: String(s.value) }));
   requiresTimeSet = new Set(sts.filter(s => s.requireTime).map(s => String(s.value)));
@@ -27,6 +128,11 @@ function setupMenus(m){
   dl.replaceChildren();
   const optBlank = document.createElement('option'); optBlank.value = ""; optBlank.label = "（空白）"; optBlank.textContent = "（空白）"; dl.appendChild(optBlank);
   (MENUS.noteOptions || []).forEach(t => { const opt = document.createElement('option'); opt.value = String(t); dl.appendChild(opt); });
+
+  let workDl = document.getElementById('workHourOptions');
+  if(!workDl){ workDl = document.createElement('datalist'); workDl.id = 'workHourOptions'; document.body.appendChild(workDl); }
+  workDl.replaceChildren();
+  workDl.appendChild(buildWorkHourOptions());
 
   buildStatusFilterOptions();
 }
@@ -49,7 +155,8 @@ function normalizeConfigClient(cfg){
       members: members.map(m => ({
         id:    String(m.id ?? "").trim(),
         name:  String(m.name ?? ""),
-        ext:   String(m.ext  ?? "")
+        ext:   String(m.ext  ?? ""),
+        workHours: sanitizeWorkHoursValue(m.workHours)
       })).filter(m => m.id || m.name)
     };
   });
@@ -156,7 +263,9 @@ async function pushRowDelta(key){
     toast('保存に失敗しました', false);
   }finally{
     PENDING_ROWS.delete(key);
-    if(tr){ const n=tr.querySelector('input[name="note"]'); if(n) delete n.dataset.editing; }
+    if(tr){
+      tr.querySelectorAll('input[name="note"],input[name="workHours"]').forEach(inp=>{ if(inp && inp.dataset) delete inp.dataset.editing; });
+    }
   }
 
 }
