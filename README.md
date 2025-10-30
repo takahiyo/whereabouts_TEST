@@ -14,4 +14,14 @@ cp config.dev.js config.js
 cp config.prod.js config.js
 ```
 
-`index.html` の Content-Security-Policy (`connect-src`) も `REMOTE_ENDPOINT` に合わせて書き換えてください。
+稼働環境（開発・本番）を切り替える際は、以下の項目を必ず更新してください。
+
+- `config.js` の `REMOTE_ENDPOINT` 行（検索キーワード: `const REMOTE_ENDPOINT`）
+  - 開発 → 本番: `REMOTE_ENDPOINT` を本番APIのエンドポイントに差し替える。
+  - 本番 → 開発: `REMOTE_ENDPOINT` を開発APIのエンドポイントに戻す。
+- `index.html` の Content-Security-Policy の `connect-src` 行（検索キーワード: `connect-src`）
+  - 開発 → 本番: `connect-src` に指定しているドメインを本番APIのドメインに変更する。
+  - 本番 → 開発: `connect-src` に開発用APIドメインを設定し直す。
+- `index.html` 内の表示文言「在席確認表【開発用】」4か所（検索キーワード: `在席確認表`）
+  - 開発 → 本番: 文言から「【開発用】」を除き、本番向けの表示にする。
+  - 本番 → 開発: 必要に応じて「【開発用】」を付与し、開発用である旨を明示する。
