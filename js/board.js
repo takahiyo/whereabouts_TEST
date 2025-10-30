@@ -27,6 +27,14 @@ function buildRow(member){
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
+  const workPlaceholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+  const workInit = sanitizeWorkHoursValue(member.workHours);
+  const tdWork=el('td',{class:'work','data-label':'業務時間'});
+  const inpWork=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder:workPlaceholder,autocomplete:'off',inputmode:'text'});
+  inpWork.value = workInit;
+  tdWork.appendChild(el('label',{class:'sr-only',for:`work-${key}`,text:'業務時間'}));
+  tdWork.appendChild(inpWork);
+
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
   const selStatus=el('select',{id:`status-${key}`,name:'status'});
   tdStatus.appendChild(el('label',{class:'sr-only',for:`status-${key}`,text:'ステータス'}));
@@ -42,7 +50,7 @@ function buildRow(member){
   const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考'});
   tdNote.appendChild(inpNote);
 
-  tr.append(tdName,tdExt,tdStatus,tdTime,tdNote);
+  tr.append(tdName,tdExt,tdWork,tdStatus,tdTime,tdNote);
   return tr;
 }
 
@@ -66,6 +74,29 @@ function ensureRowControls(tr){
     td && td.appendChild(t);
     diagAdd('fix: time select injected');
   }
+  let w=tr.querySelector('input[name="workHours"]');
+  if(!w){
+    const td=tr.querySelector('td.work');
+    const placeholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+    w=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder,autocomplete:'off',inputmode:'text'});
+    if(td){
+      if(!td.querySelector('label.sr-only')){
+        td.insertBefore(el('label',{class:'sr-only',for:`work-${key}`,text:'業務時間'}), td.firstChild || null);
+      }
+      td.appendChild(w);
+    }
+    diagAdd('fix: workHours input injected');
+  }
+  if(w && w.getAttribute('list')!=='workHourOptions'){
+    w.setAttribute('list','workHourOptions');
+    diagAdd('fix: workHours datalist reattached');
+  }
+  if(w){
+    const placeholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+    if(w.getAttribute('placeholder')!==placeholder) w.setAttribute('placeholder',placeholder);
+    w.setAttribute('autocomplete','off');
+    w.setAttribute('inputmode','text');
+  }
   const noteInp=tr.querySelector('input[name="note"]');
   if(noteInp && noteInp.getAttribute('list')!=='noteOptions'){
     noteInp.setAttribute('list','noteOptions');
@@ -81,11 +112,12 @@ function buildPanel(group, idx){
   table.appendChild(el('colgroup',{},[
     el('col',{class:'col-name'}),
     el('col',{class:'col-ext'}),
+    el('col',{class:'col-work'}),
     el('col',{class:'col-status'}),
     el('col',{class:'col-time'}),
     el('col',{class:'col-note'})
   ]));
-  const thead=el('thead'); const thr=el('tr'); ['氏名','内線','ステータス','戻り時間','備考'].forEach(h=>thr.appendChild(el('th',{text:h}))); thead.appendChild(thr); table.appendChild(thead);
+  const thead=el('thead'); const thr=el('tr'); ['氏名','内線','業務時間','ステータス','戻り時間','備考'].forEach(h=>thr.appendChild(el('th',{text:h}))); thead.appendChild(thr); table.appendChild(thead);
   const tbody=el('tbody'); group.members.forEach(m=>{ const r=buildRow(m); tbody.appendChild(r); }); table.appendChild(tbody);
   sec.appendChild(table); return sec;
 }
@@ -127,9 +159,10 @@ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeMenu(); });
 
 /* 行状態 */
 function getRowStateByTr(tr){
-  if(!tr) return {ext:"",status:STATUSES[0]?.value||"在席",time:"",note:""};
+  if(!tr) return {ext:"",workHours:"",status:STATUSES[0]?.value||"在席",time:"",note:""};
   return {
     ext: tr.querySelector('td.ext')?.textContent.trim() || "",
+    workHours: tr.querySelector('input[name="workHours"]')?.value.trim() || "",
     status: tr.querySelector('select[name="status"]').value,
     time: tr.querySelector('select[name="time"]').value,
     note: tr.querySelector('input[name="note"]').value
@@ -147,9 +180,10 @@ function applyState(data){
     if (PENDING_ROWS.has(k)) return;
 
     const tr=document.getElementById(`row-${k}`);
-    const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), n=tr?.querySelector('input[name="note"]');
-    if(!tr || !s || !t){ ensureRowControls(tr); }
+    const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), w=tr?.querySelector('input[name="workHours"]'), n=tr?.querySelector('input[name="note"]');
+    if(!tr || !s || !t || !w){ ensureRowControls(tr); }
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
+    setIfNeeded(w,v.workHours||"");
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");
     if(s&&t) toggleTimeEnable(s,t);
 
@@ -192,8 +226,8 @@ function saveLocal(){ try{ localStorage.setItem(localKey(), JSON.stringify(getSt
 function loadLocal(){ try{ const raw=localStorage.getItem(localKey()); if(raw) applyState(JSON.parse(raw)); }catch{} }
 
 /* 同期（行ごとデバウンス送信） */
-const noteTimers=new Map();
-function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(noteTimers.has(key)) clearTimeout(noteTimers.get(key)); noteTimers.set(key,setTimeout(()=>{ noteTimers.delete(key); pushRowDelta(key); },delay)); }
+const rowTimers=new Map();
+function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(rowTimers.has(key)) clearTimeout(rowTimers.get(key)); rowTimers.set(key,setTimeout(()=>{ rowTimers.delete(key); pushRowDelta(key); },delay)); }
 
 /* 入力イベント（IME配慮・デバウンス） */
 function wireEvents(){
@@ -202,12 +236,12 @@ function wireEvents(){
   board.addEventListener('compositionend',   e => { const t=e.target; if(t && t.dataset) delete t.dataset.composing; });
 
   board.addEventListener('focusin',  e => { const t=e.target; if(t && t.dataset) t.dataset.editing='1'; });
-  board.addEventListener('focusout', e => {
+  board.addEventListener('focusout', e =>{
     const t=e.target;
     if(!(t && t.dataset)) return;
     const tr=t.closest('tr');
     const key=tr?.dataset.key;
-    if(t.name==='note' && key && PENDING_ROWS.has(key)){ t.dataset.editing='1'; }
+    if((t.name==='note' || t.name==='workHours') && key && PENDING_ROWS.has(key)){ t.dataset.editing='1'; }
     else{ delete t.dataset.editing; }
   });
   // 入力（備考：入力中は自動更新停止 → setIfNeeded が弾く）
@@ -216,7 +250,22 @@ function wireEvents(){
     if(!(t && t.name)) return;
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
-    if(t.name === 'note'){ debounceRowPush(key); }
+    if(t.name === 'note'){ debounceRowPush(key); return; }
+    if(t.name === 'workHours'){
+      const before = t.value;
+      const cleaned = before.replace(/[^\x20-\x7E]/g,'');
+      if(cleaned !== before){
+        const caret = t.selectionStart;
+        t.value = cleaned;
+        if(typeof caret === 'number'){
+          const prefix = before.slice(0, caret);
+          const nextPos = prefix.replace(/[^\x20-\x7E]/g,'').length;
+          try{ t.setSelectionRange(nextPos,nextPos); }catch{}
+        }
+      }
+      debounceRowPush(key);
+      return;
+    }
   });
 
   // 変更（ステータス/時間）
@@ -239,6 +288,11 @@ function wireEvents(){
       ensureTimePrompt(tr);
       recolor();
       updateStatusFilterCounts();
+      debounceRowPush(key);
+      return;
+    }
+
+    if(t.name === 'workHours'){
       debounceRowPush(key);
       return;
     }
