@@ -2,23 +2,27 @@
     /* === v1.42 の幅パラメータを踏襲 === */
     --base-name:   120px;
     --base-ext:     70px;
+    --base-work:   140px;
     --base-status: 170px;
     --base-time:    65px;
     --base-note:   210px;
 
     --scale-name:   0.50;
     --scale-ext:    0.33;
+    --scale-work:   0.55;
     --scale-status: 0.75;
     --scale-time:   0.45;
 
     --min-name:    85px;
     --min-ext:     35px;
+    --min-work:    80px;
     --min-status:  85px;
     --min-time:    65px;
     --min-note:    70px;
 
     --w-name:   max(calc(var(--base-name)   * var(--scale-name)),   var(--min-name));
     --w-ext:    max(calc(var(--base-ext)    * var(--scale-ext)),    var(--min-ext));
+    --w-work:   max(calc(var(--base-work)   * var(--scale-work)),   var(--min-work));
     --w-status: max(calc(var(--base-status) * var(--scale-status)), var(--min-status));
     --w-time:   max(calc(var(--base-time)   * var(--scale-time)),   var(--min-time));
     --w-note:   max(var(--base-note), var(--min-note));
@@ -97,6 +101,7 @@
 
   col.col-name{width:var(--w-name)}
   col.col-ext{width:var(--w-ext)}
+  col.col-work{width:var(--w-work)}
   col.col-status{width:var(--status-effective)}
   col.col-time{width:var(--w-time)}
   col.col-note{width:var(--w-note)}
@@ -104,6 +109,7 @@
   select,input[type="text"],input[type="search"]{width:100%; box-sizing:border-box; padding:.3rem .35rem; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; appearance:auto; -webkit-appearance:auto}
   td.status select{padding-right:2.6em}
   td.time   select{text-align-last:center; font-variant-numeric:tabular-nums}
+  td.work   input{font-variant-numeric:tabular-nums; letter-spacing:.02em; text-align:center;}
 
   /* ステータス別の行色（在席はデフォルト） */
   #board tbody tr{ transition: background-color .15s ease; }
@@ -155,7 +161,11 @@
     }
     tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
     tbody td.name::before{ content:""; display:none; }
-    tbody td.ext{ order:1; } tbody td.time{ order:2; } tbody td.status{ order:3; } tbody td.note{ order:4; flex:1 1 100%; }
+    tbody td.ext{ order:1; }
+    tbody td.work{ order:2; }
+    tbody td.status{ order:3; }
+    tbody td.time{ order:4; }
+    tbody td.note{ order:5; flex:1 1 100%; }
   }
 
   #board.force-cards colgroup,
@@ -193,23 +203,24 @@
     padding-bottom:2px;
   }
 
-  #board.force-cards tbody td.name::before,
-  #board[data-cols="1"] tbody td.name::before{
-    content:""; display:none;
-  }
-
   #board.force-cards tbody td.ext,
   #board[data-cols="1"] tbody td.ext{ order:1; }
 
-  #board.force-cards tbody td.time,
-  #board[data-cols="1"] tbody td.time{ order:2; }
+  #board.force-cards tbody td.work,
+  #board[data-cols="1"] tbody td.work{ order:2; }
 
   #board.force-cards tbody td.status,
   #board[data-cols="1"] tbody td.status{ order:3; }
 
+  #board.force-cards tbody td.time,
+  #board[data-cols="1"] tbody td.time{ order:4; }
+
   #board.force-cards tbody td.note,
-  #board[data-cols="1"] tbody td.note{
-    order:4; flex:1 1 100%;
+  #board[data-cols="1"] tbody td.note{ order:5; flex:1 1 100%; }
+
+  #board.force-cards tbody td.name::before,
+  #board[data-cols="1"] tbody td.name::before{
+    content:""; display:none;
   }
 
   /* 1列になったら強制カード化 */
@@ -285,4 +296,3 @@
   text-align:left; font-size:14px; font-weight:600; color:#1f2937; cursor:pointer;
 }
 .grp-menu button.grp-item:hover{background:#bfe4ff;}
-
