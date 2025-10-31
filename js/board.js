@@ -1,4 +1,3 @@
-
 /* === 時刻メニュー（07:00〜22:00） === */
 const TIME_RANGE_START_MIN = 7*60;  // 07:00
 const TIME_RANGE_END_MIN   = 22*60; // 22:00
