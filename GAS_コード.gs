@@ -303,7 +303,10 @@ function doPost(e){
         }
         const nextRev = prevRev + 1; // 緩和/厳格いずれでもサーバ採番
         const hasWorkHours = Object.prototype.hasOwnProperty.call(client, 'workHours');
-        const workHoursValue = hasWorkHours ? sanitizeWorkHoursValue_(client.workHours) : prev.workHours;
+        let workHoursValue = prev.workHours;
+        if(hasWorkHours){
+          workHoursValue = sanitizeWorkHoursValue_(client.workHours);
+        }
 
         const rec = {
           ext:   client.ext   == null ? '' : String(client.ext),
@@ -490,5 +493,6 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
