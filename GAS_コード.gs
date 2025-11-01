@@ -97,6 +97,19 @@ function getCasEnforce_(){
 
 
 /* ===== 既定メニュー／設定 ===== */
+const DEFAULT_BUSINESS_HOURS = [
+  "07:00-15:30",
+  "07:30-16:00",
+  "08:00-16:30",
+  "08:30-17:00",
+  "09:00-17:30",
+  "09:30-18:00",
+  "10:00-18:30",
+  "10:30-19:00",
+  "11:00-19:30",
+  "11:30-20:00",
+  "12:00-20:30",
+];
 function defaultMenus_(){
   return {
     timeStepMinutes: 30,
@@ -111,7 +124,8 @@ function defaultMenus_(){
       { value: "帰宅",       class: "st-home",    clearOnSet: true  },
       { value: "休み",       class: "st-off",     clearOnSet: true  }
       ],
-    noteOptions: ["直出","直帰","直出・直帰"]
+    noteOptions: ["直出","直帰","直出・直帰"],
+    businessHours: DEFAULT_BUSINESS_HOURS.slice()
   };
 }
 function defaultConfig_(){
@@ -476,4 +490,5 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
