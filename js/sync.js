@@ -68,44 +68,10 @@ function formatRange(startMin,endMin){
 }
 
 function buildWorkHourOptions(){
-  const manual = normalizeBusinessHours(MENUS?.businessHours);
-  const uniq = new Set();
-  const results = [];
-  const manualParsed = manual.map(v => {
-    const [startStr, endStr] = v.split('-');
-    return {
-      value: v,
-      start: toMinutes(startStr),
-      end: toMinutes(endStr)
-    };
-  });
-  manualParsed.forEach(item => {
-    if(uniq.has(item.value)) return;
-    uniq.add(item.value);
-    results.push(item);
-  });
-
-  const STEP = 30;
-  const START_MIN = 6*60;
-  const END_MIN = 22*60;
-  const generated = [];
-  for(let start=START_MIN; start<=END_MIN-STEP; start+=STEP){
-    for(let end=start+STEP; end<=END_MIN; end+=STEP){
-      const val = formatRange(start,end);
-      if(uniq.has(val)) continue;
-      generated.push({ value: val, start, end });
-    }
-  }
-  generated.sort((a,b)=> (a.start-b.start) || (a.end-b.end));
-  generated.forEach(item => {
-    if(uniq.has(item.value)) return;
-    uniq.add(item.value);
-    results.push(item);
-  });
-
-  const frag=document.createDocumentFragment();
-  results.forEach(item => {
-    frag.appendChild(el('option',{value:item.value,text:item.value}));
+  const hours = Array.isArray(MENUS?.businessHours) ? MENUS.businessHours : [];
+  const frag = document.createDocumentFragment();
+  hours.forEach(value => {
+    frag.appendChild(el('option', { value, text: value }));
   });
   return frag;
 }
