@@ -435,12 +435,17 @@ function doPost(e){
       Object.keys(incoming.data || {}).forEach(id=>{
         const v = incoming.data[id] || {};
         const prev = cur.data && cur.data[id] || {};
+        let workHoursValue = prev.workHours;
+        if(Object.prototype.hasOwnProperty.call(v, 'workHours')){
+          workHoursValue = sanitizeWorkHoursValue_(v.workHours);
+        }
         const nextRev = (typeof prev.rev === 'number' ? prev.rev : 0) + 1;
         outData[id] = {
           ext:   v.ext   == null ? '' : String(v.ext),
           status:v.status== null ? '' : String(v.status),
           time:  v.time  == null ? '' : String(v.time),
           note:  v.note  == null ? '' : String(v.note),
+          workHours: workHoursValue,
           rev: nextRev,
           serverUpdated: nowTs
         };
@@ -511,6 +516,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
