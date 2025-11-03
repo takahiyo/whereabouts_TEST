@@ -80,6 +80,13 @@ function buildWorkHourOptions(){
 function setupMenus(m){
   const base = defaultMenus();
   MENUS = (m && typeof m === 'object') ? Object.assign({}, base, m) : base;
+  // --- compatibility: accept legacy keys for business-hours ---
+  if(!Array.isArray(MENUS.businessHours)){
+    const legacy1 = Array.isArray(MENUS.workHourOptions) ? MENUS.workHourOptions : null;
+    const legacy2 = Array.isArray(MENUS.workHoursOptions) ? MENUS.workHoursOptions : null;
+    MENUS.businessHours = legacy1 || legacy2 || MENUS.businessHours;
+  }
+
   if(!Array.isArray(MENUS.statuses)) MENUS.statuses = base.statuses;
   if(!Array.isArray(MENUS.noteOptions)) MENUS.noteOptions = base.noteOptions;
   MENUS.businessHours = normalizeBusinessHours(MENUS.businessHours);
