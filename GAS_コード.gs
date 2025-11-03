@@ -29,42 +29,6 @@ const CTL_RE = /[\u0000-\u001F\u007F]/g;
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
-function sanitizeWorkHoursValue_(value){
-  let s = String(value == null ? '' : value).replace(CTL_RE, '').trim();
-  if(s){
-    s = s
-      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-      .replace(/[：]/g, ':')
-      .replace(/[－―〜～−﹣ーｰ‐‑‒–—﹘]/g, '-');
-  }
-  if(!s) return '';
-  const parts = s.split('-');
-  if(parts.length !== 2) return '';
-  const start = parseWorkTime_(parts[0]);
-  const end = parseWorkTime_(parts[1]);
-  if(start == null || end == null) return '';
-  return (start < end) ? formatRange_(start, end) : '';
-}
-
-function parseWorkTime_(value){
-  const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(value || '').trim());
-  if(!m) return null;
-  const hour = Number(m[1]);
-  const minute = Number(m[2]);
-  if(!isFinite(hour) || hour < 0 || hour > 24) return null;
-  if(hour === 24) return (minute === 0) ? 24 * 60 : null;
-  return hour * 60 + minute;
-}
-
-function formatRange_(startMin, endMin){
-  const h1 = ('0' + Math.floor(startMin / 60)).slice(-2);
-  const m1 = ('0' + (startMin % 60)).slice(-2);
-  const h2 = ('0' + Math.floor(endMin / 60)).slice(-2);
-  const m2 = ('0' + (endMin % 60)).slice(-2);
-  return `${h1}:${m1}-${h2}:${m2}`;
-}
-
-
 
 /* ===== データ保存キー ===== */
 function dataKeyForOffice_(office){ return `presence-board-${office}`; }
@@ -180,7 +144,7 @@ function normalizeConfig_(cfg){
           id:        String(m.id || '').trim(),
           name:      String(m.name || ''),
           ext:       String(m.ext || ''),
-          workHours: sanitizeWorkHoursValue_(m.workHours)
+          workHours: m.workHours == null ? '' : String(m.workHours)
         })).filter(m=>m.id || m.name)
       };
     }),
@@ -341,7 +305,7 @@ function doPost(e){
         const hasWorkHours = Object.prototype.hasOwnProperty.call(client, 'workHours');
         let workHoursValue = prev.workHours;
         if(hasWorkHours){
-          workHoursValue = sanitizeWorkHoursValue_(client.workHours);
+          workHoursValue = client.workHours == null ? '' : String(client.workHours);
         }
 
         const rec = {
@@ -454,9 +418,9 @@ function doPost(e){
         const v = incoming.data[id] || {};
         const prev = cur.data && cur.data[id] || {};
         let workHoursValue = prev.workHours;
-        if(Object.prototype.hasOwnProperty.call(v, 'workHours')){
-          workHoursValue = sanitizeWorkHoursValue_(v.workHours);
-        }
+        if(Object.prototype.hasOwnProperty.call(v, 'workHours')){␊
+          workHoursValue = v.workHours == null ? '' : String(v.workHours);
+        }␊
         const nextRev = (typeof prev.rev === 'number' ? prev.rev : 0) + 1;
         outData[id] = {
           ext:   v.ext   == null ? '' : String(v.ext),
@@ -534,6 +498,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
