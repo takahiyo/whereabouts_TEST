@@ -160,9 +160,10 @@ function normalizeConfig_(cfg){
       return {
         title: String(g.title || ''),
         members: members.map(m=>({
-          id:   String(m.id || '').trim(),
-          name: String(m.name || ''),
-          ext:  String(m.ext || '')
+          id:        String(m.id || '').trim(),
+          name:      String(m.name || ''),
+          ext:       String(m.ext || ''),
+          workHours: sanitizeWorkHoursValue_(m.workHours)
         })).filter(m=>m.id || m.name)
       };
     }),
@@ -516,6 +517,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
