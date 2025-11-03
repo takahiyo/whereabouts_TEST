@@ -13,16 +13,15 @@ const DEFAULT_BUSINESS_HOURS = [
   "12:00-20:30",
 ];
 
-const WORK_RANGE_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
-
 function sanitizeWorkHoursValue(value){
   const s = String(stripCtl(value ?? "")).trim();
   if(!s) return "";
-  if(!WORK_RANGE_RE.test(s)) return "";
-  const [startStr, endStr] = s.split('-');
-  const start = toMinutes(startStr);
-  const end = toMinutes(endStr);
-  return (start < end) ? s : "";
+  const parts = s.split('-');
+  if(parts.length !== 2) return "";
+  const start = parseWorkTime(parts[0]);
+  const end = parseWorkTime(parts[1]);
+  if(start == null || end == null) return "";
+  return (start < end) ? formatRange(start, end) : "";
 }
 
 function defaultMenus(){
@@ -53,17 +52,21 @@ function normalizeBusinessHours(arr){
   return cleaned.length ? cleaned : DEFAULT_BUSINESS_HOURS.slice();
 }
 
-function toMinutes(hhmm){
-  const [h,m] = hhmm.split(":").map(Number);
-  return (Number.isFinite(h)?h:0)*60 + (Number.isFinite(m)?m:0);
-}
-
 function formatRange(startMin,endMin){
   const h1 = String(Math.floor(startMin/60)).padStart(2,'0');
   const m1 = String(startMin%60).padStart(2,'0');
   const h2 = String(Math.floor(endMin/60)).padStart(2,'0');
   const m2 = String(endMin%60).padStart(2,'0');
   return `${h1}:${m1}-${h2}:${m2}`;
+}
+
+function parseWorkTime(str){
+  const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(str ?? '').trim());
+  if(!m) return null;
+  const hour = Number(m[1]);
+  if(!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
+  const minute = Number(m[2]);
+  return hour * 60 + minute;
 }
 
 function buildWorkHourOptions(){
@@ -195,6 +198,7 @@ async function pushRowDelta(key){
   try{
     if(!tr) return;
     const st = getRowState(key);
+    st.workHours = sanitizeWorkHoursValue(st.workHours);
     const baseRev = {}; baseRev[key] = Number(tr.dataset.rev || 0);
     const payload = { updated: Date.now(), data: { [key]: st } };
     const r = await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload), baseRev: JSON.stringify(baseRev) });
