@@ -146,6 +146,14 @@ btnLoadMenus.addEventListener('click', async ()=>{
 btnSaveMenus.addEventListener('click', async ()=>{
   let obj;
   try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; }
+  // --- normalize legacy keys for business-hours list ---
+  if(obj && typeof obj === 'object'){
+    if(!Array.isArray(obj.businessHours)){
+      if(Array.isArray(obj.workHourOptions)) obj.businessHours = obj.workHourOptions;
+      else if(Array.isArray(obj.workHoursOptions)) obj.businessHours = obj.workHoursOptions;
+    }
+  }
+
   const office=selectedOfficeId(); if(!office) return;
   const cfg=await adminGetConfigFor(office);
   if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
