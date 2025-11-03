@@ -157,9 +157,10 @@ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeMenu(); });
 /* 行状態 */
 function getRowStateByTr(tr){
   if(!tr) return {ext:"",workHours:"",status:STATUSES[0]?.value||"在席",time:"",note:""};
+    const workHoursInput = tr.querySelector('input[name="workHours"]');
   return {
     ext: tr.querySelector('td.ext')?.textContent.trim() || "",
-    workHours: tr.querySelector('input[name="workHours"]')?.value ?? "",
+    workHours: workHoursInput ? workHoursInput.value : "",
     status: tr.querySelector('select[name="status"]').value,
     time: tr.querySelector('select[name="time"]').value,
     note: tr.querySelector('input[name="note"]').value
