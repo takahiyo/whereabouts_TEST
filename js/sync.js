@@ -19,7 +19,7 @@ function sanitizeWorkHoursValue(value){
     s = s
       .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
       .replace(/[：]/g, ':')
-      .replace(/[－―〜～−﹣]/g, '-');
+      .replace(/[－―〜～−﹣ーｰ‐‑‒–—﹘]/g, '-');
   }
   if(!s) return "";
   const parts = s.split('-');
