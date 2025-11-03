@@ -26,25 +26,35 @@ const TOKEN_ROLE_PREFIX    = 'trole_';
 
 /* ===== ユーティリティ ===== */
 const CTL_RE = /[\u0000-\u001F\u007F]/g;
-const WORK_RANGE_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
-
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
-function toMinutes_(hhmm){
-  const parts = String(hhmm || '').split(':');
-  const h = Number(parts[0]);
-  const m = Number(parts[1]);
-  return (isFinite(h) ? h : 0) * 60 + (isFinite(m) ? m : 0);
-}
 function sanitizeWorkHoursValue_(value){
   const s = String(value == null ? '' : value).replace(CTL_RE, '').trim();
   if(!s) return '';
-  if(!WORK_RANGE_RE.test(s)) return '';
-  const [startStr, endStr] = s.split('-');
-  const start = toMinutes_(startStr);
-  const end = toMinutes_(endStr);
-  return (start < end) ? s : '';
+  const parts = s.split('-');
+  if(parts.length !== 2) return '';
+  const start = parseWorkTime_(parts[0]);
+  const end = parseWorkTime_(parts[1]);
+  if(start == null || end == null) return '';
+  return (start < end) ? formatRange_(start, end) : '';
+}
+
+function parseWorkTime_(value){
+  const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(value || '').trim());
+  if(!m) return null;
+  const hour = Number(m[1]);
+  if(!isFinite(hour) || hour < 0 || hour > 23) return null;
+  const minute = Number(m[2]);
+  return hour * 60 + minute;
+}
+
+function formatRange_(startMin, endMin){
+  const h1 = ('0' + Math.floor(startMin / 60)).slice(-2);
+  const m1 = ('0' + (startMin % 60)).slice(-2);
+  const h2 = ('0' + Math.floor(endMin / 60)).slice(-2);
+  const m2 = ('0' + (endMin % 60)).slice(-2);
+  return `${h1}:${m1}-${h2}:${m2}`;
 }
 
 
@@ -517,6 +527,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
