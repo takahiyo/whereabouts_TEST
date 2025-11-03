@@ -30,7 +30,13 @@ function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
 function sanitizeWorkHoursValue_(value){
-  const s = String(value == null ? '' : value).replace(CTL_RE, '').trim();
+  let s = String(value == null ? '' : value).replace(CTL_RE, '').trim();
+  if(s){
+    s = s
+      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+      .replace(/[：]/g, ':')
+      .replace(/[－―〜～−﹣]/g, '-');
+  }
   if(!s) return '';
   const parts = s.split('-');
   if(parts.length !== 2) return '';
@@ -528,6 +534,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
