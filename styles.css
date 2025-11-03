@@ -2,8 +2,8 @@
     /* === v1.42 の幅パラメータを踏襲 === */
     --base-name:   120px;
     --base-ext:     70px;
-    --base-work:   calc(140px + 2ch);
-    --base-status: calc(170px - 2ch);
+    --base-work:   190px;
+    --base-status: 120px;
     --base-time:    65px;
     --base-note:   210px;
 
