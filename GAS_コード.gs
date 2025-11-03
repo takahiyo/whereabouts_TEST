@@ -44,8 +44,9 @@ function parseWorkTime_(value){
   const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(value || '').trim());
   if(!m) return null;
   const hour = Number(m[1]);
-  if(!isFinite(hour) || hour < 0 || hour > 23) return null;
   const minute = Number(m[2]);
+  if(!isFinite(hour) || hour < 0 || hour > 24) return null;
+  if(hour === 24) return (minute === 0) ? 24 * 60 : null;
   return hour * 60 + minute;
 }
 
@@ -527,6 +528,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
