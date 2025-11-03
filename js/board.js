@@ -248,21 +248,7 @@ function wireEvents(){
     const tr = t.closest('tr'); if(!tr) return;
     const key = tr.dataset.key;
     if(t.name === 'note'){ debounceRowPush(key); return; }
-    if(t.name === 'workHours'){
-      const before = t.value;
-      const cleaned = before.replace(/[^\x20-\x7E]/g,'');
-      if(cleaned !== before){
-        const caret = t.selectionStart;
-        t.value = cleaned;
-        if(typeof caret === 'number'){
-          const prefix = before.slice(0, caret);
-          const nextPos = prefix.replace(/[^\x20-\x7E]/g,'').length;
-          try{ t.setSelectionRange(nextPos,nextPos); }catch{}
-        }
-      }
-      debounceRowPush(key);
-      return;
-    }
+    if(t.name === 'workHours'){ debounceRowPush(key); return; }
   });
 
   // 変更（ステータス/時間）
