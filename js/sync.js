@@ -13,23 +13,6 @@ const DEFAULT_BUSINESS_HOURS = [
   "12:00-20:30",
 ];
 
-function sanitizeWorkHoursValue(value){
-  let s = String(stripCtl(value ?? "")).trim();
-  if(s){
-    s = s
-      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-      .replace(/[：]/g, ':')
-      .replace(/[－―〜～−﹣ーｰ‐‑‒–—﹘]/g, '-');
-  }
-  if(!s) return "";
-  const parts = s.split('-');
-  if(parts.length !== 2) return "";
-  const start = parseWorkTime(parts[0]);
-  const end = parseWorkTime(parts[1]);
-  if(start == null || end == null) return "";
-  return (start < end) ? formatRange(start, end) : "";
-}
-
 function defaultMenus(){
   return {
     timeStepMinutes: 30,
@@ -47,33 +30,10 @@ function defaultMenus(){
 
 function normalizeBusinessHours(arr){
   const list = Array.isArray(arr) ? arr : [];
-  const uniq = new Set();
-  const cleaned = [];
-  list.forEach(v => {
-    const s = sanitizeWorkHoursValue(v);
-    if(!s || uniq.has(s)) return;
-    uniq.add(s);
-    cleaned.push(s);
-  });
-  return cleaned.length ? cleaned : DEFAULT_BUSINESS_HOURS.slice();
-}
-
-function formatRange(startMin,endMin){
-  const h1 = String(Math.floor(startMin/60)).padStart(2,'0');
-  const m1 = String(startMin%60).padStart(2,'0');
-  const h2 = String(Math.floor(endMin/60)).padStart(2,'0');
-  const m2 = String(endMin%60).padStart(2,'0');
-  return `${h1}:${m1}-${h2}:${m2}`;
-}
-
-function parseWorkTime(str){
-  const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(str ?? '').trim());
-  if(!m) return null;
-  const hour = Number(m[1]);
-  const minute = Number(m[2]);
-    if(!Number.isFinite(hour) || hour < 0 || hour > 24) return null;
-  if(hour === 24) return (minute === 0) ? 24 * 60 : null;
-  return hour * 60 + minute;
+  if(list.length){
+    return list.map(v => String(v ?? ""));
+  }
+  return DEFAULT_BUSINESS_HOURS.slice();
 }
 
 function buildWorkHourOptions(){
@@ -150,7 +110,7 @@ function normalizeConfigClient(cfg){
         id:    String(m.id ?? "").trim(),
         name:  String(m.name ?? ""),
         ext:   String(m.ext  ?? ""),
-        workHours: sanitizeWorkHoursValue(m.workHours)
+        workHours: m.workHours == null ? '' : String(m.workHours)
       })).filter(m => m.id || m.name)
     };
   });
@@ -224,7 +184,7 @@ async function pushRowDelta(key){
   try{
     if(!tr) return;
     const st = getRowState(key);
-    st.workHours = sanitizeWorkHoursValue(st.workHours);
+    st.workHours = st.workHours == null ? '' : String(st.workHours);
     const baseRev = {}; baseRev[key] = Number(tr.dataset.rev || 0);
     const payload = { updated: Date.now(), data: { [key]: st } };
     const r = await apiPost({ action:'set', token: SESSION_TOKEN, data: JSON.stringify(payload), baseRev: JSON.stringify(baseRev) });
