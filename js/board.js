@@ -180,10 +180,7 @@ function applyState(data){
     const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), w=tr?.querySelector('input[name="workHours"]'), n=tr?.querySelector('input[name="note"]');
     if(!tr || !s || !t || !w){ ensureRowControls(tr); }
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
-    if (Object.prototype.hasOwnProperty.call(v, 'workHours')) {
-      // プロパティがある場合のみサニタイズ済みの値を反映し、無い場合は名簿設定からの初期値を保持する
-      setIfNeeded(w,v.workHours||"");
-    }
+    setIfNeeded(w, (v && typeof v.workHours === 'string') ? v.workHours : (v && v.workHours==null ? '' : String(v?.workHours ?? '')));
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");
     if(s&&t) toggleTimeEnable(s,t);
 
