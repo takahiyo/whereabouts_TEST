@@ -276,11 +276,6 @@ function wireEvents(){
       return;
     }
 
-    if(t.name === 'workHours'){
-      debounceRowPush(key);
-      return;
-    }
-
     if(t.name === 'time'){
       ensureTimePrompt(tr);
       debounceRowPush(key);
