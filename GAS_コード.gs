@@ -25,9 +25,27 @@ const TOKEN_OFFICE_PREFIX  = 'toff_';
 const TOKEN_ROLE_PREFIX    = 'trole_';
 
 /* ===== ユーティリティ ===== */
+const CTL_RE = /[\u0000-\u001F\u007F]/g;
+const WORK_RANGE_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+
 function now_(){ return Date.now(); }
 function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? String(e.parameter[k]) : d; }
+function toMinutes_(hhmm){
+  const parts = String(hhmm || '').split(':');
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  return (isFinite(h) ? h : 0) * 60 + (isFinite(m) ? m : 0);
+}
+function sanitizeWorkHoursValue_(value){
+  const s = String(value == null ? '' : value).replace(CTL_RE, '').trim();
+  if(!s) return '';
+  if(!WORK_RANGE_RE.test(s)) return '';
+  const [startStr, endStr] = s.split('-');
+  const start = toMinutes_(startStr);
+  const end = toMinutes_(endStr);
+  return (start < end) ? s : '';
+}
 
 
 
@@ -493,6 +511,7 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
+
 
 
 
