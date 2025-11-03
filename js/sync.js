@@ -64,8 +64,9 @@ function parseWorkTime(str){
   const m = /^([0-9]{1,2}):([0-5]\d)$/.exec(String(str ?? '').trim());
   if(!m) return null;
   const hour = Number(m[1]);
-  if(!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
   const minute = Number(m[2]);
+    if(!Number.isFinite(hour) || hour < 0 || hour > 24) return null;
+  if(hour === 24) return (minute === 0) ? 24 * 60 : null;
   return hour * 60 + minute;
 }
 
