@@ -14,7 +14,13 @@ const DEFAULT_BUSINESS_HOURS = [
 ];
 
 function sanitizeWorkHoursValue(value){
-  const s = String(stripCtl(value ?? "")).trim();
+  let s = String(stripCtl(value ?? "")).trim();
+  if(s){
+    s = s
+      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+      .replace(/[：]/g, ':')
+      .replace(/[－―〜～−﹣]/g, '-');
+  }
   if(!s) return "";
   const parts = s.split('-');
   if(parts.length !== 2) return "";
