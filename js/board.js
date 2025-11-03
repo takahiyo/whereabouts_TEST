@@ -25,7 +25,7 @@ function buildRow(member){
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
   const workPlaceholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
-  const workInit = sanitizeWorkHoursValue(member.workHours);
+  const workInit = member.workHours == null ? '' : String(member.workHours);
   const tdWork=el('td',{class:'work','data-label':'業務時間'});
   const inpWork=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder:workPlaceholder,autocomplete:'off',inputmode:'text'});
   inpWork.value = workInit;
