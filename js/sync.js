@@ -73,9 +73,21 @@ function parseWorkTime(str){
 function buildWorkHourOptions(){
   const hours = Array.isArray(MENUS?.businessHours) ? MENUS.businessHours : [];
   const frag = document.createDocumentFragment();
+  
+  const optBlank = document.createElement('option');
+  optBlank.value = "";
+  optBlank.label = "（空白）";
+  optBlank.textContent = "（空白）";
+  frag.appendChild(optBlank);
+
   hours.forEach(value => {
-    frag.appendChild(el('option', { value, text: value }));
+    const s = String(value ?? "");
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    frag.appendChild(opt);
   });
+  
   return frag;
 }
 function setupMenus(m){
