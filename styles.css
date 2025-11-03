@@ -1,9 +1,9 @@
   :root{
     /* === v1.42 の幅パラメータを踏襲 === */
-    --base-name:   120px;
+    --base-name:   110px;
     --base-ext:     70px;
     --base-work:   170px;
-    --base-status: 140px;
+    --base-status: 150px;
     --base-time:    65px;
     --base-note:   210px;
 
