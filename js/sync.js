@@ -29,24 +29,30 @@ function defaultMenus(){
 }
 
 function normalizeBusinessHours(arr){
-  const list = Array.isArray(arr) ? arr : [];
-  if(list.length){
-    return list.map(v => String(v ?? ""));
+  if(Array.isArray(arr)){
+    if(arr.length === 0){
+      return [];
+    }
+    return arr.map(v => String(v ?? ""));
   }
   return DEFAULT_BUSINESS_HOURS.slice();
 }
 
-function buildWorkHourOptions(){
-  const hours = Array.isArray(MENUS?.businessHours) ? MENUS.businessHours : [];
+function buildWorkHourOptions(hours){
+  const list = Array.isArray(hours) ? hours : [];
   const frag = document.createDocumentFragment();
-  
+
+  if(!list.length){
+    return frag;
+  }
+
   const optBlank = document.createElement('option');
   optBlank.value = "";
   optBlank.label = "（空白）";
   optBlank.textContent = "（空白）";
   frag.appendChild(optBlank);
 
-  hours.forEach(value => {
+  list.forEach(value => {
     const s = String(value ?? "");
     const opt = document.createElement('option');
     opt.value = s;
@@ -86,7 +92,7 @@ function setupMenus(m){
   let workDl = document.getElementById('workHourOptions');
   if(!workDl){ workDl = document.createElement('datalist'); workDl.id = 'workHourOptions'; document.body.appendChild(workDl); }
   workDl.replaceChildren();
-  workDl.appendChild(buildWorkHourOptions());
+  workDl.appendChild(buildWorkHourOptions(MENUS.businessHours));
 
   buildStatusFilterOptions();
 }
