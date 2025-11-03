@@ -44,7 +44,7 @@ btnImport.addEventListener('click', async ()=>{
       if(currentCfg && currentCfg.groups){
         (currentCfg.groups||[]).forEach((g,gi0)=>{
           (g.members||[]).forEach((m,mi0)=>{
-            const val=sanitizeWorkHoursValue(m.workHours);
+            const val = m.workHours == null ? '' : String(m.workHours);
             if(!val) return;
             if(m.id) fallbackById.set(String(m.id), val);
             fallbackByKey.set(keyOf(gi0+1,g.title||'',mi0+1,m.name||'',m.ext||''), val);
@@ -57,7 +57,7 @@ btnImport.addEventListener('click', async ()=>{
   const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
     if(hasWorkHoursColumn){
       const [gi,gt,mi,id,name,ext,workHours,status,time,note]=r;
-      const workHoursSanitized = sanitizeWorkHoursValue(workHours);
+      const workHoursValue = workHours == null ? '' : String(workHours);
       return {
         gi:Number(gi)||0,
         gt:(gt||''),
@@ -65,7 +65,7 @@ btnImport.addEventListener('click', async ()=>{
         id:(id||''),
         name:(name||''),
         ext:(ext||''),
-        workHours:workHoursSanitized,
+        workHours:workHoursValue,
         status:(status||(STATUSES[0]?.value||'在席')),
         time:(time||''),
         note:(note||'')
@@ -74,7 +74,7 @@ btnImport.addEventListener('click', async ()=>{
       const [gi,gt,mi,id,name,ext,status,time,note]=r;
       const key=keyOf(gi,gt,mi,name,ext||'');
       const fallback=(id&&fallbackById.get(id))||fallbackByKey.get(key)||'';
-      const workHoursSanitized = sanitizeWorkHoursValue(fallback);
+      const workHoursValue = fallback == null ? '' : String(fallback);
       return {
         gi:Number(gi)||0,
         gt:(gt||''),
@@ -82,7 +82,7 @@ btnImport.addEventListener('click', async ()=>{
         id:(id||''),
         name:(name||''),
         ext:(ext||''),
-        workHours:workHoursSanitized,
+        workHours:workHoursValue,
         status:(status||(STATUSES[0]?.value||'在席')),
         time:(time||''),
         note:(note||'')
