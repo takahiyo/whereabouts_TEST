@@ -90,34 +90,266 @@
       </div>
 
       <section id="manualUser" class="manual-section">
-        <h4>ユーザーマニュアル</h4>
-        <ol>
-          <li><strong>ログイン</strong>
-            <ul>
-              <li>営業所を選び、パスワードを入力してください</li>
-            </ul>
-          </li>
-          <li><strong>在席確認表【開発用】</strong>
-            <ul>
-              <li>パネルはチーム（グループ）ごとです。</li>
-              <li>画面幅に応じて最大3列。狭い幅ではリスト→カード表示に切り替わります。</li>
-              <li>縦スクロールが長い場合、タイトルをクリックでジャンプメニューから目的のグループへ移動できます。</li>
-              <li><strong>検索/絞り込み</strong>：ヘッダの氏名検索・ステータス絞りで即時に反映。該当行ゼロのパネルは非表示。</li>
-              <li><strong>色分け</strong>：在席（無色）、外出（橙）、会議（青）、テレワーク（紫）、休み（赤）。</li>
-              <li><strong>業務時間</strong>：例「09:00-18:00」のように開始-終了を半角で入力（30分刻み候補を一覧から選択可）。</li>
-              <li><strong>戻り時間</strong>：外出/会議で有効（07:00〜22:00、既定30分刻み）。未入力時は赤枠で促します。</li>
-              <li><strong>備考</strong>：自由入力＋候補（空白/直出/直帰/直出・直帰）。入力中は自動更新を保留。</li>
-              <li><strong>反映速度</strong>：約2秒で他端末に反映。競合はサーバ時刻採用（CAS設定に依存）。</li>
-            </ul>
-          </li>
+        <h4>📖 ユーザーマニュアル - 初めての方へ</h4>
+        
+        <div style="background:#f0f8ff;padding:12px;margin:12px 0;border-left:4px solid #0073bb;border-radius:4px;">
+          <strong>💡 このシステムについて</strong><br>
+          在席確認表は、チームメンバーの在席状況をリアルタイムで共有するシステムです。<br>
+          入力した内容は自動的に保存され、他の人のPCやスマートフォンにも即座に反映されます。
+        </div>
+
+        <h5>🔐 1. 初回ログイン（管理者からパスワードを受け取ってください）</h5>
+        <ol style="line-height:1.8;">
+          <li><strong>拠点を選択</strong>：ドロップダウンから所属する拠点（営業所）を選びます</li>
+          <li><strong>パスワードを入力</strong>：管理者から教えてもらったパスワードを入力します</li>
+          <li><strong>「ログイン」ボタンをクリック</strong></li>
+          <li>✅ ログイン成功すると、在席確認表が表示されます</li>
         </ol>
+        <p style="margin:8px 0 16px 0;color:#666;font-size:0.9em;">
+          ※ログイン状態は1時間保持され、自動的に延長されます。ブラウザを閉じた場合は再ログインが必要です。
+        </p>
+
+        <h5>👁️ 2. 画面の見方</h5>
+        <ul style="line-height:1.8;">
+          <li><strong>画面上部（ヘッダー）</strong>：
+            <ul style="margin-top:4px;">
+              <li>📍 <strong>タイトル</strong>：拠点名が表示されます（クリックするとグループ一覧メニューが開きます）</li>
+              <li>🔍 <strong>氏名検索</strong>：特定の人を探すときに使います</li>
+              <li>🎯 <strong>ステータス絞り込み</strong>：「外出中の人だけ」など、条件で絞り込めます</li>
+              <li>⚙️ <strong>管理</strong>：管理者のみ表示されます</li>
+              <li>🚪 <strong>ログオフ</strong>：ログアウトします</li>
+            </ul>
+          </li>
+          <li><strong>メイン画面</strong>：
+            <ul style="margin-top:4px;">
+              <li>チーム（グループ）ごとに表が表示されます</li>
+              <li>各行がメンバー1人の情報です</li>
+              <li>スマートフォンでは自動的にカード表示に切り替わります</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h5>✍️ 3. 基本操作 - 自分の状態を更新する</h5>
+        
+        <p style="margin:8px 0;"><strong>📝 業務時間の入力</strong></p>
+        <ol style="line-height:1.8;">
+          <li>自分の行の「業務時間」欄をクリック</li>
+          <li>直接入力するか、表示される候補リストから選択（例：<code>09:00-17:30</code>）</li>
+          <li>✅ 入力が完了すると、約2秒後に自動保存されます（保存ボタンは不要です）</li>
+        </ol>
+
+        <p style="margin:16px 0 8px 0;"><strong>🎨 ステータスの選択（色分けされます）</strong></p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:0.9em;">
+          <tr style="background:#f5f5f5;"><th style="padding:6px;border:1px solid #ddd;">ステータス</th><th style="padding:6px;border:1px solid #ddd;">色</th><th style="padding:6px;border:1px solid #ddd;">戻り時間</th><th style="padding:6px;border:1px solid #ddd;">使用例</th></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">在席</td><td style="padding:6px;border:1px solid #ddd;">無色（白）</td><td style="padding:6px;border:1px solid #ddd;">不要</td><td style="padding:6px;border:1px solid #ddd;">デスクにいるとき</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">外出</td><td style="padding:6px;border:1px solid #ddd;">🟠 オレンジ</td><td style="padding:6px;border:1px solid #ddd;"><strong>必須</strong></td><td style="padding:6px;border:1px solid #ddd;">銀行、郵便局など</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">在宅勤務</td><td style="padding:6px;border:1px solid #ddd;">🟣 紫</td><td style="padding:6px;border:1px solid #ddd;">不要</td><td style="padding:6px;border:1px solid #ddd;">テレワーク中</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">出張</td><td style="padding:6px;border:1px solid #ddd;">🔵 水色</td><td style="padding:6px;border:1px solid #ddd;"><strong>必須</strong></td><td style="padding:6px;border:1px solid #ddd;">他拠点や客先へ</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">研修</td><td style="padding:6px;border:1px solid #ddd;">🟢 緑</td><td style="padding:6px;border:1px solid #ddd;"><strong>必須</strong></td><td style="padding:6px;border:1px solid #ddd;">研修・セミナー参加</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">健康診断</td><td style="padding:6px;border:1px solid #ddd;">🩷 ピンク</td><td style="padding:6px;border:1px solid #ddd;"><strong>必須</strong></td><td style="padding:6px;border:1px solid #ddd;">健康診断受診中</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">コアドック</td><td style="padding:6px;border:1px solid #ddd;">💜 薄紫</td><td style="padding:6px;border:1px solid #ddd;"><strong>必須</strong></td><td style="padding:6px;border:1px solid #ddd;">コアドック受診中</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">帰宅</td><td style="padding:6px;border:1px solid #ddd;">⚪ 灰色</td><td style="padding:6px;border:1px solid #ddd;">不要</td><td style="padding:6px;border:1px solid #ddd;">退社済み</td></tr>
+          <tr><td style="padding:6px;border:1px solid #ddd;">休み</td><td style="padding:6px;border:1px solid #ddd;">🔴 赤</td><td style="padding:6px;border:1px solid #ddd;">不要</td><td style="padding:6px;border:1px solid #ddd;">休暇・欠勤</td></tr>
+        </table>
+
+        <p style="margin:16px 0 8px 0;"><strong>⏰ 戻り時間の入力（外出、出張、研修などの場合）</strong></p>
+        <ol style="line-height:1.8;">
+          <li>ステータスで「外出」「出張」「研修」「健康診断」「コアドック」を選ぶと、戻り時間が<strong style="color:#d00;">必須</strong>になります</li>
+          <li>「戻り時間」のドロップダウンをクリックして選択（07:00〜22:00、30分刻み）</li>
+          <li>⚠️ 未入力の場合は赤枠で表示されます（必ず入力してください）</li>
+        </ol>
+        <p style="margin:8px 0;color:#666;font-size:0.9em;">
+          💡 ヒント：「在席」「在宅勤務」「帰宅」「休み」を選ぶと、戻り時間と備考が自動的にクリアされます
+        </p>
+
+        <p style="margin:16px 0 8px 0;"><strong>📌 備考の入力（任意）</strong></p>
+        <ul style="line-height:1.8;">
+          <li>「備考」欄をクリックして、自由に入力できます</li>
+          <li>候補から選ぶこともできます：<strong>直出</strong>、<strong>直帰</strong>、<strong>直出・直帰</strong></li>
+          <li>空白にしたい場合は「（空白）」を選択してください</li>
+        </ul>
+
+        <h5>🔍 4. 他の人の状況を確認する</h5>
+        
+        <p><strong>氏名検索の使い方</strong></p>
+        <ol style="line-height:1.8;">
+          <li>画面上部の検索ボックスに名前を入力（例：「田中」）</li>
+          <li>入力すると同時に、該当する人だけが表示されます</li>
+          <li>検索を解除するには、入力内容を削除してください</li>
+        </ol>
+
+        <p style="margin-top:12px;"><strong>ステータスで絞り込み</strong></p>
+        <ol style="line-height:1.8;">
+          <li>画面上部の「ステータス絞り込み」ドロップダウンをクリック</li>
+          <li>見たいステータスを選択（例：「外出中の人だけ見る」→「外出」を選択）</li>
+          <li>全員表示に戻すには「全て」を選択してください</li>
+        </ol>
+
+        <p style="margin-top:12px;"><strong>グループジャンプ（画面が長い場合）</strong></p>
+        <ol style="line-height:1.8;">
+          <li>画面上部の拠点名（タイトル）をクリック</li>
+          <li>グループ一覧メニューが表示されます</li>
+          <li>行きたいグループをクリックすると、その位置にスクロールします</li>
+        </ol>
+
+        <h5>🔄 5. 自動更新について（重要）</h5>
+        <div style="background:#fff3cd;padding:12px;margin:12px 0;border-left:4px solid #ffc107;border-radius:4px;">
+          <strong>⚡ リアルタイム同期</strong>
+          <ul style="margin:8px 0;line-height:1.8;">
+            <li>✅ あなたが入力した内容は、約2秒後に自動的に保存されます</li>
+            <li>✅ 他の人が入力した内容も、約2秒ごとに自動的にあなたの画面に反映されます</li>
+            <li>✅ 保存ボタンや更新ボタンは<strong>不要</strong>です</li>
+            <li>⚠️ 入力中や変換中は、他の人の更新が一時的に保留されます（入力の邪魔になりません）</li>
+          </ul>
+        </div>
+
+        <h5>❓ よくある質問</h5>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 保存ボタンはどこですか？</summary>
+          <p style="margin:8px 0 8px 20px;">A. 保存ボタンはありません。入力すると自動的に約2秒後に保存されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 戻り時間が選択できません</summary>
+          <p style="margin:8px 0 8px 20px;">A. ステータスが「在席」「在宅勤務」「帰宅」「休み」の場合、戻り時間は不要なため選択できません。「外出」「出張」などに変更してください。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. スマートフォンでも使えますか？</summary>
+          <p style="margin:8px 0 8px 20px;">A. はい、スマートフォンのブラウザでも利用できます。画面が自動的にカード表示に切り替わります。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 間違えて入力してしまいました</summary>
+          <p style="margin:8px 0 8px 20px;">A. すぐに正しい内容に入力し直してください。約2秒後に自動保存されます。</p>
+        </details>
+
+        <p style="margin-top:16px;font-size:0.95em;">
+          <strong>📚 さらに詳しく知りたい方へ</strong><br>
+          より詳細な情報は <a href="USER_MANUAL.md" target="_blank" style="color:#0073bb;text-decoration:underline;">詳細マニュアル（USER_MANUAL.md）</a> をご覧ください。
+        </p>
       </section>
 
       <section id="manualAdmin" class="manual-section">
-        <h4>管理者マニュアル</h4>
-        <ol>
-          <li>CSV入出力、拠点名変更、パスワード変更、メニュー設定（JSON：statuses / noteOptions / businessHours / timeStepMinutes）に対応。</li>
+        <h4>⚙️ 管理者マニュアル</h4>
+        
+        <div style="background:#fff3cd;padding:12px;margin:12px 0;border-left:4px solid #ffc107;border-radius:4px;">
+          <strong>🔐 管理者ログインについて</strong><br>
+          管理パネルを表示するには、<strong>管理者パスワード</strong>でログインしてください。<br>
+          一般ユーザーパスワードではログインできても「管理」ボタンは表示されません。
+        </div>
+
+        <h5>📂 1. CSVエクスポート - データのバックアップ</h5>
+        <p><strong>用途</strong>：現在の名簿と在席データをExcelで編集できる形式でダウンロードします</p>
+        <ol style="line-height:1.8;">
+          <li>画面上部の「管理」ボタンをクリック</li>
+          <li>管理パネルが開きます</li>
+          <li>「CSVエクスポート」セクションの「ダウンロード」ボタンをクリック</li>
+          <li>✅ ファイル <code>presence_<拠点ID>.csv</code> がダウンロードされます</li>
         </ol>
+        <p style="margin:8px 0;color:#d00;font-weight:bold;">⚠️ 重要：CSVインポート前に必ずエクスポートでバックアップを取ってください！</p>
+
+        <h5>📥 2. CSVインポート - 名簿の一括登録・更新</h5>
+        <p><strong>用途</strong>：Excelで編集した名簿を一括で取り込みます（名簿全体が置き換わります）</p>
+        
+        <p style="margin:12px 0 8px 0;"><strong>対応しているCSV形式</strong></p>
+        <ul style="line-height:1.8;">
+          <li><strong>標準形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考</code></li>
+          <li><strong>旧形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考</code>（業務時間列なし。既存データから引き継ぎます）</li>
+        </ul>
+
+        <p style="margin:12px 0 8px 0;"><strong>操作手順</strong></p>
+        <ol style="line-height:1.8;">
+          <li><strong style="color:#d00;">【重要】まずエクスポートでバックアップを取る</strong></li>
+          <li>ダウンロードしたCSVファイルをExcelで開いて編集</li>
+          <li>管理パネルの「CSVインポート」セクションで「ファイルを選択」をクリック</li>
+          <li>編集したCSVファイルを選択</li>
+          <li>「取り込み」ボタンをクリック</li>
+          <li>✅「インポート完了」と表示されたら成功です</li>
+        </ol>
+
+        <div style="background:#f8d7da;padding:12px;margin:12px 0;border-left:4px solid #dc3545;border-radius:4px;">
+          <strong>⚠️ 注意事項</strong>
+          <ul style="margin:8px 0;line-height:1.8;">
+            <li>インポートすると<strong>名簿全体が置き換わります</strong>（部分更新はできません）</li>
+            <li>CSVに含まれないメンバーは削除されます</li>
+            <li>元に戻すにはバックアップのCSVを再インポートしてください</li>
+            <li>1行目は必ずヘッダー行にしてください</li>
+          </ul>
+        </div>
+
+        <h5>🏢 3. 拠点名の変更</h5>
+        <ol style="line-height:1.8;">
+          <li>管理パネルの「拠点名の変更」セクションに新しい拠点名を入力</li>
+          <li>「変更」ボタンをクリック</li>
+          <li>✅ 画面タイトルとログイン画面の拠点名が変更されます</li>
+        </ol>
+
+        <h5>🔑 4. パスワード変更</h5>
+        <p>2種類のパスワードを個別に変更できます：</p>
+        <ul style="line-height:1.8;">
+          <li><strong>新パスワード</strong>：一般ユーザーがログインするときのパスワード</li>
+          <li><strong>新管理者PW</strong>：管理者権限でログインするときのパスワード</li>
+        </ul>
+        <ol style="line-height:1.8;">
+          <li>変更したいパスワード欄に新しいパスワードを入力（両方でも片方でもOK）</li>
+          <li>「更新」ボタンをクリック</li>
+          <li>✅「パスワードを更新しました」と表示されたら成功です</li>
+        </ol>
+        <p style="margin:8px 0;color:#666;font-size:0.9em;">
+          💡 パスワードは平文で保存されます。<strong>強固なパスワード</strong>を使用してください。
+        </p>
+
+        <h5>⚙️ 5. メニュー設定（JSON）- 高度な設定</h5>
+        <p>以下の設定をJSON形式で変更できます：</p>
+        <ul style="line-height:1.8;">
+          <li><code>statuses</code>：ステータスの種類、色、戻り時間の要否、自動クリア設定</li>
+          <li><code>noteOptions</code>：備考欄の候補リスト（例：直出、直帰）</li>
+          <li><code>businessHours</code>：業務時間の候補リスト（例：09:00-17:30）</li>
+          <li><code>timeStepMinutes</code>：戻り時間の刻み（分単位、デフォルト30）</li>
+        </ul>
+        
+        <p style="margin:12px 0 8px 0;"><strong>操作手順</strong></p>
+        <ol style="line-height:1.8;">
+          <li>「現在の設定を読み込み」ボタンをクリック → テキストエリアにJSON形式で表示されます</li>
+          <li>内容を編集（JSON形式を崩さないように注意）</li>
+          <li>「保存」ボタンをクリック</li>
+          <li>✅ 画面が自動的に再描画され、新しい設定が反映されます</li>
+        </ol>
+
+        <div style="background:#d1ecf1;padding:12px;margin:12px 0;border-left:4px solid #0c5460;border-radius:4px;">
+          <strong>💡 例：備考の候補を追加する</strong><br>
+          <code>"noteOptions": ["直出", "直帰", "直出・直帰", "半休"]</code><br>
+          → 備考欄で「半休」が選択できるようになります
+        </div>
+
+        <p style="margin:8px 0;color:#d00;font-weight:bold;">
+          ⚠️ 注意：ステータスを削除すると、既にそのステータスを選択しているメンバーの表示が崩れます
+        </p>
+
+        <h5>📋 運用上の注意事項</h5>
+        <ul style="line-height:1.8;">
+          <li>💾 <strong>バックアップは必須</strong>：重要な操作の前に必ずCSVエクスポートでバックアップを取ってください</li>
+          <li>👥 <strong>複数管理者の同時操作は避ける</strong>：競合してデータが失われる可能性があります</li>
+          <li>🔄 <strong>定期バックアップ</strong>：週1回程度、定期的にCSVエクスポートすることを推奨します</li>
+          <li>🔒 <strong>パスワード管理</strong>：パスワードは平文保存のため、強固なものを使い、関係者以外に漏らさないでください</li>
+        </ul>
+
+        <h5>❓ よくある質問（管理者向け）</h5>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. CSVインポートで「CSVヘッダが不正です」と出る</summary>
+          <p style="margin:8px 0 8px 20px;">A. 1行目のヘッダーが正しい形式か確認してください。エクスポートしたCSVの1行目をそのまま使うのが確実です。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 誤ってメンバーを削除してしまった</summary>
+          <p style="margin:8px 0 8px 20px;">A. 削除前のバックアップCSVを再インポートしてください。バックアップがない場合は手動でCSVを作成する必要があります。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. メニュー設定のJSONが正しいか不安</summary>
+          <p style="margin:8px 0 8px 20px;">A. オンラインのJSONバリデーター（例：jsonlint.com）で確認できます。保存時にエラーが出た場合は「現在の設定を読み込み」で元に戻してください。</p>
+        </details>
+
+        <p style="margin-top:16px;font-size:0.95em;">
+          <strong>📚 さらに詳しく知りたい方へ</strong><br>
+          より詳細な情報は <a href="ADMIN_MANUAL.md" target="_blank" style="color:#0073bb;text-decoration:underline;">管理者向け詳細マニュアル（ADMIN_MANUAL.md）</a> をご覧ください。
+        </p>
       </section>
     </div>
   </div>
