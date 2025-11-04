@@ -280,9 +280,11 @@
   .manual-section h4{ margin:8px 0; }
   .manual-section table{ width:100%; border-collapse:collapse; font-size:14px; }
   .manual-section table th, .manual-section table td{ border:1px solid #ddd; padding:6px; }
- .grp-menu{
+.grp-menu{
   position:absolute; top:100%; left:0;
-  width:100%;
+  min-width:100%;
+  width:max-content;
+  max-width:calc(100vw - 32px);
   background:#dff1ff; border:1px solid #bfe4ff; border-radius:8px; padding:4px 0;
   max-height:calc(100vh - var(--header-height) - 20px); overflow:auto;
   box-shadow:0 4px 8px rgba(0,0,0,.08);
@@ -298,5 +300,6 @@
   background:transparent; border:none;
   padding:4px 12px; border-radius:4px;
   text-align:left; font-size:14px; font-weight:600; color:#1f2937; cursor:pointer;
+    white-space:nowrap;
 }
 .grp-menu button.grp-item:hover{background:#bfe4ff;}
