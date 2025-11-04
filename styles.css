@@ -161,10 +161,10 @@
     }
     tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
     tbody td.name::before{ content:""; display:none; }
-    tbody td.ext{ order:1; }
-    tbody td.work{ order:2; }
-    tbody td.status{ order:3; }
-    tbody td.time{ order:4; }
+    tbody td.work{ order:1; flex:1 1 100%; }
+    tbody td.ext{ order:2; }
+    tbody td.time{ order:3; }
+    tbody td.status{ order:4; flex:1 1 100%; }
     tbody td.note{ order:5; flex:1 1 100%; }
   }
 
@@ -203,17 +203,21 @@
     padding-bottom:2px;
   }
 
-  #board.force-cards tbody td.ext,
-  #board[data-cols="1"] tbody td.ext{ order:1; }
-
   #board.force-cards tbody td.work,
-  #board[data-cols="1"] tbody td.work{ order:2; }
+  #board[data-cols="1"] tbody td.work{
+    order:1; flex:1 1 100%;
+  }
 
-  #board.force-cards tbody td.status,
-  #board[data-cols="1"] tbody td.status{ order:3; }
+  #board.force-cards tbody td.ext,
+  #board[data-cols="1"] tbody td.ext{ order:2; }
 
   #board.force-cards tbody td.time,
-  #board[data-cols="1"] tbody td.time{ order:4; }
+  #board[data-cols="1"] tbody td.time{ order:3; }
+
+  #board.force-cards tbody td.status,
+  #board[data-cols="1"] tbody td.status{
+    order:4; flex:1 1 100%;
+  }
 
   #board.force-cards tbody td.note,
   #board[data-cols="1"] tbody td.note{ order:5; flex:1 1 100%; }
