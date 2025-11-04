@@ -24,7 +24,7 @@ function buildRow(member){
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
-  const workPlaceholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+  const workPlaceholder = '09:00-17:30';
   const workInit = member.workHours == null ? '' : String(member.workHours);
   const tdWork=el('td',{class:'work','data-label':'業務時間'});
   const inpWork=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder:workPlaceholder,autocomplete:'off',inputmode:'text'});
@@ -74,7 +74,7 @@ function ensureRowControls(tr){
   let w=tr.querySelector('input[name="workHours"]');
   if(!w){
     const td=tr.querySelector('td.work');
-    const placeholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+    const placeholder = '09:00-17:30';
     w=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder,autocomplete:'off',inputmode:'text'});
     if(td){
       if(!td.querySelector('label.sr-only')){
@@ -89,7 +89,7 @@ function ensureRowControls(tr){
     diagAdd('fix: workHours datalist reattached');
   }
   if(w){
-    const placeholder = (MENUS?.businessHours && MENUS.businessHours[0]) ? MENUS.businessHours[0] : '09:00-18:00';
+    const placeholder = '09:00-17:30';
     if(w.getAttribute('placeholder')!==placeholder) w.setAttribute('placeholder',placeholder);
     w.setAttribute('autocomplete','off');
     w.setAttribute('inputmode','text');
