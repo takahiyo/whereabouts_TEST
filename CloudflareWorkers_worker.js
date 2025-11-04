@@ -1,11 +1,12 @@
 // 【ここに貼る】Cloudflare Worker（presence-proxy）: index.js（全置換）
 // ・GAS（ウェブアプリURL）へ POST プロキシ
-// ・CORS: takahiyo.github.io からのみ許可https://presence-proxy-prod.taka-hiyo.workers.dev/
+// ・CORS: takahiyo.github.io からのみ許可https://presence-proxy-test.taka-hiyo.workers.dev/
 // ・レスポンスは no-store。login/renewの role/office/officeName をそのまま転送
 export default {
   async fetch(req, env, ctx) {
-    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbztl-BbrdrpwW7C686wRIib9cReu2sRALZk5HG0CEn66zcH5B7ra4yiDStqgEXqdTQw/exec";
+    const GAS_ENDPOINT = env.GAS_ENDPOINT || "https://script.google.com/macros/s/AKfycbzw7kmlmVLkp9U4WFvmRV7Oe79n8RHAa1A1AcrlMomKjWRzqyOQJzV9QlGaWc7MOt3J/exec";
     const origin = req.headers.get('origin') || '';
+
     // CORS 許可元
     const ALLOW_ORIGINS = new Set([
       'https://takahiyo.github.io'
