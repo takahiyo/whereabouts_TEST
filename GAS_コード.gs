@@ -418,9 +418,9 @@ function doPost(e){
         const v = incoming.data[id] || {};
         const prev = cur.data && cur.data[id] || {};
         let workHoursValue = prev.workHours;
-        if(Object.prototype.hasOwnProperty.call(v, 'workHours')){␊
+        if(Object.prototype.hasOwnProperty.call(v, 'workHours')){
           workHoursValue = v.workHours == null ? '' : String(v.workHours);
-        }␊
+        }
         const nextRev = (typeof prev.rev === 'number' ? prev.rev : 0) + 1;
         outData[id] = {
           ext:   v.ext   == null ? '' : String(v.ext),
@@ -498,7 +498,6 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
-
 
 
 
