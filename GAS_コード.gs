@@ -15,6 +15,7 @@
 const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
+const MAX_NOTICES_PER_OFFICE = 100;     // お知らせ最大件数
 
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
@@ -152,6 +153,56 @@ function normalizeConfig_(cfg){
     menus: (cfg.menus && typeof cfg.menus === 'object') ? cfg.menus : defaultMenus_()
   };
   return out;
+}
+
+function coerceNoticeArray_(src){
+  if(src == null) return [];
+  if(Array.isArray(src)) return src;
+  if(typeof src === 'string'){
+    const trimmed = src.trim();
+    if(!trimmed) return [];
+    if(trimmed[0] === '[' || trimmed[0] === '{'){
+      try{ return coerceNoticeArray_(JSON.parse(trimmed)); }catch(_){ /* fallthrough */ }
+    }
+    return [ trimmed ];
+  }
+  if(typeof src === 'object'){
+    if(Array.isArray(src.list)) return src.list;
+    if(Array.isArray(src.items)) return src.items;
+    return Object.keys(src).sort().map(k=>src[k]).filter(v=>v!=null);
+  }
+  return [];
+}
+
+function normalizeNoticeItem_(raw){
+  if(raw == null) return null;
+  if(typeof raw === 'string'){
+    const text = raw.trim();
+    if(!text) return null;
+    return { title: text.substring(0, 200), content: '' };
+  }
+  if(Array.isArray(raw)){
+    const title = raw[0] == null ? '' : String(raw[0]).substring(0, 200);
+    const content = raw[1] == null ? '' : String(raw[1]).substring(0, 2000);
+    if(!title.trim() && !content.trim()) return null;
+    return { title, content };
+  }
+  if(typeof raw !== 'object') return null;
+  const titleSrc = raw.title != null ? raw.title : (raw.subject != null ? raw.subject : raw.headline);
+  const contentSrc = raw.content != null ? raw.content : (raw.body != null ? raw.body : (raw.text != null ? raw.text : raw.description));
+  const title = titleSrc == null ? '' : String(titleSrc).substring(0, 200);
+  const content = contentSrc == null ? '' : String(contentSrc).substring(0, 2000);
+  if(!title.trim() && !content.trim()) return null;
+  return { title, content };
+}
+
+function normalizeNoticesArray_(raw){
+  const arr = coerceNoticeArray_(raw);
+  const normalized = arr.map(normalizeNoticeItem_).filter(Boolean);
+  if(normalized.length > MAX_NOTICES_PER_OFFICE){
+    return normalized.slice(0, MAX_NOTICES_PER_OFFICE);
+  }
+  return normalized;
 }
 
 function notifyConfigPush_(office){
@@ -486,13 +537,12 @@ function doPost(e){
     const hit = noCache ? null : cache.get(cKey);
     if(hit){ try{ return json_(JSON.parse(hit)); }catch(_){ /* fallthrough */ } }
 
-    let notices;
-    try{ notices = JSON.parse(prop.getProperty(NOTICES_KEY) || '[]') || []; }
-    catch(_){ notices = []; }
+    const stored = prop.getProperty(NOTICES_KEY);
+    const notices = normalizeNoticesArray_(stored || []);
 
-    const out = JSON.stringify({ updated: now_(), notices });
-    if(!noCache) cache.put(cKey, out, CACHE_TTL_SEC);
-    return json_(JSON.parse(out));
+    const outObj = { updated: now_(), notices };
+    if(!noCache) cache.put(cKey, JSON.stringify(outObj), CACHE_TTL_SEC);
+    return json_(outObj);
   }
 
   if(action === 'setNotices'){
@@ -510,22 +560,14 @@ function doPost(e){
     if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden', debug:'role='+role });
 
     const NOTICES_KEY = noticesKeyForOffice_(office);
-    let notices;
     const noticesParam = p_(e,'notices','[]');
-    try{ notices = JSON.parse(noticesParam) || []; }
+    let parsedNotices;
+    try{ parsedNotices = JSON.parse(noticesParam); }
     catch(err){ return json_({ error:'bad_json', debug:String(err), param:noticesParam }); }
-
-    if(!Array.isArray(notices)) return json_({ error:'bad_data', debug:'not_array', received:typeof notices });
 
     const lock = LockService.getScriptLock(); lock.waitLock(2000);
     try{
-      const normalized = notices.map(n=>{
-        if(!n || typeof n !== 'object') return null;
-        return {
-          title: String(n.title || '').substring(0, 200),
-          content: String(n.content || '').substring(0, 2000)
-        };
-      }).filter(n=>n && (n.title || n.content));
+      const normalized = normalizeNoticesArray_(parsedNotices);
 
       prop.setProperty(NOTICES_KEY, JSON.stringify(normalized));
       const out = JSON.stringify({ updated: now_(), notices: normalized });
