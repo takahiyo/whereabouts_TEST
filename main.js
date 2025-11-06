@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
     if(!SESSION_TOKEN) return;
-    startRemoteSync(true); startConfigWatch();
+    startRemoteSync(true); startConfigWatch(); startNoticesPolling();
   }
 
   // 既存セッション
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       }
       if(d&&d.data) applyState(d.data);
       if(!SESSION_TOKEN) return;
-      startRemoteSync(true); startConfigWatch();
+      startRemoteSync(true); startConfigWatch(); startNoticesPolling();
     })();
   }else{
     loginEl.style.display='flex';

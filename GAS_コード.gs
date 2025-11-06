@@ -33,6 +33,7 @@ function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? Stri
 /* ===== データ保存キー ===== */
 function dataKeyForOffice_(office){ return `presence-board-${office}`; }
 function configKeyForOffice_(office){ return `presence-config-${office}`; }
+function noticesKeyForOffice_(office){ return `presence-notices-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
@@ -466,6 +467,55 @@ function doPost(e){
     if(apw) offs[id].adminPassword = apw;
     setOffices_(offs);
     return json_({ ok:true });
+  }
+
+  /* ===== お知らせAPI ===== */
+  if(action === 'getNotices'){
+    const office = tokenOffice;
+    const NOTICES_KEY = noticesKeyForOffice_(office);
+    const cKey = KEY_PREFIX + 'notices:' + office;
+    const noCache = p_(e,'nocache','') === '1';
+
+    const hit = noCache ? null : cache.get(cKey);
+    if(hit){ try{ return json_(JSON.parse(hit)); }catch(_){ /* fallthrough */ } }
+
+    let notices;
+    try{ notices = JSON.parse(prop.getProperty(NOTICES_KEY) || '[]') || []; }
+    catch(_){ notices = []; }
+
+    const out = JSON.stringify({ updated: now_(), notices });
+    if(!noCache) cache.put(cKey, out, CACHE_TTL_SEC);
+    return json_(JSON.parse(out));
+  }
+
+  if(action === 'setNotices'){
+    const office = tokenOffice;
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden' });
+
+    const NOTICES_KEY = noticesKeyForOffice_(office);
+    let notices;
+    try{ notices = JSON.parse(p_(e,'notices','[]')) || []; }
+    catch(_){ return json_({ error:'bad_json' }); }
+
+    if(!Array.isArray(notices)) return json_({ error:'bad_data' });
+
+    const lock = LockService.getScriptLock(); lock.waitLock(2000);
+    try{
+      const normalized = notices.map(n=>{
+        if(!n || typeof n !== 'object') return null;
+        return {
+          title: String(n.title || '').substring(0, 200),
+          content: String(n.content || '').substring(0, 2000)
+        };
+      }).filter(n=>n && (n.title || n.content));
+
+      prop.setProperty(NOTICES_KEY, JSON.stringify(normalized));
+      const out = JSON.stringify({ updated: now_(), notices: normalized });
+      cache.put(KEY_PREFIX+'notices:'+office, out, CACHE_TTL_SEC);
+      return json_({ ok:true, notices: normalized });
+    } finally{
+      try{ lock.releaseLock(); }catch(_){}
+    }
   }
 
   return json_({ error:'unknown_action' });

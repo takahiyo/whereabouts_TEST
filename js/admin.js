@@ -164,6 +164,56 @@ btnSaveMenus.addEventListener('click', async ()=>{
   else toast('保存に失敗',false);
 });
 
+/* お知らせ管理UI */
+btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
+btnLoadNotices.addEventListener('click', async ()=>{
+  const office=selectedOfficeId(); if(!office) return;
+  try{
+    const res=await apiPost({ action:'getNotices', token:SESSION_TOKEN, nocache:'1' });
+    if(res && res.notices){
+      noticesEditor.innerHTML='';
+      if(res.notices.length === 0){
+        addNoticeEditorItem();
+      } else {
+        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content));
+      }
+      toast('お知らせを読み込みました');
+    }
+  }catch(e){
+    toast('お知らせの読み込みに失敗',false);
+  }
+});
+btnSaveNotices.addEventListener('click', async ()=>{
+  const office=selectedOfficeId(); if(!office) return;
+  const items=noticesEditor.querySelectorAll('.notice-edit-item');
+  const notices=[];
+  items.forEach(item=>{
+    const title=(item.querySelector('.notice-edit-title').value||'').trim();
+    const content=(item.querySelector('.notice-edit-content').value||'').trim();
+    if(title || content){
+      notices.push({ title, content });
+    }
+  });
+  
+  const success=await saveNotices(notices);
+  if(success) toast('お知らせを保存しました');
+  else toast('お知らせの保存に失敗',false);
+});
+
+function addNoticeEditorItem(title='', content=''){
+  const item=document.createElement('div');
+  item.className='notice-edit-item';
+  item.innerHTML=`
+    <div class="notice-edit-row">
+      <input type="text" class="notice-edit-title" placeholder="タイトル" value="${escapeHtml(title)}">
+      <button class="btn-remove-notice">削除</button>
+    </div>
+    <textarea class="notice-edit-content" placeholder="内容（省略可）&#10;URLを記載すると自動的にリンクになります">${escapeHtml(content)}</textarea>
+  `;
+  item.querySelector('.btn-remove-notice').addEventListener('click', ()=> item.remove());
+  noticesEditor.appendChild(item);
+}
+
 /* Admin API */
 function selectedOfficeId(){
   const office=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
