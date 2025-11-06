@@ -73,9 +73,12 @@ async function fetchNotices() {
   
   try {
     const res = await apiPost({ action: 'getNotices', token: SESSION_TOKEN, nocache: '1' });
+    console.log('fetchNotices response:', res);
     if (res && res.notices) {
       CURRENT_NOTICES = res.notices;
       renderNotices(CURRENT_NOTICES);
+    } else if (res && res.error) {
+      console.error('fetchNotices error:', res.error);
     }
   } catch (e) {
     console.error('お知らせ取得エラー:', e);
@@ -93,6 +96,8 @@ async function saveNotices(notices) {
       notices: JSON.stringify(notices)
     });
     
+    console.log('setNotices response:', res);
+    
     if (res && res.ok) {
       CURRENT_NOTICES = res.notices || [];
       renderNotices(CURRENT_NOTICES);
@@ -100,9 +105,13 @@ async function saveNotices(notices) {
     } else if (res && res.error === 'forbidden') {
       toast('お知らせの編集権限がありません');
       return false;
+    } else if (res && res.error) {
+      toast('エラー: ' + res.error);
+      return false;
     }
   } catch (e) {
     console.error('お知らせ保存エラー:', e);
+    toast('通信エラーが発生しました');
   }
   
   return false;

@@ -490,14 +490,16 @@ function doPost(e){
 
   if(action === 'setNotices'){
     const office = tokenOffice;
-    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden' });
+    const role = getRoleByToken_(prop, token);
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden', debug:'role='+role });
 
     const NOTICES_KEY = noticesKeyForOffice_(office);
     let notices;
-    try{ notices = JSON.parse(p_(e,'notices','[]')) || []; }
-    catch(_){ return json_({ error:'bad_json' }); }
+    const noticesParam = p_(e,'notices','[]');
+    try{ notices = JSON.parse(noticesParam) || []; }
+    catch(err){ return json_({ error:'bad_json', debug:String(err), param:noticesParam }); }
 
-    if(!Array.isArray(notices)) return json_({ error:'bad_data' });
+    if(!Array.isArray(notices)) return json_({ error:'bad_data', debug:'not_array', received:typeof notices });
 
     const lock = LockService.getScriptLock(); lock.waitLock(2000);
     try{
@@ -513,6 +515,8 @@ function doPost(e){
       const out = JSON.stringify({ updated: now_(), notices: normalized });
       cache.put(KEY_PREFIX+'notices:'+office, out, CACHE_TTL_SEC);
       return json_({ ok:true, notices: normalized });
+    } catch(err){
+      return json_({ error:'save_failed', debug:String(err) });
     } finally{
       try{ lock.releaseLock(); }catch(_){}
     }
