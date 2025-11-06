@@ -77,6 +77,17 @@
           <div class="admin-row"><textarea id="menusJson" placeholder='{"statuses":[...], "noteOptions":[...], "timeStepMinutes":30}'></textarea></div>
           <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
         </div>
+
+        <div class="admin-box">
+          <h4>お知らせ管理</h4>
+          <div class="admin-note">複数のお知らせを登録できます。タイトルのみ、またはタイトル＋内容を入力してください。</div>
+          <div id="noticesEditor" class="notices-editor"></div>
+          <div class="admin-row">
+            <button id="btnAddNotice">➕ お知らせを追加</button>
+            <button id="btnLoadNotices">現在のお知らせを読み込み</button>
+            <button id="btnSaveNotices">保存</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -367,6 +378,15 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  
+  <!-- お知らせエリア -->
+  <div id="noticesArea" class="notices-area" style="display:none">
+    <div class="notices-container">
+      <h3 class="notices-title">📢 お知らせ</h3>
+      <div id="noticesList" class="notices-list"></div>
+    </div>
+  </div>
+
   <div class="wrap"><div id="board" class="board" style="display:none"></div></div>
   <div id="diag" class="diag"></div>
   <script src="config.js"></script>
@@ -379,6 +399,7 @@
   <script src="js/auth.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/notices.js"></script>
   <script src="main.js"></script>
 
 </body>

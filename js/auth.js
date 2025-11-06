@@ -10,6 +10,7 @@ async function logout(){
     if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
     if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
     if(ro){ try{ ro.disconnect(); }catch{} }
+    stopNoticesPolling();
   }catch{}
   logoutButtonsCleanup();
   SESSION_TOKEN=""; sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_ROLE_KEY);

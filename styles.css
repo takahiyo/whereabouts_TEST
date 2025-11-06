@@ -303,3 +303,87 @@
     white-space:nowrap;
 }
 .grp-menu button.grp-item:hover{background:#bfe4ff;}
+
+/* お知らせエリア */
+.notices-area{
+  max-width:100%; margin:0 auto 16px; padding:0 16px;
+}
+.notices-container{
+  background:#fffbeb; border:1px solid #fbbf24; border-radius:8px;
+  padding:12px 16px; box-shadow:0 2px 4px rgba(0,0,0,.05);
+}
+.notices-title{
+  margin:0 0 8px 0; font-size:16px; font-weight:700; color:#92400e;
+}
+.notices-list{
+  display:flex; flex-direction:column; gap:8px;
+}
+.notice-item{
+  background:#fff; border:1px solid #fbbf24; border-radius:6px;
+  padding:8px 12px; cursor:pointer; transition:all .2s;
+}
+.notice-item:hover{
+  background:#fef3c7; border-color:#f59e0b;
+}
+.notice-header{
+  display:flex; align-items:center; gap:8px; font-weight:600;
+  color:#92400e; user-select:none;
+}
+.notice-toggle{
+  font-size:14px; transition:transform .2s;
+}
+.notice-item.expanded .notice-toggle{
+  transform:rotate(90deg);
+}
+.notice-title{
+  flex:1; font-size:14px;
+}
+.notice-content{
+  margin-top:8px; padding-top:8px; border-top:1px solid #fbbf24;
+  font-size:14px; color:#78350f; line-height:1.6; white-space:pre-wrap;
+  display:none;
+}
+.notice-item.expanded .notice-content{
+  display:block;
+}
+.notice-content a{
+  color:#0073bb; text-decoration:underline; word-break:break-all;
+}
+.notice-content a:hover{
+  color:#005a8f;
+}
+/* タイトルのみのお知らせは開閉不要 */
+.notice-item.title-only{
+  cursor:default;
+}
+.notice-item.title-only .notice-toggle{
+  display:none;
+}
+.notice-item.title-only:hover{
+  background:#fff;
+}
+
+/* お知らせ管理UI */
+.notices-editor{
+  display:flex; flex-direction:column; gap:12px; margin-bottom:12px;
+}
+.notice-edit-item{
+  background:#f9fafb; border:1px solid #d1d5db; border-radius:6px; padding:12px;
+}
+.notice-edit-row{
+  display:flex; gap:8px; margin-bottom:8px; align-items:center;
+}
+.notice-edit-item input[type="text"]{
+  flex:1;
+}
+.notice-edit-item textarea{
+  width:100%; min-height:80px; padding:8px; border:1px solid #d1d5db;
+  border-radius:4px; font-size:14px; font-family:inherit; resize:vertical;
+}
+.btn-remove-notice{
+  background:#ef4444; color:#fff; border:none; padding:4px 12px;
+  border-radius:4px; cursor:pointer; font-size:13px;
+}
+.btn-remove-notice:hover{
+  background:#dc2626;
+}
