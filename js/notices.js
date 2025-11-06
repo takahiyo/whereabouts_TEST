@@ -73,9 +73,12 @@ async function fetchNotices() {
   
   try {
     const res = await apiPost({ action: 'getNotices', token: SESSION_TOKEN, nocache: '1' });
+    console.log('fetchNotices response:', res);
     if (res && res.notices) {
       CURRENT_NOTICES = res.notices;
       renderNotices(CURRENT_NOTICES);
+    } else if (res && res.error) {
+      console.error('fetchNotices error:', res.error);
     }
   } catch (e) {
     console.error('お知らせ取得エラー:', e);
@@ -83,15 +86,26 @@ async function fetchNotices() {
 }
 
 // お知らせを保存（管理者のみ）
-async function saveNotices(notices) {
+async function saveNotices(notices, office) {
   if (!SESSION_TOKEN) return false;
   
   try {
-    const res = await apiPost({
+    const params = {
       action: 'setNotices',
       token: SESSION_TOKEN,
       notices: JSON.stringify(notices)
-    });
+    };
+    
+    // office パラメータが指定された場合は追加（スーパー管理者用）
+    if (office) {
+      params.office = office;
+    }
+    
+    const res = await apiPost(params);
+    
+    console.log('setNotices response:', res);
+    
+    console.log('setNotices response:', res);
     
     if (res && res.ok) {
       CURRENT_NOTICES = res.notices || [];
@@ -100,9 +114,13 @@ async function saveNotices(notices) {
     } else if (res && res.error === 'forbidden') {
       toast('お知らせの編集権限がありません');
       return false;
+    } else if (res && res.error) {
+      toast('エラー: ' + res.error);
+      return false;
     }
   } catch (e) {
     console.error('お知らせ保存エラー:', e);
+    toast('通信エラーが発生しました');
   }
   
   return false;
