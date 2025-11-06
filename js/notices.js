@@ -72,7 +72,17 @@ async function fetchNotices() {
   if (!SESSION_TOKEN) return;
   
   try {
-    const res = await apiPost({ action: 'getNotices', token: SESSION_TOKEN, nocache: '1' });
+    const params = {
+      action: 'getNotices',
+      token: SESSION_TOKEN,
+      nocache: '1'
+    };
+    const officeId = CURRENT_OFFICE_ID || '';
+    if (officeId) {
+      params.office = officeId;
+    }
+
+    const res = await apiPost(params);
     console.log('fetchNotices response:', res);
     if (res && res.notices) {
       CURRENT_NOTICES = res.notices;
@@ -96,14 +106,12 @@ async function saveNotices(notices, office) {
       notices: JSON.stringify(notices)
     };
     
-    // office パラメータが指定された場合は追加（スーパー管理者用）
-    if (office) {
-      params.office = office;
+    const targetOffice = office || CURRENT_OFFICE_ID || '';
+    if (targetOffice) {
+      params.office = targetOffice;
     }
     
     const res = await apiPost(params);
-    
-    console.log('setNotices response:', res);
     
     console.log('setNotices response:', res);
     
