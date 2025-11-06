@@ -86,15 +86,24 @@ async function fetchNotices() {
 }
 
 // お知らせを保存（管理者のみ）
-async function saveNotices(notices) {
+async function saveNotices(notices, office) {
   if (!SESSION_TOKEN) return false;
   
   try {
-    const res = await apiPost({
+    const params = {
       action: 'setNotices',
       token: SESSION_TOKEN,
       notices: JSON.stringify(notices)
-    });
+    };
+    
+    // office パラメータが指定された場合は追加（スーパー管理者用）
+    if (office) {
+      params.office = office;
+    }
+    
+    const res = await apiPost(params);
+    
+    console.log('setNotices response:', res);
     
     console.log('setNotices response:', res);
     

@@ -167,8 +167,14 @@ btnSaveMenus.addEventListener('click', async ()=>{
 /* お知らせ管理UI */
 btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
 btnLoadNotices.addEventListener('click', async ()=>{
+  const office=selectedOfficeId(); if(!office) return;
   try{
-    const res=await apiPost({ action:'getNotices', token:SESSION_TOKEN, nocache:'1' });
+    const params = { action:'getNotices', token:SESSION_TOKEN, nocache:'1' };
+    // スーパー管理者の場合は選択中の拠点を指定
+    if(CURRENT_ROLE === 'superAdmin' && office !== CURRENT_OFFICE_ID){
+      params.office = office;
+    }
+    const res=await apiPost(params);
     console.log('getNotices response:', res);
     if(res && res.notices){
       noticesEditor.innerHTML='';
@@ -187,6 +193,7 @@ btnLoadNotices.addEventListener('click', async ()=>{
   }
 });
 btnSaveNotices.addEventListener('click', async ()=>{
+  const office=selectedOfficeId(); if(!office) return;
   const items=noticesEditor.querySelectorAll('.notice-edit-item');
   const notices=[];
   items.forEach(item=>{
@@ -197,8 +204,10 @@ btnSaveNotices.addEventListener('click', async ()=>{
     }
   });
   
-  console.log('Saving notices:', notices);
-  const success=await saveNotices(notices);
+  console.log('Saving notices:', notices, 'for office:', office);
+  // スーパー管理者の場合は選択中の拠点を指定
+  const targetOffice = (CURRENT_ROLE === 'superAdmin' && office !== CURRENT_OFFICE_ID) ? office : undefined;
+  const success=await saveNotices(notices, targetOffice);
   if(success) toast('お知らせを保存しました');
   else toast('お知らせの保存に失敗',false);
 });
