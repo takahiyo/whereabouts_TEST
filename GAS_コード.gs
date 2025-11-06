@@ -471,7 +471,14 @@ function doPost(e){
 
   /* ===== お知らせAPI ===== */
   if(action === 'getNotices'){
-    const office = tokenOffice;
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    // スーパー管理者が別拠点を指定した場合、権限チェック
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      }
+    }
     const NOTICES_KEY = noticesKeyForOffice_(office);
     const cKey = KEY_PREFIX + 'notices:' + office;
     const noCache = p_(e,'nocache','') === '1';
@@ -489,7 +496,16 @@ function doPost(e){
   }
 
   if(action === 'setNotices'){
-    const office = tokenOffice;
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    // スーパー管理者が別拠点を指定した場合、権限チェック
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden', debug:'cannot_admin_office='+requestedOffice });
+      }
+    }
     const role = getRoleByToken_(prop, token);
     if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden', debug:'role='+role });
 
