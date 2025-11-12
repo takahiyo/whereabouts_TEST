@@ -131,8 +131,10 @@
               <li>📍 <strong>タイトル</strong>：拠点名が表示されます（クリックするとグループ一覧メニューが開きます）</li>
               <li>🔍 <strong>氏名検索</strong>：特定の人を探すときに使います</li>
               <li>🎯 <strong>ステータス絞り込み</strong>：「外出中の人だけ」など、条件で絞り込めます</li>
+              <li>📢 <strong>お知らせ</strong>：お知らせがある場合に表示。クリックで折りたたみ/展開を切り替えます</li>
               <li>⚙️ <strong>管理</strong>：管理者のみ表示されます</li>
               <li>🚪 <strong>ログオフ</strong>：ログアウトします</li>
+              <li>📖 <strong>マニュアル</strong>：このマニュアルを表示します</li>
             </ul>
           </li>
           <li><strong>メイン画面</strong>：
@@ -150,7 +152,7 @@
         <ol style="line-height:1.8;">
           <li>自分の行の「業務時間」欄をクリック</li>
           <li>直接入力するか、表示される候補リストから選択（例：<code>09:00-17:30</code>）</li>
-          <li>✅ 入力が完了すると、約2秒後に自動保存されます（保存ボタンは不要です）</li>
+          <li>✅ 入力が完了すると、約1秒後に自動保存されます（保存ボタンは不要です）</li>
         </ol>
 
         <p style="margin:16px 0 8px 0;"><strong>🎨 ステータスの選択（色分けされます）</strong></p>
@@ -207,12 +209,35 @@
           <li>行きたいグループをクリックすると、その位置にスクロールします</li>
         </ol>
 
-        <h5>🔄 5. 自動更新について（重要）</h5>
+        <h5>📢 5. お知らせ機能の使い方</h5>
+        <p><strong>お知らせエリアとは</strong></p>
+        <ul style="line-height:1.8;">
+          <li>管理者が登録した重要なお知らせが、ヘッダーとメイン画面の間に表示されます</li>
+          <li>システムメンテナンス、業務連絡、注意事項などが掲載されます</li>
+          <li>お知らせがない場合は、お知らせエリアとボタンは表示されません</li>
+        </ul>
+
+        <p style="margin-top:12px;"><strong>折りたたみ/展開の切り替え</strong></p>
+        <ol style="line-height:1.8;">
+          <li><strong>初期状態（ログイン直後）</strong>：お知らせは<strong>展開</strong>された状態で表示されます</li>
+          <li><strong>折りたたみ</strong>：ヘッダーの「お知らせ」ボタンをクリック → 最初のお知らせのタイトルと件数のみ表示されます<br>
+            <span style="color:#666;font-size:0.9em;">例：「システムメンテナンスのお知らせ (他2件)」</span></li>
+          <li><strong>展開</strong>：もう一度「お知らせ」ボタンをクリック → すべてのお知らせが表示されます</li>
+        </ol>
+
+        <p style="margin-top:12px;"><strong>お知らせの更新頻度</strong></p>
+        <ul style="line-height:1.8;">
+          <li>管理者が追加・編集・削除したお知らせは、約30秒ごとに自動的に反映されます</li>
+          <li>すぐに確認したい場合は、ページを再読み込み（F5キー）してください</li>
+        </ul>
+
+        <h5>🔄 6. 自動更新について（重要）</h5>
         <div style="background:#fff3cd;padding:12px;margin:12px 0;border-left:4px solid #ffc107;border-radius:4px;">
           <strong>⚡ リアルタイム同期</strong>
           <ul style="margin:8px 0;line-height:1.8;">
-            <li>✅ あなたが入力した内容は、約2秒後に自動的に保存されます</li>
-            <li>✅ 他の人が入力した内容も、約2秒ごとに自動的にあなたの画面に反映されます</li>
+            <li>✅ あなたが入力した内容は、<strong>約1秒後</strong>に自動的に保存されます</li>
+            <li>✅ 他の人が入力した在席状況は、<strong>約10秒ごと</strong>に自動的にあなたの画面に反映されます</li>
+            <li>✅ お知らせや設定の変更は、<strong>約30秒ごと</strong>に自動的に反映されます</li>
             <li>✅ 保存ボタンや更新ボタンは<strong>不要</strong>です</li>
             <li>⚠️ 入力中や変換中は、他の人の更新が一時的に保留されます（入力の邪魔になりません）</li>
           </ul>
@@ -221,7 +246,15 @@
         <h5>❓ よくある質問</h5>
         <details style="margin:8px 0;">
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 保存ボタンはどこですか？</summary>
-          <p style="margin:8px 0 8px 20px;">A. 保存ボタンはありません。入力すると自動的に約2秒後に保存されます。</p>
+          <p style="margin:8px 0 8px 20px;">A. 保存ボタンはありません。入力すると自動的に約1秒後に保存されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. お知らせボタンが表示されません</summary>
+          <p style="margin:8px 0 8px 20px;">A. お知らせがない場合、お知らせボタンとお知らせエリアは表示されません。管理者がお知らせを登録すると自動的に表示されます（約30秒以内に反映）。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. お知らせが邪魔で画面が見づらい</summary>
+          <p style="margin:8px 0 8px 20px;">A. ヘッダーの「お知らせ」ボタンをクリックすると、お知らせエリアを折りたたむことができます。折りたたむと1行のサマリー表示になります。</p>
         </details>
         <details style="margin:8px 0;">
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 戻り時間が選択できません</summary>
@@ -312,7 +345,54 @@
           💡 パスワードは平文で保存されます。<strong>強固なパスワード</strong>を使用してください。
         </p>
 
-        <h5>⚙️ 5. メニュー設定（JSON）- 高度な設定</h5>
+        <h5>📢 5. お知らせ管理</h5>
+        <p><strong>用途</strong>：拠点のメンバー全員に重要な情報を掲示します</p>
+        
+        <p style="margin:12px 0 8px 0;"><strong>お知らせの追加</strong></p>
+        <ol style="line-height:1.8;">
+          <li>管理パネルの「お知らせ管理」セクションを探す</li>
+          <li>「➕ お知らせを追加」ボタンをクリック → 入力欄が表示されます</li>
+          <li><strong>タイトル</strong>（最大200文字）と<strong>内容</strong>（最大2000文字）を入力</li>
+          <li>「保存」ボタンをクリック</li>
+          <li>✅ お知らせが即座に保存され、約30秒以内に全ユーザーの画面に表示されます</li>
+        </ol>
+
+        <p style="margin:12px 0 8px 0;"><strong>お知らせの編集</strong></p>
+        <ol style="line-height:1.8;">
+          <li>「現在のお知らせを読み込み」ボタンをクリック → 既存のお知らせが一覧表示されます</li>
+          <li>編集したいお知らせの「編集」ボタンをクリック</li>
+          <li>入力欄に内容が表示されるので、修正します</li>
+          <li>「保存」ボタンをクリック</li>
+        </ol>
+
+        <p style="margin:12px 0 8px 0;"><strong>お知らせの削除</strong></p>
+        <ol style="line-height:1.8;">
+          <li>「現在のお知らせを読み込み」ボタンをクリック</li>
+          <li>削除したいお知らせの「削除」ボタンをクリック</li>
+          <li>確認ダイアログで「OK」をクリック</li>
+        </ol>
+
+        <div style="background:#d1ecf1;padding:12px;margin:12px 0;border-left:4px solid #0c5460;border-radius:4px;">
+          <strong>💡 お知らせ機能のポイント</strong>
+          <ul style="margin:8px 0;line-height:1.8;">
+            <li>お知らせは<strong>拠点ごと</strong>に独立して管理されます</li>
+            <li>1拠点あたり<strong>最大20件</strong>まで登録できます</li>
+            <li>お知らせは<strong>追加した順</strong>（古い順）に表示されます</li>
+            <li>HTML/スクリプトは自動的に無効化されます（セキュリティ対策）</li>
+            <li>全ユーザーの画面に<strong>約30秒以内</strong>に自動反映されます</li>
+          </ul>
+        </div>
+
+        <p style="margin:12px 0 8px 0;"><strong>お知らせの用途例</strong></p>
+        <ul style="line-height:1.8;">
+          <li>🔧 システムメンテナンスの予定</li>
+          <li>📅 全体会議やイベントの案内</li>
+          <li>⚠️ 業務上の注意事項</li>
+          <li>🎉 新機能の案内</li>
+          <li>📢 重要な連絡事項</li>
+        </ul>
+
+        <h5>⚙️ 6. メニュー設定（JSON）- 高度な設定</h5>
         <p>以下の設定をJSON形式で変更できます：</p>
         <ul style="line-height:1.8;">
           <li><code>statuses</code>：ステータスの種類、色、戻り時間の要否、自動クリア設定</li>
