@@ -170,7 +170,10 @@ function toggleNoticesArea() {
 
 // お知らせを取得
 async function fetchNotices() {
-  if (!SESSION_TOKEN) return;
+  if (!SESSION_TOKEN) {
+    console.log('fetchNotices: SESSION_TOKEN is not set');
+    return;
+  }
   
   try {
     const params = {
@@ -183,9 +186,12 @@ async function fetchNotices() {
       params.office = officeId;
     }
 
+    console.log('fetchNotices params:', params);
     const res = await apiPost(params);
     console.log('fetchNotices response:', res);
+    
     if (res && Object.prototype.hasOwnProperty.call(res, 'notices')) {
+      console.log('Applying notices:', res.notices);
       applyNotices(res.notices);
     } else if (res && res.error) {
       if (res.error === 'unauthorized') {
@@ -193,8 +199,10 @@ async function fetchNotices() {
         await logout();
         stopNoticesPolling();
       } else {
-        console.error('fetchNotices error:', res.error);
+        console.error('fetchNotices error:', res.error, res.debug || '');
       }
+    } else {
+      console.warn('fetchNotices: Unexpected response format', res);
     }
   } catch (e) {
     console.error('お知らせ取得エラー:', e);
@@ -242,12 +250,19 @@ async function saveNotices(notices, office) {
     }
 
     if (res && res.error) {
-      toast('エラー: ' + res.error);
+      const debugInfo = res.debug ? ` (${res.debug})` : '';
+      toast('エラー: ' + res.error + debugInfo);
+      console.error('setNotices error details:', res);
       return false;
     }
+    
+    // レスポンスが不明な場合
+    console.error('Unexpected setNotices response:', res);
+    toast('お知らせの保存に失敗しました（不明なレスポンス）');
+    return false;
   } catch (e) {
     console.error('お知らせ保存エラー:', e);
-    toast('通信エラーが発生しました');
+    toast('通信エラーが発生しました: ' + e.message);
   }
   
   return false;
