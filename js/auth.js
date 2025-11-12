@@ -123,6 +123,10 @@ function applyRoleToManual(){
 adminBtn.addEventListener('click', async ()=>{
   applyRoleToAdminPanel();
   showAdminModal(true);
+  // お知らせを自動的に読み込み
+  if(typeof autoLoadNoticesOnAdminOpen === 'function'){
+    await autoLoadNoticesOnAdminOpen();
+  }
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);

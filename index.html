@@ -77,12 +77,6 @@
         </div>
 
         <div class="admin-box">
-          <h4>メニュー設定（JSON）</h4>
-          <div class="admin-row"><textarea id="menusJson" placeholder='{"statuses":[...], "noteOptions":[...], "timeStepMinutes":30}'></textarea></div>
-          <div class="admin-row"><button id="btnLoadMenus">現在の設定を読み込み</button><button id="btnSaveMenus">保存</button></div>
-        </div>
-
-        <div class="admin-box">
           <h4>お知らせ管理</h4>
           <div class="admin-note">複数のお知らせを登録できます。タイトルのみ、またはタイトル＋内容を入力してください。</div>
           <div id="noticesEditor" class="notices-editor"></div>
@@ -99,9 +93,11 @@
   <!-- マニュアルモーダル -->
   <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
     <div class="manual-card" role="document">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3 id="manualTitle">マニュアル</h3>
-        <button id="manualClose" aria-label="閉じる">閉じる</button>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 id="manualTitle" style="margin:0;">マニュアル</h3>
+          <button id="manualClose" aria-label="閉じる">閉じる</button>
+        </div>
       </div>
 
       <section id="manualUser" class="manual-section">
@@ -348,10 +344,16 @@
         <h5>📢 5. お知らせ管理</h5>
         <p><strong>用途</strong>：拠点のメンバー全員に重要な情報を掲示します</p>
         
+        <div style="background:#e7f8e7;padding:12px;margin:12px 0;border-left:4px solid #4ade80;border-radius:4px;">
+          <strong>✨ 自動読み込み機能</strong><br>
+          管理パネルを開くと、現在のお知らせが<strong>自動的に表示</strong>されます。<br>
+          「現在のお知らせを読み込み」ボタンを押す必要はありません。
+        </div>
+
         <p style="margin:12px 0 8px 0;"><strong>お知らせの追加</strong></p>
         <ol style="line-height:1.8;">
-          <li>管理パネルの「お知らせ管理」セクションを探す</li>
-          <li>「➕ お知らせを追加」ボタンをクリック → 入力欄が表示されます</li>
+          <li>管理パネルを開く（現在のお知らせが自動表示されます）</li>
+          <li>「➕ お知らせを追加」ボタンをクリック → 入力欄が追加されます</li>
           <li><strong>タイトル</strong>（最大200文字）と<strong>内容</strong>（最大2000文字）を入力</li>
           <li>「保存」ボタンをクリック</li>
           <li>✅ お知らせが即座に保存され、約30秒以内に全ユーザーの画面に表示されます</li>
@@ -359,7 +361,6 @@
 
         <p style="margin:12px 0 8px 0;"><strong>お知らせの編集</strong></p>
         <ol style="line-height:1.8;">
-          <li>「現在のお知らせを読み込み」ボタンをクリック → 既存のお知らせが一覧表示されます</li>
           <li>編集したいお知らせの「編集」ボタンをクリック</li>
           <li>入力欄に内容が表示されるので、修正します</li>
           <li>「保存」ボタンをクリック</li>
@@ -367,7 +368,6 @@
 
         <p style="margin:12px 0 8px 0;"><strong>お知らせの削除</strong></p>
         <ol style="line-height:1.8;">
-          <li>「現在のお知らせを読み込み」ボタンをクリック</li>
           <li>削除したいお知らせの「削除」ボタンをクリック</li>
           <li>確認ダイアログで「OK」をクリック</li>
         </ol>
@@ -391,33 +391,6 @@
           <li>🎉 新機能の案内</li>
           <li>📢 重要な連絡事項</li>
         </ul>
-
-        <h5>⚙️ 6. メニュー設定（JSON）- 高度な設定</h5>
-        <p>以下の設定をJSON形式で変更できます：</p>
-        <ul style="line-height:1.8;">
-          <li><code>statuses</code>：ステータスの種類、色、戻り時間の要否、自動クリア設定</li>
-          <li><code>noteOptions</code>：備考欄の候補リスト（例：直出、直帰）</li>
-          <li><code>businessHours</code>：業務時間の候補リスト（例：09:00-17:30）</li>
-          <li><code>timeStepMinutes</code>：戻り時間の刻み（分単位、デフォルト30）</li>
-        </ul>
-        
-        <p style="margin:12px 0 8px 0;"><strong>操作手順</strong></p>
-        <ol style="line-height:1.8;">
-          <li>「現在の設定を読み込み」ボタンをクリック → テキストエリアにJSON形式で表示されます</li>
-          <li>内容を編集（JSON形式を崩さないように注意）</li>
-          <li>「保存」ボタンをクリック</li>
-          <li>✅ 画面が自動的に再描画され、新しい設定が反映されます</li>
-        </ol>
-
-        <div style="background:#d1ecf1;padding:12px;margin:12px 0;border-left:4px solid #0c5460;border-radius:4px;">
-          <strong>💡 例：備考の候補を追加する</strong><br>
-          <code>"noteOptions": ["直出", "直帰", "直出・直帰", "半休"]</code><br>
-          → 備考欄で「半休」が選択できるようになります
-        </div>
-
-        <p style="margin:8px 0;color:#d00;font-weight:bold;">
-          ⚠️ 注意：ステータスを削除すると、既にそのステータスを選択しているメンバーの表示が崩れます
-        </p>
 
         <h5>📋 運用上の注意事項</h5>
         <ul style="line-height:1.8;">

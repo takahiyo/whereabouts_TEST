@@ -274,8 +274,17 @@
   .manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
   .manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
   .manual-card{
-    background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px;
-    width:min(960px, 94vw); max-height:80vh; overflow:auto;
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    width:min(960px, 94vw); max-height:80vh; 
+    position:relative; display:flex; flex-direction:column;
+  }
+  .manual-card > div:first-child{
+    position:sticky; top:0; background:#fff; z-index:10;
+    padding:16px; padding-bottom:8px;
+    border-bottom:1px solid #e5e7eb;
+  }
+  .manual-card > section{
+    overflow:auto; padding:0 16px 16px 16px; flex:1;
   }
   .manual-section{ margin-bottom:16px; }
   .manual-section h4{ margin:8px 0; }

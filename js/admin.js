@@ -138,31 +138,6 @@ btnSetPw.addEventListener('click', async ()=>{
   if(r&&r.ok){ toast('パスワードを更新しました'); setPw.value=''; setAdminPw.value=''; }
   else toast('更新に失敗',false);
 });
-btnLoadMenus.addEventListener('click', async ()=>{
-  const office=selectedOfficeId(); if(!office) return;
-  const cfg=await adminGetConfigFor(office);
-  menusJson.value=JSON.stringify((cfg&&cfg.menus)||defaultMenus(),null,2);
-});
-btnSaveMenus.addEventListener('click', async ()=>{
-  let obj;
-  try{ obj=JSON.parse(menusJson.value); }catch{ toast('JSONの形式が不正です',false); return; }
-  // --- normalize legacy keys for business-hours list ---
-  if(obj && typeof obj === 'object'){
-    if(!Array.isArray(obj.businessHours)){
-      if(Array.isArray(obj.workHourOptions)) obj.businessHours = obj.workHourOptions;
-      else if(Array.isArray(obj.workHoursOptions)) obj.businessHours = obj.workHoursOptions;
-    }
-  }
-
-  const office=selectedOfficeId(); if(!office) return;
-  const cfg=await adminGetConfigFor(office);
-  if(!(cfg&&cfg.groups)){ toast('名簿の取得に失敗',false); return; }
-
-  cfg.menus=obj;
-  const r=await adminSetConfigFor(office,cfg);
-  if(r && !r.error){ toast('メニュー設定を保存しました'); setupMenus(cfg.menus); render(); }
-  else toast('保存に失敗',false);
-});
 
 /* お知らせ管理UI */
 btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
@@ -286,4 +261,24 @@ function makeNormalizedCSV(cfg,data){
     });
   });
   return rows.join('\n');
+}
+
+/* 管理モーダルを開いたときにお知らせを自動読み込み */
+async function autoLoadNoticesOnAdminOpen(){
+  const office = adminSelectedOfficeId || CURRENT_OFFICE_ID;
+  if(!office) return;
+  try{
+    const params = { action:'getNotices', token:SESSION_TOKEN, nocache:'1', office };
+    const res = await apiPost(params);
+    if(res && res.notices){
+      noticesEditor.innerHTML = '';
+      if(res.notices.length === 0){
+        addNoticeEditorItem();
+      } else {
+        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content));
+      }
+    }
+  }catch(e){
+    console.error('Auto-load notices error:', e);
+  }
 }
