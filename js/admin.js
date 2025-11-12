@@ -139,6 +139,28 @@ btnSetPw.addEventListener('click', async ()=>{
   else toast('更新に失敗',false);
 });
 
+/* お知らせ管理モーダル */
+if(btnOpenNoticesManager){
+  btnOpenNoticesManager.addEventListener('click', async ()=>{
+    noticesManagerModal.classList.add('show');
+    // 自動的にお知らせを読み込み
+    await autoLoadNoticesOnAdminOpen();
+  });
+}
+if(noticesManagerClose){
+  noticesManagerClose.addEventListener('click', ()=>{
+    noticesManagerModal.classList.remove('show');
+  });
+}
+// モーダル外クリックで閉じる
+if(noticesManagerModal){
+  noticesManagerModal.addEventListener('click', (e)=>{
+    if(e.target === noticesManagerModal){
+      noticesManagerModal.classList.remove('show');
+    }
+  });
+}
+
 /* お知らせ管理UI */
 btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
 btnLoadNotices.addEventListener('click', async ()=>{
@@ -184,15 +206,83 @@ btnSaveNotices.addEventListener('click', async ()=>{
 function addNoticeEditorItem(title='', content=''){
   const item=document.createElement('div');
   item.className='notice-edit-item';
+  item.draggable=true;
   item.innerHTML=`
+    <span class="notice-edit-handle">⋮⋮</span>
     <div class="notice-edit-row">
       <input type="text" class="notice-edit-title" placeholder="タイトル" value="${escapeHtml(title)}">
-      <button class="btn-remove-notice">削除</button>
+      <div class="notice-edit-controls">
+        <button class="btn-move-up" title="上に移動">▲</button>
+        <button class="btn-move-down" title="下に移動">▼</button>
+        <button class="btn-remove-notice">削除</button>
+      </div>
     </div>
     <textarea class="notice-edit-content" placeholder="内容（省略可）&#10;URLを記載すると自動的にリンクになります">${escapeHtml(content)}</textarea>
   `;
-  item.querySelector('.btn-remove-notice').addEventListener('click', ()=> item.remove());
+  
+  // 削除ボタン
+  item.querySelector('.btn-remove-notice').addEventListener('click', ()=> {
+    item.remove();
+    updateMoveButtons();
+  });
+  
+  // 上に移動ボタン
+  item.querySelector('.btn-move-up').addEventListener('click', ()=> {
+    const prev = item.previousElementSibling;
+    if(prev){
+      noticesEditor.insertBefore(item, prev);
+      updateMoveButtons();
+    }
+  });
+  
+  // 下に移動ボタン
+  item.querySelector('.btn-move-down').addEventListener('click', ()=> {
+    const next = item.nextElementSibling;
+    if(next){
+      noticesEditor.insertBefore(next, item);
+      updateMoveButtons();
+    }
+  });
+  
+  // ドラッグ&ドロップイベント
+  item.addEventListener('dragstart', (e)=> {
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  
+  item.addEventListener('dragend', ()=> {
+    item.classList.remove('dragging');
+    document.querySelectorAll('.notice-edit-item').forEach(i=> i.classList.remove('drag-over'));
+  });
+  
+  item.addEventListener('dragover', (e)=> {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const dragging = noticesEditor.querySelector('.dragging');
+    if(dragging && dragging !== item){
+      const rect = item.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      if(e.clientY < midpoint){
+        noticesEditor.insertBefore(dragging, item);
+      } else {
+        noticesEditor.insertBefore(dragging, item.nextSibling);
+      }
+    }
+  });
+  
   noticesEditor.appendChild(item);
+  updateMoveButtons();
+}
+
+// 上下移動ボタンの有効/無効を更新
+function updateMoveButtons(){
+  const items = noticesEditor.querySelectorAll('.notice-edit-item');
+  items.forEach((item, index)=> {
+    const upBtn = item.querySelector('.btn-move-up');
+    const downBtn = item.querySelector('.btn-move-down');
+    if(upBtn) upBtn.disabled = (index === 0);
+    if(downBtn) downBtn.disabled = (index === items.length - 1);
+  });
 }
 
 /* Admin API */

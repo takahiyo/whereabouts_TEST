@@ -418,7 +418,7 @@
   display:flex; gap:8px; margin-bottom:8px; align-items:center;
 }
 .notice-edit-item input[type="text"]{
-  flex:1;
+  flex:1; margin-left:24px;
 }
 .notice-edit-item textarea{
   width:100%; min-height:80px; padding:8px; border:1px solid #d1d5db;
@@ -430,4 +430,102 @@
 }
 .btn-remove-notice:hover{
   background:#dc2626;
+}
+
+/* お知らせ管理モーダル */
+.notices-manager-modal{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+  z-index:2000; padding:20px; overflow:auto;
+}
+.notices-manager-modal.show{
+  display:flex; align-items:flex-start; justify-content:center;
+}
+.notices-manager-card{
+  background:#fff; border-radius:12px; width:min(800px, 94vw);
+  max-height:90vh; display:flex; flex-direction:column;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+  margin:20px auto;
+}
+.notices-manager-header{
+  position:sticky; top:0; background:#fff; z-index:10;
+  padding:20px; border-bottom:2px solid #e5e7eb;
+  display:flex; justify-content:space-between; align-items:center;
+  border-radius:12px 12px 0 0;
+}
+.notices-manager-body{
+  padding:20px; overflow-y:auto; flex:1;
+}
+.notices-manager-info{
+  background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;
+  padding:12px 16px; margin-bottom:16px; font-size:14px; color:#1e40af;
+}
+.notices-manager-info p{
+  margin:0; line-height:1.6;
+}
+.notices-manager-actions{
+  display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;
+}
+.btn-primary{
+  background:#0073bb; color:#fff; border:none; padding:8px 16px;
+  border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;
+  transition:background .2s;
+}
+.btn-primary:hover{
+  background:#005a94;
+}
+.btn-secondary{
+  background:#6b7280; color:#fff; border:none; padding:8px 16px;
+  border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;
+  transition:background .2s;
+}
+.btn-secondary:hover{
+  background:#4b5563;
+}
+.btn-success{
+  background:#10b981; color:#fff; border:none; padding:8px 16px;
+  border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;
+  transition:background .2s;
+}
+.btn-success:hover{
+  background:#059669;
+}
+
+/* ドラッグ&ドロップ対応のお知らせエディタアイテム */
+.notice-edit-item{
+  position:relative;
+  background:#f9fafb; border:1px solid #d1d5db; border-radius:6px; padding:12px;
+  transition:all .2s; cursor:move;
+}
+.notice-edit-item:hover{
+  border-color:#9ca3af; box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.notice-edit-item.dragging{
+  opacity:0.5; border-color:#0073bb; background:#e0f2fe;
+}
+.notice-edit-item.drag-over{
+  border-top:3px solid #0073bb;
+}
+.notice-edit-handle{
+  position:absolute; left:12px; top:12px;
+  font-size:18px; color:#9ca3af; cursor:move;
+  user-select:none;
+}
+.notice-edit-controls{
+  display:flex; gap:4px; align-items:center;
+}
+.btn-move-up, .btn-move-down{
+  background:#6b7280; color:#fff; border:none;
+  width:28px; height:28px; border-radius:4px; cursor:pointer;
+  font-size:16px; line-height:1; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .2s;
+}
+.btn-move-up:hover{
+  background:#4b5563;
+}
+.btn-move-down:hover{
+  background:#4b5563;
+}
+.btn-move-up:disabled, .btn-move-down:disabled{
+  background:#d1d5db; cursor:not-allowed; opacity:0.5;
 }

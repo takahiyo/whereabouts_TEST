@@ -78,12 +78,9 @@
 
         <div class="admin-box">
           <h4>お知らせ管理</h4>
-          <div class="admin-note">複数のお知らせを登録できます。タイトルのみ、またはタイトル＋内容を入力してください。</div>
-          <div id="noticesEditor" class="notices-editor"></div>
+          <div class="admin-note">拠点のお知らせを登録・編集できます。専用画面で順番の入れ替えも可能です。</div>
           <div class="admin-row">
-            <button id="btnAddNotice">➕ お知らせを追加</button>
-            <button id="btnLoadNotices">現在のお知らせを読み込み</button>
-            <button id="btnSaveNotices">保存</button>
+            <button id="btnOpenNoticesManager">📢 お知らせを管理</button>
           </div>
         </div>
       </div>
@@ -439,6 +436,30 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- お知らせ管理モーダル -->
+  <div id="noticesManagerModal" class="notices-manager-modal" aria-modal="true" role="dialog" aria-labelledby="noticesManagerTitle">
+    <div class="notices-manager-card" role="document">
+      <div class="notices-manager-header">
+        <h3 id="noticesManagerTitle" style="margin:0;">📢 お知らせ管理</h3>
+        <button id="noticesManagerClose" aria-label="閉じる">閉じる</button>
+      </div>
+      
+      <div class="notices-manager-body">
+        <div class="notices-manager-info">
+          <p>お知らせの順番はドラッグ&ドロップまたは↑↓ボタンで入れ替えられます。上にあるものから順に表示されます。</p>
+        </div>
+        
+        <div id="noticesEditor" class="notices-editor"></div>
+        
+        <div class="notices-manager-actions">
+          <button id="btnAddNotice" class="btn-primary">➕ お知らせを追加</button>
+          <button id="btnLoadNotices" class="btn-secondary">🔄 読み込み</button>
+          <button id="btnSaveNotices" class="btn-success">💾 保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <!-- お知らせエリア -->
   <div id="noticesArea" class="notices-area" style="display:none">

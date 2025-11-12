@@ -141,17 +141,20 @@ function applyRoleToManual(){
 adminBtn.addEventListener('click', async ()=>{
   applyRoleToAdminPanel();
   showAdminModal(true);
-  // お知らせを自動的に読み込み
-  if(typeof autoLoadNoticesOnAdminOpen === 'function'){
-    await autoLoadNoticesOnAdminOpen();
-  }
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ showAdminModal(false); showManualModal(false); closeMenu(); }});
+document.addEventListener('keydown', (e)=>{ 
+  if(e.key==='Escape'){ 
+    showAdminModal(false); 
+    showManualModal(false); 
+    if(noticesManagerModal) noticesManagerModal.classList.remove('show');
+    closeMenu(); 
+  }
+});
 
 /* マニュアルタブ切り替え */
 document.querySelectorAll('.manual-tab-btn').forEach(btn => {
