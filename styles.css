@@ -45,11 +45,12 @@
     padding:6px 0; box-shadow: 0 1px 0 rgba(0,0,0,.06);
   }
   .title-wrap{ position:relative; }
-  header .title-btn, header .admin-btn, header .logout-btn, header .manual-btn{
+  header .title-btn, header .notices-btn, header .admin-btn, header .logout-btn, header .manual-btn{
     font-size:14px; font-weight:600; color:#1f2937;
     padding:.35rem .9rem; border-radius:999px; line-height:1.2; border:1px solid transparent; cursor:pointer;
   }
   header .title-btn{ background:#dff1ff; border-color:#bfe4ff; }
+  header .notices-btn{ background:#fffbeb; border-color:#fbbf24; display:none; }
   header .admin-btn{ background:#e7f8e7; border-color:#b7e6b7; display:none; }
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
   header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
@@ -307,16 +308,30 @@
 /* お知らせエリア */
 .notices-area{
   max-width:100%; margin:0 auto 16px; padding:0 16px;
+  transition: all 0.3s ease;
 }
 .notices-container{
   background:#fffbeb; border:1px solid #fbbf24; border-radius:8px;
   padding:12px 16px; box-shadow:0 2px 4px rgba(0,0,0,.05);
 }
+.notices-header{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+}
 .notices-title{
-  margin:0 0 8px 0; font-size:16px; font-weight:700; color:#92400e;
+  margin:0; font-size:16px; font-weight:700; color:#92400e;
+}
+.notices-summary{
+  font-size:14px; color:#92400e; font-weight:400;
 }
 .notices-list{
   display:flex; flex-direction:column; gap:8px;
+}
+/* お知らせエリアが閉じている状態 */
+.notices-area.collapsed .notices-list{
+  display:none;
+}
+.notices-area.collapsed .notices-summary{
+  display:inline !important;
 }
 .notice-item{
   background:#fff; border:1px solid #fbbf24; border-radius:6px;

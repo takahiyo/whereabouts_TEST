@@ -19,6 +19,9 @@ async function logout(){
     adminSelectedOfficeId='';
   if(adminOfficeSel){ adminOfficeSel.textContent=''; adminOfficeSel.disabled=false; }
   if(adminOfficeRow){ adminOfficeRow.style.display='none'; }
+  // お知らせエリアを非表示にする
+  const noticesArea = document.getElementById('noticesArea');
+  if(noticesArea) noticesArea.style.display='none';
   titleBtn.textContent='在席確認表';
   ensureAuthUI();
   try{ await refreshPublicOfficeSelect(); }
@@ -28,6 +31,7 @@ async function logout(){
 function ensureAuthUI(){
   const loggedIn = !!SESSION_TOKEN;
   const showAdmin = loggedIn && isOfficeAdmin();
+  noticesBtn.style.display = 'none'; // デフォルトは非表示、お知らせがある場合にnotices.jsで表示
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';

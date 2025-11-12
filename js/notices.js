@@ -25,9 +25,12 @@ function escapeHtml(text) {
 function renderNotices(notices) {
   const noticesArea = document.getElementById('noticesArea');
   const noticesList = document.getElementById('noticesList');
+  const noticesSummary = document.getElementById('noticesSummary');
+  const noticesBtn = document.getElementById('noticesBtn');
   
   if (!notices || notices.length === 0) {
     noticesArea.style.display = 'none';
+    if (noticesBtn) noticesBtn.style.display = 'none';
     return;
   }
   
@@ -63,8 +66,31 @@ function renderNotices(notices) {
     
     noticesList.appendChild(item);
   });
-  
+
+  // サマリー更新
+  if (noticesSummary) {
+    const firstTitle = notices[0] && notices[0].title ? String(notices[0].title) : '';
+    const remaining = notices.length - 1;
+    if (remaining > 0) {
+      noticesSummary.textContent = `${escapeHtml(firstTitle)} (他${remaining}件)`;
+    } else {
+      noticesSummary.textContent = escapeHtml(firstTitle);
+    }
+  }
+
   noticesArea.style.display = 'block';
+  if (noticesBtn) noticesBtn.style.display = 'inline-block';
+  
+  // デフォルトで展開状態にする
+  noticesArea.classList.remove('collapsed');
+}
+
+// お知らせエリアの開閉トグル
+function toggleNoticesArea() {
+  const noticesArea = document.getElementById('noticesArea');
+  if (!noticesArea) return;
+  
+  noticesArea.classList.toggle('collapsed');
 }
 
 // お知らせを取得

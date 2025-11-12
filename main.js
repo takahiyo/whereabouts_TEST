@@ -92,3 +92,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     loginEl.style.display='flex';
   }
 });
+
+/* お知らせボタンのイベントハンドラ */
+if(noticesBtn){
+  noticesBtn.addEventListener('click', ()=>{
+    toggleNoticesArea();
+  });
+}
