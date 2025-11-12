@@ -35,6 +35,7 @@
     </div>
     <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
     <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
+    <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
@@ -385,7 +386,10 @@
   <!-- お知らせエリア -->
   <div id="noticesArea" class="notices-area" style="display:none">
     <div class="notices-container">
-      <h3 class="notices-title">📢 お知らせ</h3>
+      <div class="notices-header">
+        <h3 class="notices-title">📢 お知らせ</h3>
+        <span id="noticesSummary" class="notices-summary" style="display:none"></span>
+      </div>
       <div id="noticesList" class="notices-list"></div>
     </div>
   </div>
