@@ -158,6 +158,18 @@ function renderNotices(notices) {
   
   // デフォルトで展開状態にする
   noticesArea.classList.remove('collapsed');
+  
+  // お知らせヘッダーをクリックで開閉できるようにする
+  const noticesHeader = noticesArea.querySelector('.notices-header');
+  if(noticesHeader){
+    // 既存のリスナーを削除するため、一度クローンして置き換え
+    const newHeader = noticesHeader.cloneNode(true);
+    noticesHeader.parentNode.replaceChild(newHeader, noticesHeader);
+    
+    newHeader.addEventListener('click', ()=>{
+      toggleNoticesArea();
+    });
+  }
 }
 
 // お知らせエリアの開閉トグル
