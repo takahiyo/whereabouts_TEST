@@ -211,10 +211,17 @@ async function fetchNotices() {
 
 // お知らせを保存（管理者のみ）
 async function saveNotices(notices, office) {
-  if (!SESSION_TOKEN) return false;
+  if (!SESSION_TOKEN) {
+    console.error('saveNotices: SESSION_TOKEN is not set');
+    return false;
+  }
+  
+  console.log('saveNotices called with:', {notices, office, SESSION_TOKEN: SESSION_TOKEN ? 'set' : 'not set'});
   
   try {
     const payload = normalizeNoticeEntries(notices);
+    console.log('saveNotices: normalized payload:', payload);
+    
     const params = {
       action: 'setNotices',
       token: SESSION_TOKEN,
@@ -225,6 +232,8 @@ async function saveNotices(notices, office) {
     if (targetOffice) {
       params.office = targetOffice;
     }
+    
+    console.log('saveNotices: sending params:', {action: params.action, office: targetOffice, noticesLength: payload.length});
     
     const res = await apiPost(params);
     
