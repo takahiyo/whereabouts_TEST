@@ -169,11 +169,7 @@ btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
 btnLoadNotices.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); if(!office) return;
   try{
-    const params = { action:'getNotices', token:SESSION_TOKEN, nocache:'1' };
-    // スーパー管理者の場合は選択中の拠点を指定
-    if(CURRENT_ROLE === 'superAdmin' && office !== CURRENT_OFFICE_ID){
-      params.office = office;
-    }
+    const params = { action:'getNotices', token:SESSION_TOKEN, nocache:'1', office };
     const res=await apiPost(params);
     console.log('getNotices response:', res);
     if(res && res.notices){
@@ -205,9 +201,7 @@ btnSaveNotices.addEventListener('click', async ()=>{
   });
   
   console.log('Saving notices:', notices, 'for office:', office);
-  // スーパー管理者の場合は選択中の拠点を指定
-  const targetOffice = (CURRENT_ROLE === 'superAdmin' && office !== CURRENT_OFFICE_ID) ? office : undefined;
-  const success=await saveNotices(notices, targetOffice);
+  const success=await saveNotices(notices, office);
   if(success) toast('お知らせを保存しました');
   else toast('お知らせの保存に失敗',false);
 });
