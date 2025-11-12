@@ -139,27 +139,29 @@ btnSetPw.addEventListener('click', async ()=>{
   else toast('更新に失敗',false);
 });
 
-/* お知らせ管理モーダル */
-if(btnOpenNoticesManager){
-  btnOpenNoticesManager.addEventListener('click', async ()=>{
-    noticesManagerModal.classList.add('show');
-    // 自動的にお知らせを読み込み
-    await autoLoadNoticesOnAdminOpen();
-  });
-}
-if(noticesManagerClose){
-  noticesManagerClose.addEventListener('click', ()=>{
-    noticesManagerModal.classList.remove('show');
-  });
-}
-// モーダル外クリックで閉じる
-if(noticesManagerModal){
-  noticesManagerModal.addEventListener('click', (e)=>{
-    if(e.target === noticesManagerModal){
-      noticesManagerModal.classList.remove('show');
+/* 管理モーダルのタブ切り替え */
+document.querySelectorAll('.admin-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', async ()=> {
+    const targetTab = btn.dataset.tab;
+    
+    // タブボタンのアクティブ状態を切り替え
+    document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // タブパネルの表示を切り替え
+    document.querySelectorAll('.admin-modal .tab-panel').forEach(panel => panel.classList.remove('active'));
+    
+    if(targetTab === 'basic'){
+      document.getElementById('tabBasic').classList.add('active');
+    } else if(targetTab === 'notices'){
+      document.getElementById('tabNotices').classList.add('active');
+      // お知らせタブを開いたときに自動読み込み
+      if(typeof autoLoadNoticesOnAdminOpen === 'function'){
+        await autoLoadNoticesOnAdminOpen();
+      }
     }
   });
-}
+});
 
 /* お知らせ管理UI */
 btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());

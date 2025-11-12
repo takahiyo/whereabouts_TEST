@@ -432,28 +432,9 @@
   background:#dc2626;
 }
 
-/* お知らせ管理モーダル */
-.notices-manager-modal{
-  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
-  z-index:2000; padding:20px; overflow:auto;
-}
-.notices-manager-modal.show{
-  display:flex; align-items:flex-start; justify-content:center;
-}
-.notices-manager-card{
-  background:#fff; border-radius:12px; width:min(800px, 94vw);
-  max-height:90vh; display:flex; flex-direction:column;
-  box-shadow:0 8px 24px rgba(0,0,0,.15);
-  margin:20px auto;
-}
-.notices-manager-header{
-  position:sticky; top:0; background:#fff; z-index:10;
-  padding:20px; border-bottom:2px solid #e5e7eb;
-  display:flex; justify-content:space-between; align-items:center;
-  border-radius:12px 12px 0 0;
-}
+/* お知らせ管理（タブ内） */
 .notices-manager-body{
-  padding:20px; overflow-y:auto; flex:1;
+  padding:0;
 }
 .notices-manager-info{
   background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;

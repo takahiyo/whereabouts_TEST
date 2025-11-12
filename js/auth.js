@@ -151,7 +151,6 @@ document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){ 
     showAdminModal(false); 
     showManualModal(false); 
-    if(noticesManagerModal) noticesManagerModal.classList.remove('show');
     closeMenu(); 
   }
 });
