@@ -94,13 +94,17 @@
   <div id="manualModal" class="manual-modal" aria-modal="true" role="dialog" aria-labelledby="manualTitle">
     <div class="manual-card" role="document">
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h3 id="manualTitle" style="margin:0;">マニュアル</h3>
           <button id="manualClose" aria-label="閉じる">閉じる</button>
         </div>
+        <div class="manual-tabs">
+          <button class="manual-tab-btn active" data-tab="user">📖 ユーザー向け</button>
+          <button class="manual-tab-btn" data-tab="admin">⚙️ 管理者向け</button>
+        </div>
       </div>
 
-      <section id="manualUser" class="manual-section">
+      <section id="manualUser" class="manual-section manual-tab-content active">
         <h4>📖 ユーザーマニュアル - 初めての方へ</h4>
         
         <div style="background:#f0f8ff;padding:12px;margin:12px 0;border-left:4px solid #0073bb;border-radius:4px;">
@@ -271,7 +275,7 @@
         </p>
       </section>
 
-      <section id="manualAdmin" class="manual-section">
+      <section id="manualAdmin" class="manual-section manual-tab-content">
         <h4>⚙️ 管理者マニュアル</h4>
         
         <div style="background:#fff3cd;padding:12px;margin:12px 0;border-left:4px solid #ffc107;border-radius:4px;">

@@ -290,6 +290,20 @@
   .manual-section h4{ margin:8px 0; }
   .manual-section table{ width:100%; border-collapse:collapse; font-size:14px; }
   .manual-section table th, .manual-section table td{ border:1px solid #ddd; padding:6px; }
+  /* マニュアルタブ */
+  .manual-tabs{ display:flex; gap:8px; margin-top:8px; }
+  .manual-tab-btn{
+    padding:8px 16px; border:1px solid #d1d5db; border-radius:6px 6px 0 0;
+    background:#f9fafb; cursor:pointer; font-size:14px; font-weight:600;
+    color:#6b7280; transition:all .2s;
+  }
+  .manual-tab-btn:hover{ background:#f3f4f6; }
+  .manual-tab-btn.active{
+    background:#fff; border-bottom-color:#fff; color:#0073bb;
+    position:relative; margin-bottom:-1px;
+  }
+  .manual-tab-content{ display:none; }
+  .manual-tab-content.active{ display:block; }
 .grp-menu{
   position:absolute; top:100%; left:0;
   min-width:100%;
