@@ -116,19 +116,33 @@
     position:relative;
     display:flex;
     align-items:center;
-    gap:6px;
+    gap:2px;
   }
-  .candidate-input input{ flex: 1 1 auto; }
+  .candidate-input input{ flex: 1 1 auto; min-width: 0; }
   .candidate-btn{
-    padding:6px 8px;
-    border:1px solid #ccc;
-    background:#f4f4f4;
-    border-radius:4px;
-    cursor:pointer;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 10px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, transform 0.15s;
+  }
+  .candidate-btn:hover{
+    color: #374151;
+  }
+  .candidate-btn[aria-expanded="true"]{
+    transform: rotate(180deg);
   }
   .candidate-btn:focus-visible{
-    outline:2px solid #4a90e2;
-    outline-offset:2px;
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
   }
   .candidate-panel{
     position:absolute;
