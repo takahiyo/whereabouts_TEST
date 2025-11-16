@@ -112,6 +112,58 @@
   td.time   select{text-align-last:center; font-variant-numeric:tabular-nums}
   td.work   input{font-variant-numeric:tabular-nums; letter-spacing:.02em; text-align:center;}
 
+  .candidate-input{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .candidate-input input{ flex: 1 1 auto; }
+  .candidate-btn{
+    padding:6px 8px;
+    border:1px solid #ccc;
+    background:#f4f4f4;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .candidate-btn:focus-visible{
+    outline:2px solid #4a90e2;
+    outline-offset:2px;
+  }
+  .candidate-panel{
+    position:absolute;
+    top:calc(100% + 4px);
+    left:0;
+    z-index:10;
+    min-width:180px;
+    max-height:220px;
+    overflow:auto;
+    background:#fff;
+    border:1px solid #ccc;
+    border-radius:4px;
+    box-shadow:0 4px 12px rgba(0, 0, 0, 0.12);
+    padding:6px;
+    display:none;
+  }
+  .candidate-panel.show{ display:block; }
+  .candidate-list{ list-style:none; margin:0; padding:0; }
+  .candidate-list li + li{ margin-top:4px; }
+  .candidate-option{
+    width:100%;
+    text-align:left;
+    padding:6px 8px;
+    border:1px solid #ddd;
+    border-radius:4px;
+    background:#f8f8f8;
+    cursor:pointer;
+  }
+  .candidate-option:hover,
+  .candidate-option:focus-visible{
+    background:#e8f1ff;
+    outline:none;
+    border-color:#4a90e2;
+  }
+
   /* ステータス別の行色（在席はデフォルト） */
   #board tbody tr{ transition: background-color .15s ease; }
   #board tbody tr.st-here{ background: transparent; }
