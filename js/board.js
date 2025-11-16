@@ -78,8 +78,9 @@ function buildCandidateField({ id, name, placeholder, type, value }){
     class: 'candidate-btn',
     'aria-haspopup': 'listbox',
     'aria-expanded': 'false',
-    text: '候補'
+    'aria-label': '候補を表示'
   });
+  btn.innerHTML = '▼';
   const panel = el('div', { class: 'candidate-panel', role: 'listbox' });
   wrapper.append(input, btn, panel);
   return { wrapper, input };
