@@ -13,6 +13,90 @@ function buildTimeOptions(stepMin){
   return frag;
 }
 
+function buildCandidateList(options){
+  const vals = [''].concat(Array.isArray(options) ? options.map(v => String(v ?? '')) : []);
+  const ul = el('ul', { class: 'candidate-list' });
+  vals.forEach(v => {
+    const label = v === '' ? '（空白）' : v;
+    const btn = el('button', {
+      type: 'button',
+      class: 'candidate-option',
+      'data-value': v,
+      text: label
+    });
+    ul.appendChild(el('li', {}, [btn]));
+  });
+  return ul;
+}
+
+function renderCandidatePanel(panel, type){
+  if(!panel) return;
+  const options = type === 'workHours' ? (MENUS?.businessHours || []) : (MENUS?.noteOptions || []);
+  panel.replaceChildren();
+  panel.appendChild(buildCandidateList(options));
+}
+
+function hideAllCandidatePanels(){
+  board.querySelectorAll('.candidate-panel.show').forEach(p => {
+    p.classList.remove('show');
+    const btn = p.closest('.candidate-input')?.querySelector('.candidate-btn');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function toggleCandidatePanel(wrapper){
+  if(!wrapper) return;
+  const panel = wrapper.querySelector('.candidate-panel');
+  const btn = wrapper.querySelector('.candidate-btn');
+  const type = wrapper.dataset.type;
+  if(!panel || !type) return;
+  const isOpen = panel.classList.contains('show');
+  hideAllCandidatePanels();
+  if(isOpen){
+    panel.classList.remove('show');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  renderCandidatePanel(panel, type);
+  panel.classList.add('show');
+  if(btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function buildCandidateField({ id, name, placeholder, type, value }){
+  const wrapper = el('div', { class: 'candidate-input', 'data-type': type });
+  const input = el('input', {
+    id,
+    name,
+    type: 'text',
+    placeholder,
+    autocomplete: 'off',
+    inputmode: 'text'
+  });
+  if(value != null) input.value = value;
+  const btn = el('button', {
+    type: 'button',
+    class: 'candidate-btn',
+    'aria-haspopup': 'listbox',
+    'aria-expanded': 'false',
+    text: '候補'
+  });
+  const panel = el('div', { class: 'candidate-panel', role: 'listbox' });
+  wrapper.append(input, btn, panel);
+  return { wrapper, input };
+}
+
+let candidatePanelGlobalsBound = false;
+function bindCandidatePanelGlobals(){
+  if(candidatePanelGlobalsBound) return;
+  candidatePanelGlobalsBound = true;
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.candidate-input')) hideAllCandidatePanels();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') hideAllCandidatePanels();
+  });
+}
+
 /* 行UI */
 function buildRow(member){
   const name=sanitizeText(member.name||"");
@@ -27,10 +111,9 @@ function buildRow(member){
   const workPlaceholder = '09:00-17:30';
   const workInit = member.workHours == null ? '' : String(member.workHours);
   const tdWork=el('td',{class:'work','data-label':'業務時間'});
-  const inpWork=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder:workPlaceholder,autocomplete:'off',inputmode:'text'});
-  inpWork.value = workInit;
+  const workField = buildCandidateField({ id:`work-${key}`, name:'workHours', placeholder:workPlaceholder, type:'workHours', value:workInit });
   tdWork.appendChild(el('label',{class:'sr-only',for:`work-${key}`,text:'業務時間'}));
-  tdWork.appendChild(inpWork);
+  tdWork.appendChild(workField.wrapper);
 
   const tdStatus=el('td',{class:'status','data-label':'ステータス'});
   const selStatus=el('select',{id:`status-${key}`,name:'status'});
@@ -44,8 +127,8 @@ function buildRow(member){
   selTime.appendChild(buildTimeOptions(MENUS?.timeStepMinutes)); tdTime.appendChild(selTime);
 
   const tdNote=el('td',{class:'note','data-label':'備考'});
-  const inpNote=el('input',{id:`note-${key}`,name:'note',type:'text',list:'noteOptions',placeholder:'備考'});
-  tdNote.appendChild(inpNote);
+  const noteField = buildCandidateField({ id:`note-${key}`, name:'note', placeholder:'備考', type:'note' });
+  tdNote.appendChild(noteField.wrapper);
 
   tr.append(tdName,tdExt,tdWork,tdStatus,tdTime,tdNote);
   return tr;
@@ -71,33 +154,30 @@ function ensureRowControls(tr){
     td && td.appendChild(t);
     diagAdd('fix: time select injected');
   }
-  let w=tr.querySelector('input[name="workHours"]');
-  if(!w){
+  let w = tr.querySelector('input[name="workHours"]');
+  if(!w || !w.closest('.candidate-input')){
     const td=tr.querySelector('td.work');
     const placeholder = '09:00-17:30';
-    w=el('input',{id:`work-${key}`,name:'workHours',type:'text',list:'workHourOptions',placeholder,autocomplete:'off',inputmode:'text'});
+    const field = buildCandidateField({ id:`work-${key}`, name:'workHours', placeholder, type:'workHours', value:w?.value });
     if(td){
       if(!td.querySelector('label.sr-only')){
         td.insertBefore(el('label',{class:'sr-only',for:`work-${key}`,text:'業務時間'}), td.firstChild || null);
       }
-      td.appendChild(w);
+      td.querySelector('.candidate-input')?.remove();
+      td.appendChild(field.wrapper);
+      w = field.input;
     }
-    diagAdd('fix: workHours input injected');
-  }
-  if(w && w.getAttribute('list')!=='workHourOptions'){
-    w.setAttribute('list','workHourOptions');
-    diagAdd('fix: workHours datalist reattached');
-  }
-  if(w){
-    const placeholder = '09:00-17:30';
-    if(w.getAttribute('placeholder')!==placeholder) w.setAttribute('placeholder',placeholder);
-    w.setAttribute('autocomplete','off');
-    w.setAttribute('inputmode','text');
+    diagAdd('fix: workHours candidate field injected');
   }
   const noteInp=tr.querySelector('input[name="note"]');
-  if(noteInp && noteInp.getAttribute('list')!=='noteOptions'){
-    noteInp.setAttribute('list','noteOptions');
-    diagAdd('fix: note datalist reattached');
+  if(!noteInp || !noteInp.closest('.candidate-input')){
+    const td=tr.querySelector('td.note');
+    const field = buildCandidateField({ id:`note-${key}`, name:'note', placeholder:'備考', type:'note', value:noteInp?.value });
+    if(td){
+      td.querySelector('.candidate-input')?.remove();
+      td.appendChild(field.wrapper);
+    }
+    diagAdd('fix: note candidate field injected');
   }
 }
 
@@ -229,6 +309,32 @@ function debounceRowPush(key,delay=900){ PENDING_ROWS.add(key); if(rowTimers.has
 
 /* 入力イベント（IME配慮・デバウンス） */
 function wireEvents(){
+  bindCandidatePanelGlobals();
+
+  board.addEventListener('click', (e)=>{
+    const candidateBtn = e.target.closest('.candidate-btn');
+    if(candidateBtn){
+      e.preventDefault();
+      e.stopPropagation();
+      toggleCandidatePanel(candidateBtn.closest('.candidate-input'));
+      return;
+    }
+
+    const candidateOpt = e.target.closest('.candidate-option');
+    if(candidateOpt){
+      e.preventDefault();
+      const wrapper = candidateOpt.closest('.candidate-input');
+      const input = wrapper?.querySelector('input');
+      if(input){
+        input.value = candidateOpt.dataset.value ?? '';
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+        input.focus();
+      }
+      hideAllCandidatePanels();
+      return;
+    }
+  });
+
   // IME対策
   board.addEventListener('compositionstart', e => { const t=e.target; if(t && t.dataset) t.dataset.composing='1'; });
   board.addEventListener('compositionend',   e => { const t=e.target; if(t && t.dataset) delete t.dataset.composing; });
