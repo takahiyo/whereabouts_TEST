@@ -176,7 +176,7 @@ btnLoadNotices.addEventListener('click', async ()=>{
       if(res.notices.length === 0){
         addNoticeEditorItem();
       } else {
-        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content));
+        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content, n.display !== false));
       }
       toast('お知らせを読み込みました');
     } else if(res && res.error){
@@ -194,8 +194,10 @@ btnSaveNotices.addEventListener('click', async ()=>{
   items.forEach(item=>{
     const title=(item.querySelector('.notice-edit-title').value||'').trim();
     const content=(item.querySelector('.notice-edit-content').value||'').trim();
+    const displayToggle = item.querySelector('.notice-display-toggle');
+    const display = displayToggle ? displayToggle.checked : true;
     if(title || content){
-      notices.push({ title, content });
+      notices.push({ title, content, display });
     }
   });
   
@@ -205,15 +207,16 @@ btnSaveNotices.addEventListener('click', async ()=>{
   else toast('お知らせの保存に失敗',false);
 });
 
-function addNoticeEditorItem(title='', content=''){
+function addNoticeEditorItem(title='', content='', display=true){
   const item=document.createElement('div');
-  item.className='notice-edit-item';
+  item.className='notice-edit-item' + (display ? '' : ' hidden-notice');
   item.draggable=true;
   item.innerHTML=`
     <span class="notice-edit-handle">⋮⋮</span>
     <div class="notice-edit-row">
       <input type="text" class="notice-edit-title" placeholder="タイトル" value="${escapeHtml(title)}">
       <div class="notice-edit-controls">
+        <label class="notice-visibility-toggle"><input type="checkbox" class="notice-display-toggle" ${display ? 'checked' : ''}> 表示する</label>
         <button class="btn-move-up" title="上に移動">▲</button>
         <button class="btn-move-down" title="下に移動">▼</button>
         <button class="btn-remove-notice">削除</button>
@@ -224,9 +227,22 @@ function addNoticeEditorItem(title='', content=''){
   
   // 削除ボタン
   item.querySelector('.btn-remove-notice').addEventListener('click', ()=> {
-    item.remove();
-    updateMoveButtons();
+    if(confirm('このお知らせを削除しますか？')){
+      item.remove();
+      updateMoveButtons();
+    }
   });
+
+  const displayToggle = item.querySelector('.notice-display-toggle');
+  if(displayToggle){
+    displayToggle.addEventListener('change', ()=>{
+      if(displayToggle.checked){
+        item.classList.remove('hidden-notice');
+      }else{
+        item.classList.add('hidden-notice');
+      }
+    });
+  }
   
   // 上に移動ボタン
   item.querySelector('.btn-move-up').addEventListener('click', ()=> {
@@ -367,7 +383,7 @@ async function autoLoadNoticesOnAdminOpen(){
       if(res.notices.length === 0){
         addNoticeEditorItem();
       } else {
-        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content));
+        res.notices.forEach(n=> addNoticeEditorItem(n.title, n.content, n.display !== false));
       }
     }
   }catch(e){
