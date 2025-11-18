@@ -560,6 +560,19 @@
 .notice-edit-controls{
   display:flex; gap:4px; align-items:center;
 }
+.notice-visibility-toggle{
+  display:flex; align-items:center; gap:4px; font-size:13px;
+  background:#fff; border:1px solid #d1d5db; border-radius:4px;
+  padding:4px 8px;
+}
+.notice-visibility-toggle input[type="checkbox"]{
+  width:16px; height:16px;
+}
+.notice-edit-item.hidden-notice{
+  border-style:dashed;
+  opacity:0.7;
+  background:#fef3c7;
+}
 .btn-move-up, .btn-move-down{
   background:#6b7280; color:#fff; border:none;
   width:28px; height:28px; border-radius:4px; cursor:pointer;

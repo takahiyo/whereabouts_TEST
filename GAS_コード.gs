@@ -179,13 +179,13 @@ function normalizeNoticeItem_(raw){
   if(typeof raw === 'string'){
     const text = raw.trim();
     if(!text) return null;
-    return { title: text.substring(0, 200), content: '' };
+    return { title: text.substring(0, 200), content: '', display: true };
   }
   if(Array.isArray(raw)){
     const title = raw[0] == null ? '' : String(raw[0]).substring(0, 200);
     const content = raw[1] == null ? '' : String(raw[1]).substring(0, 2000);
     if(!title.trim() && !content.trim()) return null;
-    return { title, content };
+    return { title, content, display: true };
   }
   if(typeof raw !== 'object') return null;
   const titleSrc = raw.title != null ? raw.title : (raw.subject != null ? raw.subject : raw.headline);
@@ -534,14 +534,18 @@ function doPost(e){
     const cKey = KEY_PREFIX + 'notices:' + office;
     const noCache = p_(e,'nocache','') === '1';
 
-    const hit = noCache ? null : cache.get(cKey);
+    const isAdmin = roleIsOfficeAdmin_(prop, token);
+    const cacheKey = cKey + (isAdmin ? ':admin' : ':user');
+
+    const hit = noCache ? null : cache.get(cacheKey);
     if(hit){ try{ return json_(JSON.parse(hit)); }catch(_){ /* fallthrough */ } }
 
     const stored = prop.getProperty(NOTICES_KEY);
-    const notices = normalizeNoticesArray_(stored || []);
+    const normalized = normalizeNoticesArray_(stored || []);
+    const notices = isAdmin ? normalized : normalized.filter(n => n && n.display !== false);
 
     const outObj = { updated: now_(), notices };
-    if(!noCache) cache.put(cKey, JSON.stringify(outObj), CACHE_TTL_SEC);
+    if(!noCache) cache.put(cacheKey, JSON.stringify(outObj), CACHE_TTL_SEC);
     return json_(outObj);
   }
 
