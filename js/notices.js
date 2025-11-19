@@ -29,6 +29,10 @@ function coerceNoticeDisplayFlag(raw) {
   return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
 }
 
+function coerceNoticeVisibleFlag(raw) {
+  return coerceNoticeDisplayFlag(raw);
+}
+
 function coerceNoticeArray(raw) {
   if (raw == null) return [];
   if (Array.isArray(raw)) return raw;
@@ -63,7 +67,7 @@ function normalizeNoticeEntries(raw) {
       if (typeof item === 'string') {
         const text = item.trim();
         if (!text) return null;
-        return { title: text.slice(0, 200), content: '', display: true };
+        return { title: text.slice(0, 200), content: '', display: true, visible: true };
       }
       if (Array.isArray(item)) {
         const titleRaw = item[0] == null ? '' : String(item[0]);
@@ -71,7 +75,7 @@ function normalizeNoticeEntries(raw) {
         const title = titleRaw.slice(0, 200);
         const content = contentRaw.slice(0, 2000);
         if (!title.trim() && !content.trim()) return null;
-        return { title, content, display: true };
+        return { title, content, display: true, visible: true };
       }
       if (typeof item === 'object') {
         const titleSource =
@@ -82,11 +86,11 @@ function normalizeNoticeEntries(raw) {
         const contentStr = contentSource == null ? '' : String(contentSource);
         const title = titleStr.slice(0, 200);
         const content = contentStr.slice(0, 2000);
-        const display = coerceNoticeDisplayFlag(
-          item.display ?? item.visible ?? item.show ?? true
+        const visible = coerceNoticeVisibleFlag(
+          item.visible ?? item.display ?? item.show ?? true
         );
         if (!title.trim() && !content.trim()) return null;
-        return { title, content, display };
+        return { title, content, display: visible, visible };
       }
       return null;
     })
@@ -115,7 +119,19 @@ function renderNotices(notices) {
   const normalizedList = Array.isArray(notices)
     ? notices
     : normalizeNoticeEntries(notices);
-  const list = normalizedList.filter((n) => n && n.display !== false);
+  const list = normalizedList
+    .map((n) => {
+      if (!n || typeof n !== 'object') return null;
+      const visible = coerceNoticeVisibleFlag(
+        n.visible ?? n.display ?? n.show ?? true
+      );
+      if (!n.visible && n.display == null) {
+        // 正規化されていない古いデータも合わせて扱う
+        return { ...n, visible, display: visible };
+      }
+      return visible ? n : null;
+    })
+    .filter(Boolean);
 
   if (!list || list.length === 0) {
     noticesList.innerHTML = '';
