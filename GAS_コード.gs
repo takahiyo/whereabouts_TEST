@@ -174,18 +174,32 @@ function coerceNoticeArray_(src){
   return [];
 }
 
+function coerceNoticeVisibleFlag_(raw){
+  if(raw === false) return false;
+  if(raw === true || raw == null) return true;
+  const s = String(raw).toLowerCase();
+  return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+}
+
+function coerceNoticeVisibleFlag_(raw){
+  if(raw === false) return false;
+  if(raw === true || raw == null) return true;
+  const s = String(raw).toLowerCase();
+  return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+}
+
 function normalizeNoticeItem_(raw){
   if(raw == null) return null;
   if(typeof raw === 'string'){
     const text = raw.trim();
     if(!text) return null;
-    return { title: text.substring(0, 200), content: '', display: true };
+    return { title: text.substring(0, 200), content: '', display: true, visible: true };
   }
   if(Array.isArray(raw)){
     const title = raw[0] == null ? '' : String(raw[0]).substring(0, 200);
     const content = raw[1] == null ? '' : String(raw[1]).substring(0, 2000);
     if(!title.trim() && !content.trim()) return null;
-    return { title, content, display: true };
+    return { title, content, display: true, visible: true };
   }
   if(typeof raw !== 'object') return null;
   const titleSrc = raw.title != null ? raw.title : (raw.subject != null ? raw.subject : raw.headline);
@@ -542,7 +556,7 @@ function doPost(e){
 
     const stored = prop.getProperty(NOTICES_KEY);
     const normalized = normalizeNoticesArray_(stored || []);
-    const notices = isAdmin ? normalized : normalized.filter(n => n && n.display !== false);
+    const notices = isAdmin ? normalized : normalized.filter(n => n && coerceNoticeVisibleFlag_(n.visible != null ? n.visible : (n.display != null ? n.display : true)));
 
     const outObj = { updated: now_(), notices };
     if(!noCache) cache.put(cacheKey, JSON.stringify(outObj), CACHE_TTL_SEC);
