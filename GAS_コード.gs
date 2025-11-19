@@ -181,13 +181,6 @@ function coerceNoticeVisibleFlag_(raw){
   return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
 }
 
-function coerceNoticeVisibleFlag_(raw){
-  if(raw === false) return false;
-  if(raw === true || raw == null) return true;
-  const s = String(raw).toLowerCase();
-  return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
-}
-
 function normalizeNoticeItem_(raw){
   if(raw == null) return null;
   if(typeof raw === 'string'){
@@ -206,8 +199,9 @@ function normalizeNoticeItem_(raw){
   const contentSrc = raw.content != null ? raw.content : (raw.body != null ? raw.body : (raw.text != null ? raw.text : raw.description));
   const title = titleSrc == null ? '' : String(titleSrc).substring(0, 200);
   const content = contentSrc == null ? '' : String(contentSrc).substring(0, 2000);
+  const visible = coerceNoticeVisibleFlag_(raw.visible != null ? raw.visible : (raw.display != null ? raw.display : (raw.show != null ? raw.show : true)));
   if(!title.trim() && !content.trim()) return null;
-  return { title, content };
+  return { title, content, display: visible, visible: visible };
 }
 
 function normalizeNoticesArray_(raw){
