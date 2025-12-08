@@ -418,8 +418,8 @@ function renderVacationRows(list){
   });
 }
 
-async function loadVacationsList(showToastOnSuccess=false){
-  const office=getVacationTargetOffice(); if(!office) return;
+async function loadVacationsList(showToastOnSuccess=false, officeOverride){
+  const office=officeOverride||getVacationTargetOffice(); if(!office) return;
   if(vacationListBody){
     vacationListBody.textContent='';
     const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
@@ -461,8 +461,8 @@ async function handleVacationSave(){
     if(res && res.ok!==false){
       if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
       toast('長期休暇を保存しました');
-      await loadVacationsList();
-      if(office){ await loadLongVacations(false, office); }
+      await loadVacationsList(false, office);
+      if(office){ await loadLongVacations(office, false); }
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
