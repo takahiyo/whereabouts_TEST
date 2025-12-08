@@ -112,3 +112,23 @@ if(noticesBtn){
     }
   });
 }
+
+/* 長期休暇ボタンのイベントハンドラ */
+if(longVacationBtn){
+  longVacationBtn.addEventListener('click', async ()=>{
+    if(!longVacationModal) return;
+    
+    // モーダルを表示
+    longVacationModal.style.display = 'flex';
+    
+    // 長期休暇データを読み込み
+    await loadLongVacations(CURRENT_OFFICE_ID, false);
+  });
+}
+
+/* 長期休暇モーダルを閉じる */
+if(longVacationClose){
+  longVacationClose.addEventListener('click', ()=>{
+    if(longVacationModal) longVacationModal.style.display = 'none';
+  });
+}

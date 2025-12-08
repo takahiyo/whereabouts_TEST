@@ -35,6 +35,7 @@ function p_(e, k, d){ return (e && e.parameter && e.parameter[k] != null) ? Stri
 function dataKeyForOffice_(office){ return `presence-board-${office}`; }
 function configKeyForOffice_(office){ return `presence-config-${office}`; }
 function noticesKeyForOffice_(office){ return `presence-notices-${office}`; }
+function vacationsKeyForOffice_(office){ return `presence-vacations-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
@@ -588,6 +589,146 @@ function doPost(e){
     } catch(err){
       return json_({ error:'save_failed', debug:String(err) });
     } finally{
+      try{ lock.releaseLock(); }catch(_){}
+    }
+  }
+
+  /* ===== 長期休暇API ===== */
+  if(action === 'getVacation'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    // スーパー管理者が別拠点を指定した場合、権限チェック
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      }
+    }
+    const VACATIONS_KEY = vacationsKeyForOffice_(office);
+    const stored = prop.getProperty(VACATIONS_KEY);
+    let vacations = [];
+    if(stored){
+      try{
+        const parsed = JSON.parse(stored);
+        vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+      }catch(_){
+        vacations = [];
+      }
+    }
+    return json_({ vacations, updated: now_() });
+  }
+
+  if(action === 'setVacation'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    // スーパー管理者が別拠点を指定した場合、権限チェック
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden' });
+      }
+    }
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden' });
+
+    const VACATIONS_KEY = vacationsKeyForOffice_(office);
+    const dataParam = p_(e,'data','{}');
+    let payload;
+    try{
+      payload = JSON.parse(dataParam);
+    }catch(err){
+      return json_({ error:'bad_json', debug:String(err) });
+    }
+
+    const lock = LockService.getScriptLock(); lock.waitLock(2000);
+    try{
+      // 既存の休暇リストを取得
+      const stored = prop.getProperty(VACATIONS_KEY);
+      let vacations = [];
+      if(stored){
+        try{
+          const parsed = JSON.parse(stored);
+          vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+        }catch(_){
+          vacations = [];
+        }
+      }
+
+      // 新規追加または更新
+      const id = payload.id || Utilities.getUuid().replace(/-/g,'');
+      const title = String(payload.title || '').substring(0, 200);
+      const startDate = String(payload.start || '');
+      const endDate = String(payload.end || '');
+      const note = String(payload.note || '').substring(0, 2000);
+      const membersBits = String(payload.membersBits || '');
+
+      const newItem = {
+        id,
+        office,
+        title,
+        startDate,
+        endDate,
+        note,
+        membersBits,
+        updated: now_()
+      };
+
+      // IDが存在する場合は更新、なければ追加
+      const existingIndex = vacations.findIndex(v => v.id === id);
+      if(existingIndex >= 0){
+        vacations[existingIndex] = newItem;
+      }else{
+        vacations.push(newItem);
+      }
+
+      // 保存
+      prop.setProperty(VACATIONS_KEY, JSON.stringify(vacations));
+      return json_({ ok:true, id, vacation: newItem });
+    }catch(err){
+      return json_({ error:'save_failed', debug:String(err) });
+    }finally{
+      try{ lock.releaseLock(); }catch(_){}
+    }
+  }
+
+  if(action === 'deleteVacation'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    // スーパー管理者が別拠点を指定した場合、権限チェック
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden' });
+      }
+    }
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden' });
+
+    const id = p_(e,'id','').trim();
+    if(!id) return json_({ error:'bad_request' });
+
+    const VACATIONS_KEY = vacationsKeyForOffice_(office);
+    const lock = LockService.getScriptLock(); lock.waitLock(2000);
+    try{
+      const stored = prop.getProperty(VACATIONS_KEY);
+      let vacations = [];
+      if(stored){
+        try{
+          const parsed = JSON.parse(stored);
+          vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+        }catch(_){
+          vacations = [];
+        }
+      }
+
+      // IDが一致するものを削除
+      vacations = vacations.filter(v => v.id !== id);
+
+      // 保存
+      prop.setProperty(VACATIONS_KEY, JSON.stringify(vacations));
+      return json_({ ok:true });
+    }catch(err){
+      return json_({ error:'delete_failed', debug:String(err) });
+    }finally{
       try{ lock.releaseLock(); }catch(_){}
     }
   }
