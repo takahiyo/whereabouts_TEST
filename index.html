@@ -136,9 +136,17 @@
                 </label>
               </div>
               <div class="vacation-row">
-                <label>メンバーのビット配列
-                  <input id="vacationMembersBits" type="text" placeholder="例: 1010010 (メンバー順のビット列)" />
+                <label>メンバーの休暇指定（ガントで自動入力）
+                  <input id="vacationMembersBits" type="text" placeholder="ガント入力で自動反映されます" readonly />
+                  <span class="vacation-helper">※ 手入力は不要です。下のガント表で休暇にしたいメンバーと日付をONにしてください。</span>
                 </label>
+              </div>
+              <div class="vacation-row">
+                <div class="vacation-gantt-head">
+                  <div class="vacation-gantt-title">ガント入力</div>
+                  <div class="vacation-gantt-help">開始日/終了日に合わせて日付スロットを生成し、セルをクリック/ドラッグ（スマホはタップ）するとビットが切り替わります。</div>
+                </div>
+                <div id="vacationGantt" class="vacation-gantt" aria-live="polite"></div>
               </div>
               <div class="vacation-row">
                 <label>ID（自動設定）
@@ -189,7 +197,19 @@
 
       <!-- タブパネル: 長期休暇 -->
       <div id="tabLongVacation" class="tab-panel active">
-        <p>長期休暇の管理コンテンツがここに表示されます。</p>
+        <div class="vacation-view">
+          <p class="vacation-helper">拠点別の長期休暇を一覧表示します。休暇設定は管理画面から登録できます。</p>
+          <div class="vacation-table-wrap">
+            <table class="vacation-table">
+              <thead>
+                <tr><th>タイトル</th><th>期間</th><th>対象メンバー</th><th>備考</th></tr>
+              </thead>
+              <tbody id="longVacationListBody">
+                <tr><td colspan="4" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -564,6 +584,7 @@
   <script src="js/layout.js"></script>
   <script src="js/filters.js"></script>
   <script src="js/board.js"></script>
+  <script src="js/vacations.js"></script>
   <script src="js/offices.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/sync.js"></script>

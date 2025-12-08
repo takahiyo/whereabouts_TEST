@@ -367,6 +367,9 @@ function resetVacationForm(){
   if(vacationNoteInput) vacationNoteInput.value='';
   if(vacationMembersBitsInput) vacationMembersBitsInput.value='';
   if(vacationIdInput) vacationIdInput.value='';
+  if(window.VacationGantt){
+    window.VacationGantt.reset();
+  }
 }
 
 function fillVacationForm(item){
@@ -382,6 +385,9 @@ function fillVacationForm(item){
     if(vacationOfficeSelect.querySelector(`option[value="${item.office}"]`)){
       vacationOfficeSelect.value=item.office;
     }
+  }
+  if(window.VacationGantt){
+    window.VacationGantt.loadFromString(item.membersBits||item.bits||'');
   }
 }
 
@@ -439,6 +445,9 @@ async function handleVacationSave(){
   const start=(vacationStartInput?.value||'').trim();
   const end=(vacationEndInput?.value||'').trim();
   const note=(vacationNoteInput?.value||'').trim();
+  if(window.VacationGantt){
+    window.VacationGantt.syncInput();
+  }
   const membersBits=(vacationMembersBitsInput?.value||'').trim();
   const id=(vacationIdInput?.value||'').trim();
   if(!title){ toast('タイトルを入力してください',false); return; }

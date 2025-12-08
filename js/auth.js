@@ -2,6 +2,10 @@
 function logoutButtonsCleanup(){
   closeMenu(); showAdminModal(false); showManualModal(false); showLongVacationModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
+  if(longVacationListBody){
+    longVacationListBody.textContent='';
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);
+  }
   window.scrollTo(0,0);
 }
 async function logout(){
@@ -41,6 +45,66 @@ function ensureAuthUI(){
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
 function showLongVacationModal(yes){ longVacationModal.classList.toggle('show', !!yes); }
+function summarizeVacationMembers(bitsStr){
+  if(!bitsStr || typeof getRosterOrdering !== 'function') return '';
+  const members = getRosterOrdering().flatMap(g => g.members || []);
+  if(!members.length) return '';
+  const onSet = new Set();
+  bitsStr.split(';').map(s => s.trim()).filter(Boolean).forEach(part => {
+    const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
+    for(let i=0;i<bits.length && i<members.length;i++){
+      if(bits[i] === '1') onSet.add(i);
+    }
+  });
+  const names = members.map(m => m.name || '').filter((_,idx)=> onSet.has(idx));
+  if(names.length === 0) return '';
+  if(names.length <= 3) return names.join('、');
+  return `${names.slice(0,3).join('、')} ほか${names.length-3}名`;
+}
+function renderLongVacationRows(list){
+  if(!longVacationListBody) return;
+  longVacationListBody.textContent = '';
+  if(!Array.isArray(list) || list.length === 0){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td'); td.colSpan=4; td.style.textAlign='center'; td.textContent='登録された長期休暇はありません';
+    tr.appendChild(td); longVacationListBody.appendChild(tr); return;
+  }
+  list.forEach(item => {
+    const tr=document.createElement('tr');
+    const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
+    const start=item.startDate||item.start||item.from||'';
+    const end=item.endDate||item.end||item.to||'';
+    const period=start||end?`${start||''}〜${end||''}`:'-';
+    const periodTd=document.createElement('td'); periodTd.textContent=period;
+    const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
+    const membersTd=document.createElement('td'); membersTd.textContent=membersText||'—';
+    const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
+    tr.append(titleTd,periodTd,membersTd,noteTd);
+    longVacationListBody.appendChild(tr);
+  });
+}
+async function loadLongVacations(showToastOnSuccess=false){
+  if(!longVacationListBody){ return; }
+  longVacationListBody.textContent='';
+  const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=4; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  if(!SESSION_TOKEN || !CURRENT_OFFICE_ID){
+    loadingTd.textContent='拠点にログインすると表示できます';
+    return;
+  }
+  try{
+    const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:CURRENT_OFFICE_ID, nocache:'1' });
+    if(res?.error==='unauthorized'){
+      await logout();
+      return;
+    }
+    const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
+    renderLongVacationRows(list);
+    if(showToastOnSuccess) toast('長期休暇を読み込みました');
+  }catch(err){
+    console.error('loadLongVacations error',err);
+    loadingTd.textContent='読み込みに失敗しました';
+  }
+}
 async function applyRoleToAdminPanel(){
   if(!(adminOfficeRow&&adminOfficeSel)) return;
   if(CURRENT_ROLE!=='superAdmin'){
@@ -147,7 +211,7 @@ adminBtn.addEventListener('click', async ()=>{
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);
 
-longVacationBtn.addEventListener('click', ()=> showLongVacationModal(true));
+longVacationBtn.addEventListener('click', async ()=>{ await loadLongVacations(true); showLongVacationModal(true); });
 longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
