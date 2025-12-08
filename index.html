@@ -141,6 +141,13 @@
                 </label>
               </div>
               <div class="vacation-row">
+                <div class="vacation-gantt-head">
+                  <div class="vacation-gantt-title">ガント入力</div>
+                  <div class="vacation-gantt-help">開始日/終了日に合わせて日付スロットを生成し、セルをクリック/ドラッグ（スマホはタップ）するとビットが切り替わります。</div>
+                </div>
+                <div id="vacationGantt" class="vacation-gantt" aria-live="polite"></div>
+              </div>
+              <div class="vacation-row">
                 <label>ID（自動設定）
                   <input id="vacationId" type="text" readonly placeholder="新規作成時は空欄のまま" />
                 </label>
@@ -564,6 +571,7 @@
   <script src="js/layout.js"></script>
   <script src="js/filters.js"></script>
   <script src="js/board.js"></script>
+  <script src="js/vacations.js"></script>
   <script src="js/offices.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/sync.js"></script>

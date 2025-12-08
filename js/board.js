@@ -216,6 +216,13 @@ function render(){
   }
   buildStatusFilterOptions(); updateStatusFilterCounts();
   applyFilters();
+  if(window.VacationGantt){
+    try {
+      window.VacationGantt.rebuild();
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
 
 /* グループメニュー */
