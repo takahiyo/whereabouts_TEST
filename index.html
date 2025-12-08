@@ -141,6 +141,12 @@
                   <span class="vacation-helper">※ 手入力は不要です。下のガント表で休暇にしたいメンバーと日付をONにしてください。</span>
                 </label>
               </div>
+              <div class="vacation-actions">
+                <button id="btnVacationSave" class="btn-primary">💾 作成/更新</button>
+                <button id="btnVacationDelete" class="btn-danger">🗑️ 削除</button>
+                <button id="btnVacationClear" class="btn-secondary">🧹 入力クリア</button>
+                <button id="btnVacationReload" class="btn-secondary">🔄 一覧更新</button>
+              </div>
               <div class="vacation-row">
                 <div class="vacation-gantt-head">
                   <div class="vacation-gantt-title">ガント入力</div>
@@ -152,12 +158,6 @@
                 <label>ID（自動設定）
                   <input id="vacationId" type="text" readonly placeholder="新規作成時は空欄のまま" />
                 </label>
-              </div>
-              <div class="vacation-actions">
-                <button id="btnVacationSave" class="btn-primary">💾 作成/更新</button>
-                <button id="btnVacationDelete" class="btn-danger">🗑️ 削除</button>
-                <button id="btnVacationClear" class="btn-secondary">🧹 入力クリア</button>
-                <button id="btnVacationReload" class="btn-secondary">🔄 一覧更新</button>
               </div>
             </div>
           </div>

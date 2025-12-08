@@ -345,7 +345,7 @@
   .vacation-row label{font-weight:600;color:#374151;gap:4px;display:flex;flex-direction:column;}
   .vacation-row input,.vacation-row textarea,.vacation-row select{padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;width:100%;box-sizing:border-box;}
 .vacation-row textarea{resize:vertical;}
-.vacation-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.vacation-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 8px;}
 .vacation-table-wrap{overflow:auto;max-height:340px;border:1px solid #e5e7eb;border-radius:8px;}
 .vacation-table{width:100%;border-collapse:collapse;font-size:14px;}
 .vacation-table th,.vacation-table td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top;}
