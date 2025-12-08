@@ -45,13 +45,14 @@
     padding:6px 0; box-shadow: 0 1px 0 rgba(0,0,0,.06);
   }
   .title-wrap{ position:relative; }
-  header .title-btn, header .notices-btn, header .admin-btn, header .logout-btn, header .manual-btn{
+  header .title-btn, header .notices-btn, header .admin-btn, header .long-vacation-btn, header .logout-btn, header .manual-btn{
     font-size:14px; font-weight:600; color:#1f2937;
     padding:.35rem .9rem; border-radius:999px; line-height:1.2; border:1px solid transparent; cursor:pointer;
   }
   header .title-btn{ background:#dff1ff; border-color:#bfe4ff; }
   header .notices-btn{ background:#fffbeb; border-color:#fbbf24; display:none; }
   header .admin-btn{ background:#e7f8e7; border-color:#b7e6b7; display:none; }
+  header .long-vacation-btn{ background:#fdf2f8; border-color:#fbcfe8; display:none; }
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
   header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
 

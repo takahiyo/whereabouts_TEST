@@ -1,6 +1,6 @@
 /* 認証UI + 管理UI + マニュアルUI */
 function logoutButtonsCleanup(){
-  closeMenu(); showAdminModal(false); showManualModal(false);
+  closeMenu(); showAdminModal(false); showManualModal(false); showLongVacationModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
   window.scrollTo(0,0);
 }
@@ -35,10 +35,12 @@ function ensureAuthUI(){
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+  longVacationBtn.style.display = loggedIn ? 'inline-block' : 'none';
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
+function showLongVacationModal(yes){ longVacationModal.classList.toggle('show', !!yes); }
 async function applyRoleToAdminPanel(){
   if(!(adminOfficeRow&&adminOfficeSel)) return;
   if(CURRENT_ROLE!=='superAdmin'){
@@ -145,15 +147,30 @@ adminBtn.addEventListener('click', async ()=>{
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);
 
+longVacationBtn.addEventListener('click', ()=> showLongVacationModal(true));
+longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
+
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));
-document.addEventListener('keydown', (e)=>{ 
-  if(e.key==='Escape'){ 
-    showAdminModal(false); 
-    showManualModal(false); 
-    closeMenu(); 
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Escape'){
+    showAdminModal(false);
+    showManualModal(false);
+    showLongVacationModal(false);
+    closeMenu();
   }
 });
+
+function setupModalOverlayClose(modalEl, closeFn){
+  if(!modalEl) return;
+  modalEl.addEventListener('click', (e)=>{
+    if(e.target===modalEl){ closeFn(); }
+  });
+}
+
+setupModalOverlayClose(adminModal, ()=> showAdminModal(false));
+setupModalOverlayClose(manualModal, ()=> showManualModal(false));
+setupModalOverlayClose(longVacationModal, ()=> showLongVacationModal(false));
 
 /* マニュアルタブ切り替え */
 document.querySelectorAll('.manual-tab-btn').forEach(btn => {
