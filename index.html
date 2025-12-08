@@ -37,6 +37,7 @@
     <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
     <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
+    <button id="longVacationBtn" class="long-vacation-btn" title="長期休暇">長期休暇</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
@@ -102,6 +103,28 @@
             <button id="btnSaveNotices" class="btn-success">💾 保存</button>
           </div>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 長期休暇モーダル -->
+  <div id="longVacationModal" class="admin-modal long-vacation-modal" aria-modal="true" role="dialog">
+    <div class="admin-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3>長期休暇</h3><button id="longVacationClose">閉じる</button>
+      </div>
+
+      <!-- タブナビゲーション -->
+      <div class="admin-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="longVacation">🌴 長期休暇</button>
+        </div>
+      </div>
+
+      <!-- タブパネル: 長期休暇 -->
+      <div id="tabLongVacation" class="tab-panel active">
+        <p>長期休暇の管理コンテンツがここに表示されます。</p>
       </div>
 
     </div>
