@@ -378,9 +378,10 @@
   .vacation-gantt .vac-cell{min-width:30px;}
   .vacation-gantt{padding:6px;}
 }
+
 /* マニュアルモーダル */
-.manual-modal{ position:fixed; inset:0; z-index:1850; display:none; }
-.manual-modal.show{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
+.manual-modal{position:fixed; inset:0; z-index:1850; display:none;}
+.manual-modal.show{display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5);}
 .manual-card{
   background:#fff; border:1px solid var(--line); border-radius:12px;
   width:min(960px, 94vw); max-height:80vh;
@@ -394,24 +395,26 @@
 .manual-card > section{
   overflow:auto; padding:0 16px 16px 16px; flex:1;
 }
-.manual-section{ margin-bottom:16px; }
-.manual-section h4{ margin:8px 0; }
-.manual-section table{ width:100%; border-collapse:collapse; font-size:14px; }
-.manual-section table th, .manual-section table td{ border:1px solid #ddd; padding:6px; }
+.manual-section{margin-bottom:16px;}
+.manual-section h4{margin:8px 0;}
+.manual-section table{width:100%; border-collapse:collapse; font-size:14px;}
+.manual-section table th,.manual-section table td{border:1px solid #ddd; padding:6px;}
 /* マニュアルタブ */
-.manual-tabs{ display:flex; gap:8px; margin-top:8px; }
+.manual-tabs{display:flex; gap:8px; margin-top:8px;}
 .manual-tab-btn{
   padding:8px 16px; border:1px solid #d1d5db; border-radius:6px 6px 0 0;
   background:#f9fafb; cursor:pointer; font-size:14px; font-weight:600;
   color:#6b7280; transition:all .2s;
 }
-.manual-tab-btn:hover{ background:#f3f4f6; }
+.manual-tab-btn:hover{background:#f3f4f6;}
 .manual-tab-btn.active{
   background:#fff; border-bottom-color:#fff; color:#0073bb;
   position:relative; margin-bottom:-1px;
 }
-.manual-tab-content{ display:none; }
-.manual-tab-content.active{ display:block; }
+.manual-tab-content{display:none;}
+.manual-tab-content.active{display:block;}
+
+/* グループメニュー */
 .grp-menu{
   position:absolute; top:100%; left:0;
   min-width:100%;
@@ -432,7 +435,7 @@
   background:transparent; border:none;
   padding:4px 12px; border-radius:4px;
   text-align:left; font-size:14px; font-weight:600; color:#1f2937; cursor:pointer;
-    white-space:nowrap;
+  white-space:nowrap;
 }
 .grp-menu button.grp-item:hover{background:#bfe4ff;}
 
