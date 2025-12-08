@@ -1,5 +1,13 @@
 /* 管理UIイベント */
-if(adminOfficeSel){ adminOfficeSel.addEventListener('change', ()=>{ adminSelectedOfficeId=adminOfficeSel.value||''; }); }
+if(adminOfficeSel){
+  adminOfficeSel.addEventListener('change', ()=>{
+    adminSelectedOfficeId=adminOfficeSel.value||'';
+    refreshVacationOfficeOptions();
+    if(document.getElementById('tabVacations')?.classList.contains('active')){
+      loadVacationsList();
+    }
+  });
+}
 btnExport.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); if(!office) return;
   const cfg=await adminGetConfigFor(office);
@@ -143,22 +151,26 @@ btnSetPw.addEventListener('click', async ()=>{
 document.querySelectorAll('.admin-tabs .tab-btn').forEach(btn => {
   btn.addEventListener('click', async ()=> {
     const targetTab = btn.dataset.tab;
-    
-    // タブボタンのアクティブ状態を切り替え
+
     document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    
-    // タブパネルの表示を切り替え
+
     document.querySelectorAll('.admin-modal .tab-panel').forEach(panel => panel.classList.remove('active'));
-    
-    if(targetTab === 'basic'){
-      document.getElementById('tabBasic').classList.add('active');
-    } else if(targetTab === 'notices'){
-      document.getElementById('tabNotices').classList.add('active');
-      // お知らせタブを開いたときに自動読み込み
+    const panelMap={
+      basic: document.getElementById('tabBasic'),
+      notices: document.getElementById('tabNotices'),
+      vacations: document.getElementById('tabVacations')
+    };
+    const panel=panelMap[targetTab];
+    if(panel) panel.classList.add('active');
+
+    if(targetTab === 'notices'){
       if(typeof autoLoadNoticesOnAdminOpen === 'function'){
         await autoLoadNoticesOnAdminOpen();
       }
+    } else if(targetTab === 'vacations'){
+      refreshVacationOfficeOptions();
+      await loadVacationsList();
     }
   });
 });
@@ -306,6 +318,170 @@ function updateMoveButtons(){
   });
 }
 
+/* 長期休暇管理UI */
+if(btnVacationSave){ btnVacationSave.addEventListener('click', handleVacationSave); }
+if(btnVacationDelete){ btnVacationDelete.addEventListener('click', handleVacationDelete); }
+if(btnVacationReload){ btnVacationReload.addEventListener('click', ()=> loadVacationsList(true)); }
+if(btnVacationClear){ btnVacationClear.addEventListener('click', resetVacationForm); }
+
+function refreshVacationOfficeOptions(){
+  if(!vacationOfficeSelect) return;
+  const prev=vacationOfficeSelect.value||'';
+  vacationOfficeSelect.textContent='';
+
+  const adminOptions=(adminOfficeSel&&adminOfficeSel.options&&adminOfficeSel.options.length)?Array.from(adminOfficeSel.options):[];
+  const usableOptions=adminOptions.filter(o=>o.value);
+  if(usableOptions.length){
+    usableOptions.forEach(opt=>{
+      const o=document.createElement('option');
+      o.value=opt.value; o.textContent=opt.textContent||opt.value;
+      vacationOfficeSelect.appendChild(o);
+    });
+  }else if(CURRENT_OFFICE_ID){
+    const o=document.createElement('option');
+    o.value=CURRENT_OFFICE_ID; o.textContent=CURRENT_OFFICE_NAME||CURRENT_OFFICE_ID;
+    vacationOfficeSelect.appendChild(o);
+  }else{
+    const o=document.createElement('option');
+    o.value=''; o.textContent='対象拠点を選択してください'; o.disabled=true; o.selected=true;
+    vacationOfficeSelect.appendChild(o);
+  }
+
+  if(prev && vacationOfficeSelect.querySelector(`option[value="${prev}"]`)){
+    vacationOfficeSelect.value=prev;
+  }else if(vacationOfficeSelect.options.length){
+    vacationOfficeSelect.selectedIndex=0;
+  }
+}
+
+function getVacationTargetOffice(){
+  const office=(vacationOfficeSelect&&vacationOfficeSelect.value)||selectedOfficeId();
+  if(!office){ toast('対象拠点を選択してください',false); }
+  return office;
+}
+
+function resetVacationForm(){
+  if(vacationTitleInput) vacationTitleInput.value='';
+  if(vacationStartInput) vacationStartInput.value='';
+  if(vacationEndInput) vacationEndInput.value='';
+  if(vacationNoteInput) vacationNoteInput.value='';
+  if(vacationMembersBitsInput) vacationMembersBitsInput.value='';
+  if(vacationIdInput) vacationIdInput.value='';
+}
+
+function fillVacationForm(item){
+  if(!item) return;
+  if(vacationTitleInput) vacationTitleInput.value=item.title||'';
+  if(vacationStartInput) vacationStartInput.value=item.startDate||item.start||item.from||'';
+  if(vacationEndInput) vacationEndInput.value=item.endDate||item.end||item.to||'';
+  if(vacationNoteInput) vacationNoteInput.value=item.note||item.memo||'';
+  if(vacationMembersBitsInput) vacationMembersBitsInput.value=item.membersBits||item.bits||'';
+  if(vacationIdInput) vacationIdInput.value=item.id||item.vacationId||'';
+  if(vacationOfficeSelect && item.office){
+    refreshVacationOfficeOptions();
+    if(vacationOfficeSelect.querySelector(`option[value="${item.office}"]`)){
+      vacationOfficeSelect.value=item.office;
+    }
+  }
+}
+
+function renderVacationRows(list){
+  if(!vacationListBody) return;
+  vacationListBody.textContent='';
+  if(!Array.isArray(list) || list.length===0){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td');
+    td.colSpan=5; td.style.textAlign='center'; td.textContent='長期休暇はありません';
+    tr.appendChild(td); vacationListBody.appendChild(tr); return;
+  }
+
+  list.forEach(item=>{
+    const tr=document.createElement('tr');
+    const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
+    const start=item.startDate||item.start||item.from||'';
+    const end=item.endDate||item.end||item.to||'';
+    const periodTd=document.createElement('td'); periodTd.textContent=start||end?`${start||''}〜${end||''}`:'-';
+    const officeTd=document.createElement('td'); officeTd.textContent=item.office||'';
+    const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
+    const actionTd=document.createElement('td');
+    const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
+    editBtn.addEventListener('click', ()=> fillVacationForm(item));
+    actionTd.appendChild(editBtn);
+    tr.appendChild(titleTd); tr.appendChild(periodTd); tr.appendChild(officeTd); tr.appendChild(noteTd); tr.appendChild(actionTd);
+    vacationListBody.appendChild(tr);
+  });
+}
+
+async function loadVacationsList(showToastOnSuccess=false){
+  const office=getVacationTargetOffice(); if(!office) return;
+  if(vacationListBody){
+    vacationListBody.textContent='';
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
+  }
+  try{
+    const res=await adminGetVacation(office);
+    const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
+    renderVacationRows(list);
+    if(showToastOnSuccess) toast('長期休暇を読み込みました');
+  }catch(err){
+    console.error('loadVacationsList error',err);
+    if(vacationListBody){
+      vacationListBody.textContent='';
+      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
+    }
+    toast('長期休暇の取得に失敗しました',false);
+  }
+}
+
+async function handleVacationSave(){
+  const office=getVacationTargetOffice(); if(!office) return;
+  const title=(vacationTitleInput?.value||'').trim();
+  const start=(vacationStartInput?.value||'').trim();
+  const end=(vacationEndInput?.value||'').trim();
+  const note=(vacationNoteInput?.value||'').trim();
+  const membersBits=(vacationMembersBitsInput?.value||'').trim();
+  const id=(vacationIdInput?.value||'').trim();
+  if(!title){ toast('タイトルを入力してください',false); return; }
+  if(start && end && start>end){ toast('開始日と終了日の指定を確認してください',false); return; }
+
+  const payload={ office, title, start, end, note, membersBits };
+  if(id) payload.id=id;
+
+  try{
+    const res=await adminSetVacation(office,payload);
+    if(res && res.ok!==false){
+      if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
+      toast('長期休暇を保存しました');
+      await loadVacationsList();
+    }else{
+      throw new Error(res&&res.error?String(res.error):'save_failed');
+    }
+  }catch(err){
+    console.error('handleVacationSave error',err);
+    toast('長期休暇の保存に失敗しました',false);
+  }
+}
+
+async function handleVacationDelete(){
+  const office=getVacationTargetOffice(); if(!office) return;
+  const id=(vacationIdInput?.value||'').trim();
+  if(!id){ toast('削除する項目のIDを選択してください',false); return; }
+  if(!confirm('選択中の長期休暇を削除しますか？')) return;
+  try{
+    const res=await adminDeleteVacation(office,id);
+    if(res && res.ok!==false){
+      toast('削除しました');
+      resetVacationForm();
+      await loadVacationsList();
+    }else{
+      throw new Error(res&&res.error?String(res.error):'delete_failed');
+    }
+  }catch(err){
+    console.error('handleVacationDelete error',err);
+    toast('長期休暇の削除に失敗しました',false);
+  }
+}
+
 /* Admin API */
 function selectedOfficeId(){
   const office=adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
@@ -333,6 +509,9 @@ async function adminSetForChunked(office,dataObjFull){
 }
 async function adminRenameOffice(office,name){ return await apiPost({ action:'renameOffice', office, name, token:SESSION_TOKEN }); }
 async function adminSetOfficePassword(office,pw,apw){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; return await apiPost(q); }
+async function adminGetVacation(office){ return await apiPost({ action:'getVacation', token:SESSION_TOKEN, office, nocache:'1' }); }
+async function adminSetVacation(office,payload){ const q={ action:'setVacation', token:SESSION_TOKEN, office, data:JSON.stringify(payload) }; return await apiPost(q); }
+async function adminDeleteVacation(office,id){ return await apiPost({ action:'deleteVacation', token:SESSION_TOKEN, office, id }); }
 
 /* CSVパーサ */
 function parseCSV(text){

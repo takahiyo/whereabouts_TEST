@@ -54,11 +54,12 @@
         <div class="tab-buttons">
           <button class="tab-btn active" data-tab="basic">⚙️ 基本設定</button>
           <button class="tab-btn" data-tab="notices">📢 お知らせ管理</button>
+          <button class="tab-btn" data-tab="vacations">🌴 長期休暇管理</button>
         </div>
       </div>
 
       <!-- タブパネル1: 基本設定 -->
-      <div id="tabBasic" class="tab-panel active">
+      <div id="tabBasic" class="tab-panel active" data-tab="basic">
         <div class="admin-grid">
           <div class="admin-box">
             <h4>CSVエクスポート</h4>
@@ -88,7 +89,7 @@
       </div>
 
       <!-- タブパネル2: お知らせ管理 -->
-      <div id="tabNotices" class="tab-panel">
+      <div id="tabNotices" class="tab-panel" data-tab="notices">
         <div class="notices-manager-body">
           <div class="notices-manager-info">
             <p>お知らせの順番はドラッグ&ドロップまたは↑↓ボタンで入れ替えられます。上にあるものから順に表示されます。</p>
@@ -101,6 +102,70 @@
             <button id="btnAddNotice" class="btn-primary">➕ お知らせを追加</button>
             <button id="btnLoadNotices" class="btn-secondary">🔄 読み込み</button>
             <button id="btnSaveNotices" class="btn-success">💾 保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブパネル3: 長期休暇管理 -->
+      <div id="tabVacations" class="tab-panel" data-tab="vacations">
+        <div class="vacation-grid">
+          <div class="admin-box">
+            <h4>長期休暇の作成 / 更新</h4>
+            <div class="vacation-form">
+              <div class="vacation-row">
+                <label>対象拠点
+                  <select id="vacationOffice" aria-label="対象拠点"></select>
+                </label>
+              </div>
+              <div class="vacation-row">
+                <label>タイトル
+                  <input id="vacationTitle" type="text" placeholder="例: GW期間休暇" />
+                </label>
+              </div>
+              <div class="vacation-row vacation-row-two-cols">
+                <label>開始日
+                  <input id="vacationStart" type="date" />
+                </label>
+                <label>終了日
+                  <input id="vacationEnd" type="date" />
+                </label>
+              </div>
+              <div class="vacation-row">
+                <label>備考（任意）
+                  <textarea id="vacationNote" rows="2" placeholder="社内共有したい備考を入力"></textarea>
+                </label>
+              </div>
+              <div class="vacation-row">
+                <label>メンバーのビット配列
+                  <input id="vacationMembersBits" type="text" placeholder="例: 1010010 (メンバー順のビット列)" />
+                </label>
+              </div>
+              <div class="vacation-row">
+                <label>ID（自動設定）
+                  <input id="vacationId" type="text" readonly placeholder="新規作成時は空欄のまま" />
+                </label>
+              </div>
+              <div class="vacation-actions">
+                <button id="btnVacationSave" class="btn-primary">💾 作成/更新</button>
+                <button id="btnVacationDelete" class="btn-danger">🗑️ 削除</button>
+                <button id="btnVacationClear" class="btn-secondary">🧹 入力クリア</button>
+                <button id="btnVacationReload" class="btn-secondary">🔄 一覧更新</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-box">
+            <h4>登録済みの長期休暇</h4>
+            <div class="vacation-table-wrap">
+              <table class="vacation-table">
+                <thead>
+                  <tr><th>タイトル</th><th>期間</th><th>対象拠点</th><th>備考</th><th>操作</th></tr>
+                </thead>
+                <tbody id="vacationListBody">
+                  <tr><td colspan="5" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
