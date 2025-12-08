@@ -4,7 +4,7 @@ function logoutButtonsCleanup(){
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
   if(longVacationListBody){
     longVacationListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);
   }
   window.scrollTo(0,0);
 }
@@ -61,12 +61,12 @@ function summarizeVacationMembers(bitsStr){
   if(names.length <= 3) return names.join('、');
   return `${names.slice(0,3).join('、')} ほか${names.length-3}名`;
 }
-function renderLongVacationRows(list){
+function renderLongVacationRows(list, canToggle){
   if(!longVacationListBody) return;
   longVacationListBody.textContent = '';
   if(!Array.isArray(list) || list.length === 0){
     const tr=document.createElement('tr');
-    const td=document.createElement('td'); td.colSpan=4; td.style.textAlign='center'; td.textContent='登録された長期休暇はありません';
+    const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='登録された長期休暇はありません';
     tr.appendChild(td); longVacationListBody.appendChild(tr); return;
   }
   list.forEach(item => {
@@ -79,14 +79,30 @@ function renderLongVacationRows(list){
     const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
     const membersTd=document.createElement('td'); membersTd.textContent=membersText||'—';
     const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
-    tr.append(titleTd,periodTd,membersTd,noteTd);
+    const visibleTd=document.createElement('td');
+    const visibleToggle=document.createElement('input');
+    visibleToggle.type='checkbox';
+    visibleToggle.checked=item.visible !== false;
+    visibleToggle.disabled=!canToggle;
+    if(canToggle){
+      visibleToggle.addEventListener('change', async ()=>{
+        visibleToggle.disabled=true;
+        const success=await updateVacationVisibility(item, visibleToggle.checked);
+        if(!success){
+          visibleToggle.checked=!visibleToggle.checked;
+        }
+        visibleToggle.disabled=false;
+      });
+    }
+    visibleTd.appendChild(visibleToggle);
+    tr.append(titleTd,periodTd,membersTd,noteTd,visibleTd);
     longVacationListBody.appendChild(tr);
   });
 }
 async function loadLongVacations(officeId, showToastOnSuccess=false){
   if(!longVacationListBody){ return; }
   longVacationListBody.textContent='';
-  const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=4; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=5; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
   const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
   if(!SESSION_TOKEN || !targetOfficeId){
     loadingTd.textContent='拠点にログインすると表示できます';
@@ -99,7 +115,9 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
       return;
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
-    renderLongVacationRows(list);
+    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId }));
+    const filteredList=isOfficeAdmin()?normalizedList:normalizedList.filter(item=>item.visible!==false);
+    renderLongVacationRows(filteredList, isOfficeAdmin());
     if(showToastOnSuccess) toast('長期休暇を読み込みました');
   }catch(err){
     console.error('loadLongVacations error',err);
