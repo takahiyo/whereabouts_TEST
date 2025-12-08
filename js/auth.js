@@ -83,16 +83,17 @@ function renderLongVacationRows(list){
     longVacationListBody.appendChild(tr);
   });
 }
-async function loadLongVacations(showToastOnSuccess=false){
+async function loadLongVacations(showToastOnSuccess=false, officeId){
   if(!longVacationListBody){ return; }
   longVacationListBody.textContent='';
   const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=4; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
-  if(!SESSION_TOKEN || !CURRENT_OFFICE_ID){
+  const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
+  if(!SESSION_TOKEN || !targetOfficeId){
     loadingTd.textContent='拠点にログインすると表示できます';
     return;
   }
   try{
-    const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:CURRENT_OFFICE_ID, nocache:'1' });
+    const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:targetOfficeId, nocache:'1' });
     if(res?.error==='unauthorized'){
       await logout();
       return;
@@ -211,7 +212,11 @@ adminBtn.addEventListener('click', async ()=>{
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);
 
-longVacationBtn.addEventListener('click', async ()=>{ await loadLongVacations(true); showLongVacationModal(true); });
+longVacationBtn.addEventListener('click', async ()=>{
+  const targetOfficeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
+  await loadLongVacations(true, targetOfficeId);
+  showLongVacationModal(true);
+});
 longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });

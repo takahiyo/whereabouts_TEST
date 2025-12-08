@@ -462,6 +462,7 @@ async function handleVacationSave(){
       if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
       toast('長期休暇を保存しました');
       await loadVacationsList();
+      if(office){ await loadLongVacations(false, office); }
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
