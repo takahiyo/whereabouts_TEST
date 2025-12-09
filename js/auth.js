@@ -7,6 +7,7 @@ function logoutButtonsCleanup(){
     longVacationListBody.textContent='';
     const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);
   }
+  if(typeof updateLongVacationDetail==='function'){ updateLongVacationDetail(null); }
   window.scrollTo(0,0);
 }
 async function logout(){
@@ -41,6 +42,7 @@ function ensureAuthUI(){
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   longVacationBtn.style.display = 'none';
+  if(btnLongVacationSave) btnLongVacationSave.style.display = showAdmin ? 'inline-block' : 'none';
   updateLongVacationButtonVisibility();
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
@@ -155,7 +157,8 @@ logoutBtn.addEventListener('click', logout);
 
 longVacationBtn.addEventListener('click', async ()=>{
   const targetOfficeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  await loadLongVacations(targetOfficeId, true);
+  const list=await loadLongVacations(targetOfficeId, true, { visibleOnly:true, onSelect: handleLongVacationSelection });
+  if(!Array.isArray(list) || list.length===0){ toast('表示対象なし'); return; }
   showLongVacationModal(true);
 });
 longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
@@ -175,6 +178,12 @@ if(btnApplyVacationDisplay){
       console.error('applyLongVacationDisplay error', err);
       toast('長期休暇の表示に失敗しました', false);
     }
+  });
+}
+
+if(btnLongVacationSave){
+  btnLongVacationSave.addEventListener('click', async ()=>{
+    await saveLongVacationFromModal();
   });
 }
 
