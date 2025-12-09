@@ -90,7 +90,7 @@ function renderLongVacationList(vacations){
   if(!Array.isArray(vacations) || vacations.length === 0){
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 4;
+    td.colSpan = 5;
     td.style.textAlign = 'center';
     td.style.color = '#6b7280';
     td.textContent = '長期休暇はありません';
@@ -129,6 +129,16 @@ function renderLongVacationList(vacations){
     const noteTd = document.createElement('td');
     noteTd.textContent = vacation.note || vacation.memo || '';
     tr.appendChild(noteTd);
+
+    // 表示フラグ
+    const visibleTd = document.createElement('td');
+    const visibleFlag = vacation.visible ?? vacation.display ?? vacation.show;
+    if(visibleFlag === undefined || visibleFlag === null){
+      visibleTd.textContent = '';
+    }else{
+      visibleTd.textContent = visibleFlag !== false ? '表示' : '非表示';
+    }
+    tr.appendChild(visibleTd);
 
     longVacationListBody.appendChild(tr);
   });
