@@ -491,34 +491,52 @@ function applyLongVacationHighlight(memberIds, vacationTitle){
     const key=String(tr.dataset.key||'');
     const on=idSet.has(key);
     tr.classList.toggle('long-vacation-highlight', on);
+    
+    const statusTd = tr.querySelector('td.status');
+    const statusSelect = statusTd?.querySelector('select[name="status"]');
+    
     if(on) {
       tr.dataset.longVacation='1';
       tr.dataset.longVacationTitle=vacationTitle||'長期休暇';
       
-      // ステータスを「休み」に設定（現在のステータスが空または「在席」の場合のみ）
-      const statusSelect = tr.querySelector('td.status select[name="status"]');
-      if(statusSelect && vacationTitle){
-        const currentVal = statusSelect.value;
-        if(!currentVal || currentVal === '' || currentVal === '在席'){
-          statusSelect.value = '休み';
-          // ステータス変更イベントを発火
-          statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      // ステータス欄をテキスト表示に置き換え
+      if(statusTd && statusSelect && vacationTitle){
+        // selectを非表示にしてテキストを表示
+        statusSelect.style.display = 'none';
+        statusSelect.dataset.originalValue = statusSelect.value; // 元の値を保存
+        
+        // 長期休暇タイトルを表示する要素を作成または更新
+        let vacationLabel = statusTd.querySelector('.vacation-status-label');
+        if(!vacationLabel){
+          vacationLabel = document.createElement('div');
+          vacationLabel.className = 'vacation-status-label';
+          statusTd.appendChild(vacationLabel);
         }
-      }
-      
-      // 備考欄に長期休暇タイトルを設定（現在の備考が空の場合のみ）
-      const noteInput = tr.querySelector('td.note input[name="note"]');
-      if(noteInput && vacationTitle){
-        const currentNote = noteInput.value || '';
-        if(!currentNote.trim()){
-          noteInput.value = vacationTitle;
-          // 備考変更イベントを発火
-          noteInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        vacationLabel.textContent = vacationTitle;
+        vacationLabel.style.display = 'block';
+        
+        // 内部的にステータスを「休み」に設定
+        statusSelect.value = '休み';
+        statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
     } else {
       delete tr.dataset.longVacation;
       delete tr.dataset.longVacationTitle;
+      
+      // ステータス欄を元に戻す
+      if(statusTd && statusSelect){
+        statusSelect.style.display = '';
+        const vacationLabel = statusTd.querySelector('.vacation-status-label');
+        if(vacationLabel){
+          vacationLabel.style.display = 'none';
+        }
+        // 元の値を復元
+        if(statusSelect.dataset.originalValue !== undefined){
+          statusSelect.value = statusSelect.dataset.originalValue;
+          delete statusSelect.dataset.originalValue;
+          statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
     }
   });
 }
