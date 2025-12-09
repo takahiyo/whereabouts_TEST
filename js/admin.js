@@ -387,7 +387,7 @@ function fillVacationForm(item){
   if(vacationNoteInput) vacationNoteInput.value=item.note||item.memo||'';
   if(vacationMembersBitsInput) vacationMembersBitsInput.value=item.membersBits||item.bits||'';
   if(vacationIdInput) vacationIdInput.value=item.id||item.vacationId||'';
-  currentVacationVisible = item.visible !== false;
+  currentVacationVisible = item.visible === true;
   if(vacationOfficeSelect && item.office){
     refreshVacationOfficeOptions();
     if(vacationOfficeSelect.querySelector(`option[value="${item.office}"]`)){
@@ -420,7 +420,7 @@ function renderVacationRows(list){
     const visibleTd=document.createElement('td');
     const visibleToggle=document.createElement('input');
     visibleToggle.type='checkbox';
-    visibleToggle.checked=item.visible !== false;
+    visibleToggle.checked=item.visible === true;
     visibleToggle.addEventListener('change', async ()=>{
       visibleToggle.disabled=true;
       const success=await updateVacationVisibility(item, visibleToggle.checked);
@@ -513,8 +513,12 @@ async function handleVacationSave(){
     const res=await adminSetVacation(office,payload);
     if(res && res.ok!==false){
       if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
+      if(res.vacation){
+        currentVacationVisible = res.vacation.visible === true;
+      }
       toast('長期休暇を保存しました');
       await loadVacationsList(false, office);
+      await loadLongVacations(office, false);
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
