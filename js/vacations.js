@@ -162,6 +162,7 @@
       tr.appendChild(nameHeader);
       dateSlots.forEach(date => {
         const th = document.createElement('th');
+        th.dataset.date = date; // 日付を属性として追加
         const d = new Date(date);
         const dow = d.getDay();
         const label = document.createElement('div');
@@ -314,25 +315,32 @@
       tableEl.addEventListener('pointerover', handlePointerOver);
       ['pointerup','pointercancel','pointerleave'].forEach(ev => tableEl.addEventListener(ev, handlePointerUp));
       
-      // 行ホバー時、対応する日付列もハイライト
+      // セルホバー時、対応する日付列もハイライト
       const tbody = tableEl.querySelector('tbody');
       const thead = tableEl.querySelector('thead');
       if(tbody && thead){
         tbody.addEventListener('mouseover', (e) => {
-          const row = e.target.closest('tr');
-          if(!row) return;
-          const cells = row.querySelectorAll('td.vac-cell');
+          const cell = e.target.closest('td.vac-cell');
+          if(!cell) return;
+          
+          // 既存のハイライトをクリア
+          thead.querySelectorAll('th.hover-highlight').forEach(th => th.classList.remove('hover-highlight'));
+          
+          // このセルの日付を取得
+          const date = cell.dataset.date;
+          if(!date) return;
+          
+          // 同じ日付のヘッダーセルを探してハイライト
           const headerCells = thead.querySelectorAll('th');
-          cells.forEach((cell, idx) => {
-            const dateHeaderIdx = idx + 2; // グループ名+氏名の2列分オフセット
-            if(headerCells[dateHeaderIdx]){
-              headerCells[dateHeaderIdx].classList.add('hover-highlight');
+          headerCells.forEach(th => {
+            if(th.dataset.date === date){
+              th.classList.add('hover-highlight');
             }
           });
         });
         tbody.addEventListener('mouseout', (e) => {
-          const row = e.target.closest('tr');
-          if(!row) return;
+          const cell = e.target.closest('td.vac-cell');
+          if(!cell) return;
           thead.querySelectorAll('th.hover-highlight').forEach(th => th.classList.remove('hover-highlight'));
         });
       }
