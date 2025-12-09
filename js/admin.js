@@ -329,6 +329,11 @@ if(btnVacationSave){ btnVacationSave.addEventListener('click', handleVacationSav
 if(btnVacationDelete){ btnVacationDelete.addEventListener('click', handleVacationDelete); }
 if(btnVacationReload){ btnVacationReload.addEventListener('click', ()=> loadVacationsList(true)); }
 if(btnVacationClear){ btnVacationClear.addEventListener('click', resetVacationForm); }
+if(vacationVisibleToggle){
+  vacationVisibleToggle.addEventListener('change', ()=>{
+    currentVacationVisible = vacationVisibleToggle.checked;
+  });
+}
 
 function refreshVacationOfficeOptions(){
   if(!vacationOfficeSelect) return;
@@ -374,6 +379,7 @@ function resetVacationForm(){
   if(vacationMembersBitsInput) vacationMembersBitsInput.value='';
   if(vacationIdInput) vacationIdInput.value='';
   currentVacationVisible = true;
+  if(vacationVisibleToggle) vacationVisibleToggle.checked = true;
   if(window.VacationGantt){
     window.VacationGantt.reset();
   }
@@ -388,6 +394,7 @@ function fillVacationForm(item){
   if(vacationMembersBitsInput) vacationMembersBitsInput.value=item.membersBits||item.bits||'';
   if(vacationIdInput) vacationIdInput.value=item.id||item.vacationId||'';
   currentVacationVisible = item.visible === true;
+  if(vacationVisibleToggle) vacationVisibleToggle.checked = item.visible === true;
   if(vacationOfficeSelect && item.office){
     refreshVacationOfficeOptions();
     if(vacationOfficeSelect.querySelector(`option[value="${item.office}"]`)){

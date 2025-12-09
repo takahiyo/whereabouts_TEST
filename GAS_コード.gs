@@ -692,16 +692,17 @@ function doPost(e){
       const base = { id, office, title, startDate, endDate, note, membersBits, visible, updated: now_() };
       const newItem = normalizeVacationItem_(base, office);
 
-      if(visible){
-        vacations = vacations.map(v => ({ ...v, visible: false }));
-      }
-
       // IDが存在する場合は更新、なければ追加
       const existingIndex = vacations.findIndex(v => v.id === id);
       if(existingIndex >= 0){
         vacations[existingIndex] = newItem;
       }else{
         vacations.push(newItem);
+      }
+
+      // visible: trueの場合、他の全ての休暇をvisible: falseにする
+      if(visible){
+        vacations = vacations.map(v => v.id === id ? v : { ...v, visible: false });
       }
 
       // 保存
