@@ -15,6 +15,8 @@ const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getEle
 const longVacationBtn=document.getElementById('longVacationBtn'), longVacationModal=document.getElementById('longVacationModal'), longVacationClose=document.getElementById('longVacationClose');
 const longVacationListBody=document.getElementById('longVacationListBody');
 const vacationRadioList=document.getElementById('vacationRadioList');
+const btnApplyVacationDisplay=document.getElementById('btnApplyVacationDisplay');
+const btnClearVacationDisplay=document.getElementById('btnClearVacationDisplay');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
