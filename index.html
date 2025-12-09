@@ -197,8 +197,20 @@
               <div style="text-align:center;padding:20px;color:#6b7280;">読み込み中...</div>
             </div>
           </div>
+          <div id="longVacationGanttWrap" class="vacation-gantt-head" style="display:none;">
+            <div class="vacation-gantt-title" id="longVacationTitleText">長期休暇</div>
+            <div class="vacation-gantt-help" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <span id="longVacationPeriodText"></span>
+              <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
+            </div>
+            <div id="longVacationGantt" class="vacation-gantt" aria-live="polite"></div>
+            <input id="longVacationStart" type="hidden" />
+            <input id="longVacationEnd" type="hidden" />
+            <input id="longVacationBits" type="hidden" />
+          </div>
           <div class="vacation-actions" style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
             <button id="btnClearVacationDisplay" class="btn-secondary">表示クリア</button>
+            <button id="btnLongVacationSave" class="btn-secondary">保存</button>
             <button id="btnApplyVacationDisplay" class="btn-primary">表示</button>
           </div>
         </div>
