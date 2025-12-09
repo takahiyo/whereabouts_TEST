@@ -58,124 +58,99 @@ document.addEventListener('visibilitychange', ()=>{
 });
 function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin' || CURRENT_ROLE==='superAdmin'; }
 
-/* 長期休暇の読み込みと表示 */
-async function loadLongVacations(office, showToast = false){
-  if(!office) office = CURRENT_OFFICE_ID;
-  if(!office){
-    console.warn('loadLongVacations: office is not specified');
-    return;
-  }
-
-  try{
-    const res = await apiPost({ action:'getVacation', token:SESSION_TOKEN, office, nocache:'1' });
-    if(res && res.error){
-      console.error('loadLongVacations error:', res.error);
-      if(showToast) toast('長期休暇の取得に失敗しました', false);
-      return;
-    }
-
-    const vacations = Array.isArray(res?.vacations) ? res.vacations : [];
-    renderLongVacationList(vacations);
-    if(showToast && vacations.length > 0) toast(`長期休暇を${vacations.length}件読み込みました`);
-  }catch(err){
-    console.error('loadLongVacations exception:', err);
-    if(showToast) toast('長期休暇の取得に失敗しました', false);
-  }
-}
-
-function renderLongVacationList(vacations){
-  if(!longVacationListBody) return;
-  longVacationListBody.textContent = '';
-
-  if(!Array.isArray(vacations) || vacations.length === 0){
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 5;
-    td.style.textAlign = 'center';
-    td.style.color = '#6b7280';
-    td.textContent = '長期休暇はありません';
-    tr.appendChild(td);
-    longVacationListBody.appendChild(tr);
-    return;
-  }
-
-  vacations.forEach(vacation => {
-    const tr = document.createElement('tr');
-
-    // タイトル
-    const titleTd = document.createElement('td');
-    titleTd.textContent = vacation.title || '';
-    tr.appendChild(titleTd);
-
-    // 期間
-    const periodTd = document.createElement('td');
-    const start = vacation.startDate || vacation.start || '';
-    const end = vacation.endDate || vacation.end || '';
-    periodTd.textContent = (start || end) ? `${start || ''}〜${end || ''}` : '-';
-    tr.appendChild(periodTd);
-
-    // 対象メンバー
-    const membersTd = document.createElement('td');
-    const bits = vacation.membersBits || '';
-    if(bits){
-      const memberNames = parseMemberNamesFromBits(bits);
-      membersTd.textContent = memberNames.length > 0 ? memberNames.join(', ') : '-';
-    }else{
-      membersTd.textContent = '-';
-    }
-    tr.appendChild(membersTd);
-
-    // 備考
-    const noteTd = document.createElement('td');
-    noteTd.textContent = vacation.note || vacation.memo || '';
-    tr.appendChild(noteTd);
-
-    // 表示フラグ
-    const visibleTd = document.createElement('td');
-    const visibleFlag = vacation.visible ?? vacation.display ?? vacation.show;
-    if(visibleFlag === undefined || visibleFlag === null){
-      visibleTd.textContent = '';
-    }else{
-      visibleTd.textContent = visibleFlag !== false ? '表示' : '非表示';
-    }
-    tr.appendChild(visibleTd);
-
-    longVacationListBody.appendChild(tr);
-  });
-}
-
-function parseMemberNamesFromBits(bitsString){
-  if(!bitsString) return [];
-  const members = [];
-  const parts = bitsString.split(';').filter(Boolean);
-
-  parts.forEach(part => {
-    const [date, bits] = part.includes(':') ? part.split(':') : ['', part];
-    if(!bits) return;
-
-    // 最初の日付だけ処理（全日程同じメンバーと仮定）
-    if(members.length === 0){
-      const orderedMembers = getRosterOrdering().flatMap(g => 
-        (g.members || []).map(m => m.name)
-      );
-      
-      for(let i = 0; i < bits.length && i < orderedMembers.length; i++){
-        if(bits[i] === '1'){
-          members.push(orderedMembers[i]);
-        }
-      }
-    }
-  });
-
-  return members;
-}
-
 function getRosterOrdering(){
   if(!Array.isArray(GROUPS)) return [];
   return GROUPS.map(g => ({
     title: g.title || '',
     members: Array.isArray(g.members) ? g.members : []
   }));
+}
+
+/* 長期休暇の表示 */
+function summarizeVacationMembers(bitsStr){
+  if(!bitsStr || typeof getRosterOrdering !== 'function') return '';
+  const members = getRosterOrdering().flatMap(g => g.members || []);
+  if(!members.length) return '';
+  const onSet = new Set();
+  bitsStr.split(';').map(s => s.trim()).filter(Boolean).forEach(part => {
+    const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
+    for(let i=0;i<bits.length && i<members.length;i++){
+      if(bits[i] === '1') onSet.add(i);
+    }
+  });
+  const names = members.map(m => m.name || '').filter((_,idx)=> onSet.has(idx));
+  if(names.length === 0) return '';
+  if(names.length <= 3) return names.join('、');
+  return `${names.slice(0,3).join('、')} ほか${names.length-3}名`;
+}
+
+function renderLongVacationRows(list, canToggle){
+  if(!longVacationListBody) return;
+  longVacationListBody.textContent = '';
+  if(!Array.isArray(list) || list.length === 0){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='登録された長期休暇はありません';
+    tr.appendChild(td); longVacationListBody.appendChild(tr); return;
+  }
+  list.forEach(item => {
+    const tr=document.createElement('tr');
+    const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
+    const start=item.startDate||item.start||item.from||'';
+    const end=item.endDate||item.end||item.to||'';
+    const period=start||end?`${start||''}〜${end||''}`:'-';
+    const periodTd=document.createElement('td'); periodTd.textContent=period;
+    const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
+    const membersTd=document.createElement('td'); membersTd.textContent=membersText||'—';
+    const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
+    const visibleTd=document.createElement('td');
+    if(canToggle){
+      const visibleToggle=document.createElement('input');
+      visibleToggle.type='checkbox';
+      visibleToggle.checked=item.visible !== false;
+      visibleToggle.addEventListener('change', async ()=>{
+        visibleToggle.disabled=true;
+        const updater=typeof updateVacationVisibility==='function'?updateVacationVisibility:null;
+        let success=true;
+        if(updater){ success=await updater(item, visibleToggle.checked); }
+        if(!success){
+          visibleToggle.checked=!visibleToggle.checked;
+        }
+        visibleToggle.disabled=false;
+      });
+      visibleTd.appendChild(visibleToggle);
+    }else{
+      visibleTd.textContent = item.visible !== false ? '表示' : '非表示';
+    }
+    tr.append(titleTd,periodTd,membersTd,noteTd,visibleTd);
+    longVacationListBody.appendChild(tr);
+  });
+}
+
+async function loadLongVacations(officeId, showToastOnSuccess=false){
+  if(!longVacationListBody){ return; }
+  longVacationListBody.textContent='';
+  const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=5; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
+  if(!SESSION_TOKEN || !targetOfficeId){
+    loadingTd.textContent='拠点にログインすると表示できます';
+    return;
+  }
+  try{
+    const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:targetOfficeId, nocache:'1' });
+    if(res?.error==='unauthorized'){
+      if(typeof logout==='function'){ await logout(); }
+      return;
+    }
+    const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
+    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId }));
+    const filteredList=isOfficeAdmin()?normalizedList:normalizedList.filter(item=>item.visible!==false);
+    renderLongVacationRows(filteredList, isOfficeAdmin());
+    if(showToastOnSuccess) toast('長期休暇を読み込みました');
+  }catch(err){
+    console.error('loadLongVacations error',err);
+    loadingTd.textContent='読み込みに失敗しました';
+    if(showToastOnSuccess) toast('長期休暇の取得に失敗しました', false);
+  }
 }
 
 /* レイアウト（JS + CSS両方で冗長に制御） */
