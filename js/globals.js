@@ -474,7 +474,6 @@ function updateLongVacationBanner(item, memberNames){
 }
 
 async function saveLongVacationFromModal(){
-  if(!isOfficeAdmin()){ toast('管理者のみ保存できます', false); return false; }
   const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
   const selectedId=longVacationSelectedId || currentLongVacationId || '';
   if(!officeId || !selectedId){ toast('表示する長期休暇を取得できませんでした', false); return false; }

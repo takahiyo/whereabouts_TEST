@@ -191,6 +191,10 @@
         if(members.length === 0) return;
         members.forEach((member, mi) => {
           const tr = document.createElement('tr');
+          // グループの最後の行にクラスを追加
+          if(mi === members.length - 1){
+            tr.classList.add('group-last-row');
+          }
           if(mi === 0){
             const gth = document.createElement('th');
             gth.textContent = group.title || '';

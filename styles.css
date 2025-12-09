@@ -353,10 +353,12 @@
 .vacation-table tr:last-child td{border-bottom:none;}
 .vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow-x:auto;}
 .vacation-gantt table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;}
-.vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:2;}
+.vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:5;}
 .vacation-gantt th,.vacation-gantt td{border:1px solid #e5e7eb;padding:4px;white-space:nowrap;text-align:center;}
-.vacation-gantt th.group-name{background:#f3f4f6;position:sticky;left:0;z-index:2;min-width:32px;width:32px;writing-mode:vertical-rl;text-orientation:mixed;padding:8px 4px;font-size:11px;letter-spacing:0.05em;}
-.vacation-gantt th.member-name{background:#fff;position:sticky;left:32px;z-index:3;text-align:left;font-weight:600;width:var(--w-name);min-width:85px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vacation-gantt th.group-name{background:#f3f4f6;position:sticky;left:0;z-index:10;min-width:32px;width:32px;writing-mode:vertical-rl;text-orientation:mixed;padding:8px 4px;font-size:11px;letter-spacing:0.05em;border-right:2px solid #d1d5db;}
+.vacation-gantt th.member-name{background:#fff;position:sticky;left:32px;z-index:10;text-align:left;font-weight:600;width:var(--w-name);min-width:85px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:2px solid #9ca3af;}
+.vacation-gantt thead th.group-name{z-index:15;}
+.vacation-gantt thead th.member-name{z-index:15;}
 .vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease;}
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.weekend-sat{background:#e0f2fe;}
@@ -364,6 +366,12 @@
 .vacation-gantt .vac-cell.holiday{background:#ffe4e6;color:#b91c1c;}
 .vacation-gantt .vac-cell.on.weekend-sat{background:#0284c7;color:#fff;}
 .vacation-gantt .vac-cell.on.weekend-sun,.vacation-gantt .vac-cell.on.holiday{background:#e11d48;color:#fff;}
+.vacation-gantt tbody tr.group-last-row{border-bottom:3px solid #6b7280;}
+.vacation-gantt tbody tr.group-last-row th.group-name{border-bottom:3px solid #6b7280;}
+.vacation-gantt tbody tr.group-last-row th.member-name{border-bottom:3px solid #6b7280;}
+.vacation-gantt tbody tr.group-last-row td{border-bottom:3px solid #6b7280;}
+.vacation-gantt tbody tr:hover{background:#f0f9ff;}
+.vacation-gantt tbody tr:hover th.member-name{background:#dbeafe;color:#1e40af;font-weight:700;}
 .vacation-gantt .vac-day-label{display:flex;flex-direction:column;gap:2px;align-items:center;font-weight:600;}
 .vacation-gantt .vac-day-label .vac-day{font-size:10px;color:#6b7280;}
 .vacation-gantt .vacation-gantt-help{margin:4px 0;color:#6b7280;font-size:12px;}

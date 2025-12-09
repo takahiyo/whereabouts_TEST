@@ -141,7 +141,7 @@
                   表示する（チェックを外すと長期休暇ボタンに表示されません）
                 </label>
               </div>
-              <div class="vacation-row">
+              <div class="vacation-row" style="display:none;">
                 <label>メンバーの休暇指定（ガントで自動入力）
                   <input id="vacationMembersBits" type="text" placeholder="ガント入力で自動反映されます" readonly />
                   <span class="vacation-helper">※ 手入力は不要です。下のガント表で休暇にしたいメンバーと日付をONにしてください。</span>
@@ -153,14 +153,14 @@
                 <button id="btnVacationClear" class="btn-secondary">🧹 入力クリア</button>
                 <button id="btnVacationReload" class="btn-secondary">🔄 一覧更新</button>
               </div>
-              <div class="vacation-row">
+              <div class="vacation-row" style="display:none;">
                 <div class="vacation-gantt-head">
                   <div class="vacation-gantt-title">ガント入力</div>
                   <div class="vacation-gantt-help">開始日/終了日に合わせて日付スロットを生成し、セルをクリック/ドラッグ（スマホはタップ）するとビットが切り替わります。</div>
                 </div>
                 <div id="vacationGantt" class="vacation-gantt" aria-live="polite"></div>
               </div>
-              <div class="vacation-row">
+              <div class="vacation-row" style="display:none;">
                 <label>ID（自動設定）
                   <input id="vacationId" type="text" readonly placeholder="新規作成時は空欄のまま" />
                 </label>
