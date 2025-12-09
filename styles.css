@@ -375,7 +375,9 @@
 .vacation-gantt tbody tr:hover th.member-name{background:#dbeafe;color:#1e40af;font-weight:700;}
 .vacation-gantt tbody tr:hover td{background:#e0f2fe;}
 .vacation-gantt thead th.hover-highlight{background:#dbeafe !important;color:#1e40af;}
-.vacation-gantt .vac-day-label{display:flex;flex-direction:column;gap:2px;align-items:center;font-weight:600;white-space:nowrap;}
+.vacation-gantt .vac-day-label{display:flex;flex-direction:row;gap:2px;align-items:center;font-weight:600;white-space:nowrap;justify-content:center;}
+.vacation-gantt .vac-day-label .vac-month{font-size:11px;}
+.vacation-gantt .vac-day-label .vac-date{font-size:11px;}
 .vacation-gantt .vac-day-label .vac-day{font-size:10px;color:#6b7280;}
 .vacation-gantt .vacation-gantt-help{margin:4px 0;color:#6b7280;font-size:12px;}
 .vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;display:none;}
@@ -426,14 +428,14 @@
 
 @media (max-width:640px){
   .vacation-gantt table{font-size:10px;}
-  .vacation-gantt .vac-cell{min-width:28px;padding:2px;}
+  .vacation-gantt .vac-cell{min-width:26px;max-width:26px;padding:2px 1px;font-size:9px;}
   .vacation-gantt{padding:4px;max-height:50vh;}
-  .vacation-gantt th.group-name{min-width:24px;width:24px;font-size:9px;padding:4px 2px;letter-spacing:0;}
-  .vacation-gantt th.member-name{min-width:60px;max-width:75px;font-size:10px;padding:2px;}
-  .vacation-gantt .vac-day-label{gap:0;flex-direction:row;font-size:9px;}
-  .vacation-gantt .vac-day-label span{font-size:9px;}
-  .vacation-gantt .vac-day-label .vac-day{font-size:8px;display:none;}
-  .vacation-gantt thead th{padding:2px;vertical-align:middle;height:auto;}
+  .vacation-gantt th.group-name{min-width:22px;width:22px;font-size:9px;padding:4px 2px;letter-spacing:0;}
+  .vacation-gantt th.member-name{min-width:55px;max-width:70px;font-size:10px;padding:2px;left:22px;}
+  .vacation-gantt .vac-day-label{gap:1px;flex-direction:column;font-size:8px;line-height:1.1;}
+  .vacation-gantt .vac-day-label span{font-size:8px;display:block;line-height:1.1;}
+  .vacation-gantt .vac-day-label .vac-day{font-size:7px;display:block;}
+  .vacation-gantt thead th{padding:2px 1px;vertical-align:middle;height:auto;min-width:26px;max-width:26px;}
   .vacation-gantt-sticky-header{padding-bottom:2px;}
   .vacation-gantt-help{font-size:10px;}
   .vacation-gantt-touch-hint{font-size:9px;}
@@ -443,14 +445,15 @@
 
 @media (max-width:480px){
   .vacation-gantt table{font-size:9px;}
-  .vacation-gantt .vac-cell{min-width:24px;padding:1px;}
+  .vacation-gantt .vac-cell{min-width:24px;max-width:24px;padding:1px;font-size:8px;}
   .vacation-gantt{padding:3px;max-height:45vh;}
-  .vacation-gantt th.group-name{min-width:20px;width:20px;font-size:8px;padding:3px 1px;}
-  .vacation-gantt th.member-name{min-width:50px;max-width:65px;font-size:9px;padding:1px;left:20px;}
-  .vacation-gantt .vac-day-label{font-size:8px;gap:0;}
-  .vacation-gantt .vac-day-label span{font-size:8px;}
-  .vacation-gantt .vac-day-label .vac-day{display:none;}
-  .vacation-gantt thead th{padding:1px;vertical-align:middle;height:auto;}
+  .vacation-gantt th.group-name{min-width:18px;width:18px;font-size:8px;padding:3px 1px;}
+  .vacation-gantt th.member-name{min-width:45px;max-width:60px;font-size:9px;padding:1px;left:18px;}
+  .vacation-gantt .vac-day-label{font-size:7px;gap:1px;flex-direction:column;line-height:1;}
+  .vacation-gantt .vac-day-label .vac-month{font-size:7px;display:block;line-height:1;}
+  .vacation-gantt .vac-day-label .vac-date{font-size:7px;display:block;line-height:1;}
+  .vacation-gantt .vac-day-label .vac-day{font-size:6px;display:block;line-height:1;}
+  .vacation-gantt thead th{padding:1px;vertical-align:middle;height:auto;min-width:24px;max-width:24px;}
   .vacation-gantt-help{font-size:9px;gap:4px !important;}
   .vacation-gantt-touch-hint{font-size:8px;}
   .vacation-actions button{font-size:10px;padding:3px 6px;}

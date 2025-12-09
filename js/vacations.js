@@ -167,13 +167,26 @@
         const dow = d.getDay();
         const label = document.createElement('div');
         label.className = 'vac-day-label';
+        
+        // 月
+        const monthSpan = document.createElement('span');
+        monthSpan.className = 'vac-month';
+        monthSpan.textContent = `${d.getMonth()+1}月`;
+        
+        // 日
         const dateSpan = document.createElement('span');
-        dateSpan.textContent = `${d.getMonth()+1}/${d.getDate()}`;
+        dateSpan.className = 'vac-date';
+        dateSpan.textContent = `${d.getDate()}日`;
+        
+        // 曜日
         const daySpan = document.createElement('span');
         daySpan.textContent = ['日','月','火','水','木','金','土'][dow] || '';
         daySpan.className = 'vac-day';
+        
         if(dow === 0) th.classList.add('weekend-sun');
         if(dow === 6) th.classList.add('weekend-sat');
+        
+        label.appendChild(monthSpan);
         label.appendChild(dateSpan);
         label.appendChild(daySpan);
         th.appendChild(label);
