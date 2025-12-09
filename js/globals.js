@@ -20,6 +20,7 @@ const longVacationTitleText=document.getElementById('longVacationTitleText');
 const longVacationPeriodText=document.getElementById('longVacationPeriodText');
 const longVacationGanttWrap=document.getElementById('longVacationGanttWrap');
 const longVacationGantt=document.getElementById('longVacationGantt');
+const longVacationGroupJumps=document.getElementById('longVacationGroupJumps');
 const longVacationStartInput=document.getElementById('longVacationStart');
 const longVacationEndInput=document.getElementById('longVacationEnd');
 const longVacationBitsInput=document.getElementById('longVacationBits');
@@ -288,7 +289,9 @@ function getLongVacationGanttController(){
     endInput: longVacationEndInput,
     bitsInput: longVacationBitsInput,
     autoBind: false,
-    autoInit: false
+    autoInit: false,
+    groupJumpContainer: longVacationGroupJumps,
+    scrollContainer: longVacationGantt
   });
   if(longVacationGanttController && typeof longVacationGanttController.init==='function'){
     longVacationGanttController.init();

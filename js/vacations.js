@@ -21,12 +21,23 @@
     const endInput = opts.endInput || null;
     const bitsInput = opts.bitsInput || null;
     let ganttRoot = opts.rootEl || null;
+    const jumpContainer = opts.groupJumpContainer || null;
+    const scrollContainer = opts.scrollContainer || null;
     let tableEl = null;
     let orderedMembers = [];
     let dateSlots = [];
     let bitsByDate = new Map(); // date -> Array<boolean>
     let draggingState = null;
     let initialized = false;
+    let groupAnchors = [];
+
+    function getGroupTitle(group, idx){
+      if(typeof fallbackGroupTitle === 'function'){
+        return fallbackGroupTitle(group, idx);
+      }
+      const raw = (group && typeof group.title === 'string') ? group.title.trim() : '';
+      return raw || `グループ${idx + 1}`;
+    }
 
     function getDateRange(){
       const startRaw = startInput?.value || '';
@@ -62,9 +73,9 @@
 
     function getMembersOrdered(){
       if(typeof getRosterOrdering === 'function'){
-        return getRosterOrdering().flatMap(g => (g.members || []).map(m => ({
+        return getRosterOrdering().flatMap((g, gi) => (g.members || []).map(m => ({
           ...m,
-          groupTitle: g.title
+          groupTitle: getGroupTitle(g, gi)
         })));
       }
       return [];
@@ -198,11 +209,15 @@
 
     function createBodyRows(){
       const tbody = document.createElement('tbody');
+      groupAnchors = [];
       let cursor = 0;
       const grouped = (typeof getRosterOrdering === 'function') ? getRosterOrdering() : [];
-      grouped.forEach(group => {
+      grouped.forEach((group, gi) => {
         const members = group.members || [];
         if(members.length === 0) return;
+        const groupTitle = getGroupTitle(group, gi);
+        const anchorId = `${(ganttRoot && ganttRoot.id) ? `${ganttRoot.id}-` : ''}group-${gi}`;
+        groupAnchors.push({ id: anchorId, title: groupTitle, memberCount: members.length });
         members.forEach((member, mi) => {
           const tr = document.createElement('tr');
           // グループの最後の行にクラスを追加
@@ -210,8 +225,10 @@
             tr.classList.add('group-last-row');
           }
           if(mi === 0){
+            tr.id = anchorId;
+            tr.dataset.groupIndex = String(gi);
             const gth = document.createElement('th');
-            gth.textContent = group.title || '';
+            gth.textContent = groupTitle;
             gth.className = 'group-name';
             gth.rowSpan = members.length;
             tr.appendChild(gth);
@@ -322,41 +339,86 @@
       draggingState = null;
     }
 
+    function clearHoverHighlights(){
+      if(!tableEl) return;
+      tableEl.querySelectorAll('.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
+    }
+
+    function applyHoverHighlights(cell){
+      if(!tableEl || !cell) return;
+      clearHoverHighlights();
+      const date = cell.dataset.date;
+      if(date){
+        tableEl.querySelectorAll(`[data-date="${date}"]`).forEach(el => el.classList.add('hover-highlight'));
+      }
+      const row = cell.closest('tr');
+      if(row){
+        row.querySelectorAll('th, td').forEach(el => el.classList.add('hover-highlight'));
+      }
+    }
+
+    function scrollToGroup(anchorId){
+      if(!anchorId || !tableEl) return;
+      const target = tableEl.querySelector(`#${anchorId}`);
+      if(target){
+        const container = scrollContainer || ganttRoot;
+        if(container && container !== document.body && typeof container.scrollTo === 'function'){
+          const targetRect = target.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const offsetTop = targetRect.top - containerRect.top + container.scrollTop;
+          container.scrollTo({ top: offsetTop, behavior: 'smooth' });
+        }else{
+          target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+        }
+      }
+    }
+
+    function renderGroupJumps(){
+      if(!jumpContainer) return;
+      jumpContainer.textContent = '';
+      if(!groupAnchors.length){
+        jumpContainer.style.display = 'none';
+        return;
+      }
+      jumpContainer.style.display = 'flex';
+      const label = document.createElement('span');
+      label.className = 'jump-label';
+      label.textContent = 'グループジャンプ';
+      jumpContainer.appendChild(label);
+      groupAnchors.forEach(anchor => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'jump-btn';
+        const memberInfo = typeof anchor.memberCount === 'number' ? `（${anchor.memberCount}名）` : '';
+        btn.textContent = `${anchor.title}${memberInfo}`;
+        btn.addEventListener('click', () => scrollToGroup(anchor.id));
+        jumpContainer.appendChild(btn);
+      });
+    }
+
     function bindTableEvents(){
       if(!tableEl) return;
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
       ['pointerup','pointercancel','pointerleave'].forEach(ev => tableEl.addEventListener(ev, handlePointerUp));
-      
-      // セルホバー時、対応する日付列もハイライト
       const tbody = tableEl.querySelector('tbody');
-      const thead = tableEl.querySelector('thead');
-      if(tbody && thead){
-        tbody.addEventListener('mouseover', (e) => {
+      if(tbody){
+        const handleHover = (e) => {
           const cell = e.target.closest('td.vac-cell');
           if(!cell) return;
-          
-          // 既存のハイライトをクリア
-          thead.querySelectorAll('th.hover-highlight').forEach(th => th.classList.remove('hover-highlight'));
-          
-          // このセルの日付を取得
-          const date = cell.dataset.date;
-          if(!date) return;
-          
-          // 同じ日付のヘッダーセルを探してハイライト
-          const headerCells = thead.querySelectorAll('th');
-          headerCells.forEach(th => {
-            if(th.dataset.date === date){
-              th.classList.add('hover-highlight');
-            }
-          });
-        });
-        tbody.addEventListener('mouseout', (e) => {
+          applyHoverHighlights(cell);
+        };
+        const handleOut = (e) => {
           const cell = e.target.closest('td.vac-cell');
           if(!cell) return;
-          thead.querySelectorAll('th.hover-highlight').forEach(th => th.classList.remove('hover-highlight'));
-        });
+          clearHoverHighlights();
+        };
+        tbody.addEventListener('mouseover', handleHover);
+        tbody.addEventListener('mouseout', handleOut);
+        tbody.addEventListener('focusin', handleHover);
+        tbody.addEventListener('focusout', handleOut);
       }
+      tableEl.addEventListener('mouseleave', clearHoverHighlights);
     }
 
     function rebuild(){
@@ -365,6 +427,7 @@
       dateSlots = buildDateSlots();
       parseBitsString(bitsInput?.value || '');
       renderTable();
+      renderGroupJumps();
       bindTableEvents();
     }
 
