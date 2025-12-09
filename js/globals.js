@@ -36,6 +36,8 @@ let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 let adminSelectedOfficeId='';
+let currentLongVacationId='';
+let currentLongVacationOfficeId='';
 
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
@@ -140,6 +142,27 @@ function renderVacationRadioMessage(message){
   vacationRadioList.appendChild(div);
 }
 
+function longVacationSelectionKey(officeId){
+  return `${storeKeyBase}:longVacation:${officeId||'__none__'}`;
+}
+
+function loadSavedLongVacationId(officeId){
+  if(currentLongVacationOfficeId===officeId && currentLongVacationId) return currentLongVacationId;
+  let saved='';
+  try{ saved=localStorage.getItem(longVacationSelectionKey(officeId))||''; }
+  catch{ saved=''; }
+  currentLongVacationOfficeId=officeId||'';
+  currentLongVacationId=saved||'';
+  return currentLongVacationId;
+}
+
+function saveLongVacationId(officeId, id){
+  currentLongVacationId=id||'';
+  currentLongVacationOfficeId=officeId||'';
+  try{ localStorage.setItem(longVacationSelectionKey(officeId), currentLongVacationId); }
+  catch{}
+}
+
 function renderVacationRadioList(list){
   if(!vacationRadioList) return;
   vacationRadioList.textContent='';
@@ -147,6 +170,11 @@ function renderVacationRadioList(list){
     renderVacationRadioMessage('登録された長期休暇はありません');
     return;
   }
+
+  const officeId=list[0]?.office||CURRENT_OFFICE_ID||'';
+  const savedId=loadSavedLongVacationId(officeId);
+  let hasSelected=false;
+  const inputs=[];
 
   const updateSelectionState=()=>{
     vacationRadioList.querySelectorAll('.vacation-radio-item').forEach(item=>{
@@ -165,7 +193,15 @@ function renderVacationRadioList(list){
     input.name='vacationRadio';
     input.id=radioId;
     input.value=String(item.id||item.vacationId||idx);
-    input.addEventListener('change', updateSelectionState);
+    if(savedId && input.value===savedId){
+      input.checked=true;
+      hasSelected=true;
+    }
+    input.addEventListener('change', ()=>{
+      saveLongVacationId(officeId, input.value);
+      updateSelectionState();
+    });
+    inputs.push(input);
 
     const content=document.createElement('div');
     content.className='vacation-radio-content';
@@ -194,6 +230,10 @@ function renderVacationRadioList(list){
     wrapper.append(input, content);
     vacationRadioList.appendChild(wrapper);
   });
+  if(!hasSelected && inputs.length>0){
+    inputs[0].checked=true;
+    saveLongVacationId(officeId, inputs[0].value);
+  }
   updateSelectionState();
 }
 
