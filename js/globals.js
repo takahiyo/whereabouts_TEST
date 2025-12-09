@@ -92,12 +92,12 @@ function summarizeVacationMembers(bitsStr){
   return `${names.slice(0,3).join('、')} ほか${names.length-3}名`;
 }
 
-function renderLongVacationRows(list, canToggle){
+function renderLongVacationRows(list, canToggle, emptyMessage){
   if(!longVacationListBody) return;
   longVacationListBody.textContent = '';
   if(!Array.isArray(list) || list.length === 0){
     const tr=document.createElement('tr');
-    const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='登録された長期休暇はありません';
+    const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent=emptyMessage||'登録された長期休暇はありません';
     tr.appendChild(td); longVacationListBody.appendChild(tr); return;
   }
   list.forEach(item => {
@@ -114,7 +114,7 @@ function renderLongVacationRows(list, canToggle){
     if(canToggle){
       const visibleToggle=document.createElement('input');
       visibleToggle.type='checkbox';
-      visibleToggle.checked=item.visible !== false;
+      visibleToggle.checked=item.visible === true;
       visibleToggle.addEventListener('change', async ()=>{
         visibleToggle.disabled=true;
         const updater=typeof updateVacationVisibility==='function'?updateVacationVisibility:null;
@@ -127,7 +127,7 @@ function renderLongVacationRows(list, canToggle){
       });
       visibleTd.appendChild(visibleToggle);
     }else{
-      visibleTd.textContent = item.visible !== false ? '表示' : '非表示';
+      visibleTd.textContent = item.visible === true ? '表示' : '非表示';
     }
     tr.append(titleTd,periodTd,membersTd,noteTd,visibleTd);
     longVacationListBody.appendChild(tr);
@@ -166,11 +166,12 @@ function saveLongVacationId(officeId, id){
   catch{}
 }
 
-function renderVacationRadioList(list){
+function renderVacationRadioList(list, options){
   if(!vacationRadioList) return;
   vacationRadioList.textContent='';
+  const opts=options||{};
   if(!Array.isArray(list) || list.length===0){
-    renderVacationRadioMessage('登録された長期休暇はありません');
+    renderVacationRadioMessage(opts.emptyMessage||'登録された長期休暇はありません');
     return;
   }
 
@@ -263,11 +264,14 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
       return;
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
-    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId }));
-    const filteredList=isOfficeAdmin()?normalizedList:normalizedList.filter(item=>item.visible!==false);
+    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId, visible: item?.visible === true }));
+    const filteredList=isOfficeAdmin()?normalizedList:normalizedList.filter(item=>item.visible===true);
+    const emptyMessage = filteredList.length===0 && normalizedList.length>0
+      ? '現在表示中の長期休暇はありません。管理者が「表示」に設定するとここに表示されます。'
+      : '登録された長期休暇はありません';
     cachedLongVacations={ officeId: targetOfficeId, list: filteredList };
-    renderLongVacationRows(filteredList, isOfficeAdmin());
-    renderVacationRadioList(filteredList);
+    renderLongVacationRows(filteredList, isOfficeAdmin(), emptyMessage);
+    renderVacationRadioList(filteredList, { emptyMessage });
     if(showToastOnSuccess) toast('長期休暇を読み込みました');
   }catch(err){
     console.error('loadLongVacations error',err);

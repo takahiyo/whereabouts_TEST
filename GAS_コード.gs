@@ -182,6 +182,31 @@ function coerceNoticeVisibleFlag_(raw){
   return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
 }
 
+function coerceVacationVisibleFlag_(raw){
+  if(raw === true) return true;
+  if(raw === false) return false;
+  if(typeof raw === 'number') return raw !== 0;
+  if(typeof raw === 'string'){
+    const s = raw.trim().toLowerCase();
+    if(!s) return false;
+    return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+  }
+  return false;
+}
+
+function normalizeVacationItem_(raw, office){
+  if(raw == null) return null;
+  const id = String(raw.id || raw.vacationId || '').trim();
+  const title = String(raw.title || raw.subject || '').substring(0, 200);
+  const startDate = String(raw.startDate || raw.start || raw.from || '').trim();
+  const endDate = String(raw.endDate || raw.end || raw.to || '').trim();
+  const note = String(raw.note || raw.memo || '').substring(0, 2000);
+  const membersBits = String(raw.membersBits || raw.bits || '').trim();
+  const visible = coerceVacationVisibleFlag_(raw.visible);
+  const updated = Number(raw.updated || raw.serverUpdated || 0) || now_();
+  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, membersBits, updated, visible };
+}
+
 function normalizeNoticeItem_(raw){
   if(raw == null) return null;
   if(typeof raw === 'string'){
@@ -609,7 +634,8 @@ function doPost(e){
     if(stored){
       try{
         const parsed = JSON.parse(stored);
-        vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+        const raw = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+        vacations = raw.map(v => normalizeVacationItem_(v, office)).filter(v => v);
       }catch(_){
         vacations = [];
       }
@@ -647,7 +673,8 @@ function doPost(e){
       if(stored){
         try{
           const parsed = JSON.parse(stored);
-          vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+          const raw = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+          vacations = raw.map(v => normalizeVacationItem_(v, office)).filter(v => v);
         }catch(_){
           vacations = [];
         }
@@ -660,17 +687,14 @@ function doPost(e){
       const endDate = String(payload.end || '');
       const note = String(payload.note || '').substring(0, 2000);
       const membersBits = String(payload.membersBits || '');
+      const visible = coerceVacationVisibleFlag_(payload.visible);
 
-      const newItem = {
-        id,
-        office,
-        title,
-        startDate,
-        endDate,
-        note,
-        membersBits,
-        updated: now_()
-      };
+      const base = { id, office, title, startDate, endDate, note, membersBits, visible, updated: now_() };
+      const newItem = normalizeVacationItem_(base, office);
+
+      if(visible){
+        vacations = vacations.map(v => ({ ...v, visible: false }));
+      }
 
       // IDが存在する場合は更新、なければ追加
       const existingIndex = vacations.findIndex(v => v.id === id);
@@ -714,7 +738,8 @@ function doPost(e){
       if(stored){
         try{
           const parsed = JSON.parse(stored);
-          vacations = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+          const raw = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+          vacations = raw.map(v => normalizeVacationItem_(v, office)).filter(v => v);
         }catch(_){
           vacations = [];
         }
