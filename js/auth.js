@@ -158,6 +158,39 @@ longVacationBtn.addEventListener('click', async ()=>{
 });
 longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
 
+if(btnApplyVacationDisplay){
+  btnApplyVacationDisplay.addEventListener('click', async ()=>{
+    const selectedRadio=vacationRadioList?.querySelector('input[name="vacationRadio"]:checked');
+    if(!selectedRadio){ toast('表示する長期休暇を選択してください', false); return; }
+    const selectedId=selectedRadio.value;
+    const applyFn=typeof applyLongVacationDisplay==='function'?applyLongVacationDisplay:null;
+    try{
+      const result=applyFn?await applyFn(selectedId):true;
+      if(result===false){ toast('長期休暇の表示に失敗しました', false); return; }
+      showLongVacationModal(false);
+      toast('長期休暇を表示しました');
+    }catch(err){
+      console.error('applyLongVacationDisplay error', err);
+      toast('長期休暇の表示に失敗しました', false);
+    }
+  });
+}
+
+if(btnClearVacationDisplay){
+  btnClearVacationDisplay.addEventListener('click', async ()=>{
+    const clearFn=typeof clearLongVacationDisplay==='function'?clearLongVacationDisplay:null;
+    try{
+      const result=clearFn?await clearFn():true;
+      if(result===false){ toast('長期休暇の表示をクリアできませんでした', false); return; }
+      showLongVacationModal(false);
+      toast('長期休暇の表示をクリアしました');
+    }catch(err){
+      console.error('clearLongVacationDisplay error', err);
+      toast('長期休暇の表示をクリアできませんでした', false);
+    }
+  });
+}
+
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));
 document.addEventListener('keydown', (e)=>{
