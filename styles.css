@@ -327,7 +327,7 @@
   }
   .admin-modal{position:fixed;inset:0;z-index:1850;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);}
   .admin-modal.show{display:flex;}
-  .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:80vh;overflow:auto;}
+  .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:80vh;overflow:auto;width:min(1200px,95vw);max-width:95vw;}
   .admin-tabs{ }
   .tab-buttons{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
   .tab-btn{padding:.35rem .9rem;border:1px solid var(--line);border-radius:6px;background:#f3f4f6;cursor:pointer;}
@@ -413,6 +413,17 @@
   overflow:hidden;
   text-overflow:ellipsis;
 }
+@media (max-width:768px){
+  .admin-card{padding:12px;width:min(1200px,98vw);max-width:98vw;}
+  .vacation-view{gap:8px;}
+}
+
+@media (max-width:705px){
+  .admin-card{padding:10px;width:100vw;max-width:100vw;border-radius:0;max-height:100vh;}
+  .vacation-gantt{max-height:55vh;}
+  .vacation-view{gap:6px;}
+}
+
 @media (max-width:640px){
   .vacation-gantt table{font-size:10px;}
   .vacation-gantt .vac-cell{min-width:28px;padding:2px;}
