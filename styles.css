@@ -373,6 +373,16 @@
 .vacation-helper{color:#6b7280;font-size:12px;line-height:1.5;}
 .vacation-view{display:flex;flex-direction:column;gap:12px;}
 .long-vacation-modal .vacation-table-wrap{max-height:unset;}
+.vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
+.vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
+.vacation-radio-item{display:flex;align-items:start;gap:8px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.vacation-radio-item:hover{background:#f9fafb;border-color:#d1d5db;}
+.vacation-radio-item.selected{background:#eff6ff;border-color:#3b82f6;}
+.vacation-radio-item input[type="radio"]{margin-top:2px;cursor:pointer;}
+.vacation-radio-content{flex:1;display:flex;flex-direction:column;gap:4px;}
+.vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;}
+.vacation-radio-period{color:#6b7280;font-size:12px;}
+.vacation-radio-members{color:#6b7280;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 @media (max-width:640px){
   .vacation-gantt table{font-size:11px;}
   .vacation-gantt .vac-cell{min-width:30px;}
