@@ -15,6 +15,7 @@ const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getEle
 const longVacationBtn=document.getElementById('longVacationBtn'), longVacationModal=document.getElementById('longVacationModal'), longVacationClose=document.getElementById('longVacationClose');
 const longVacationListBody=document.getElementById('longVacationListBody');
 const vacationRadioList=document.getElementById('vacationRadioList');
+const longVacationModalTitle=document.getElementById('longVacationModalTitle');
 const longVacationTitleText=document.getElementById('longVacationTitleText');
 const longVacationPeriodText=document.getElementById('longVacationPeriodText');
 const longVacationGanttWrap=document.getElementById('longVacationGanttWrap');
@@ -299,6 +300,7 @@ function updateLongVacationDetail(item, officeId){
   const ctrl=getLongVacationGanttController();
   if(!item){
     longVacationSelectedId='';
+    if(longVacationModalTitle) longVacationModalTitle.textContent='長期休暇';
     if(longVacationTitleText) longVacationTitleText.textContent='長期休暇';
     if(longVacationPeriodText) longVacationPeriodText.textContent='期間未設定';
     if(ctrl){
@@ -313,7 +315,9 @@ function updateLongVacationDetail(item, officeId){
   const start=item.startDate||item.start||item.from||'';
   const end=item.endDate||item.end||item.to||'';
   longVacationSelectedId=String(item.id||item.vacationId||'');
-  if(longVacationTitleText) longVacationTitleText.textContent=item.title||'(無題)';
+  const title=item.title||'(無題)';
+  if(longVacationModalTitle) longVacationModalTitle.textContent=title;
+  if(longVacationTitleText) longVacationTitleText.textContent=title;
   if(longVacationPeriodText) longVacationPeriodText.textContent=(start||end)?`${start||''}〜${end||''}`:'期間未設定';
   if(ctrl){
     ctrl.setRangeAndBits(start, end, item.membersBits||item.bits||'');

@@ -351,7 +351,8 @@
 .vacation-table th,.vacation-table td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top;}
 .vacation-table th{background:#f9fafb;color:#374151;position:sticky;top:0;z-index:1;}
 .vacation-table tr:last-child td{border-bottom:none;}
-.vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow:auto;max-height:70vh;}
+.vacation-gantt-sticky-header{position:sticky;top:0;background:#fff;z-index:30;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-bottom:4px;}
+.vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow:auto;max-height:60vh;}
 .vacation-gantt table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;}
 .vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:5;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
 .vacation-gantt th,.vacation-gantt td{border:1px solid #e5e7eb;padding:4px;white-space:nowrap;text-align:center;}
@@ -372,14 +373,16 @@
 .vacation-gantt tbody tr.group-last-row td{border-bottom:3px solid #6b7280;}
 .vacation-gantt tbody tr:hover{background:#f0f9ff;}
 .vacation-gantt tbody tr:hover th.member-name{background:#dbeafe;color:#1e40af;font-weight:700;}
+.vacation-gantt tbody tr:hover td{background:#e0f2fe;}
+.vacation-gantt thead th.hover-highlight{background:#dbeafe !important;color:#1e40af;}
 .vacation-gantt .vac-day-label{display:flex;flex-direction:column;gap:2px;align-items:center;font-weight:600;}
 .vacation-gantt .vac-day-label .vac-day{font-size:10px;color:#6b7280;}
 .vacation-gantt .vacation-gantt-help{margin:4px 0;color:#6b7280;font-size:12px;}
-.vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;}
-.vacation-gantt-head{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;}
+.vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;display:none;}
+.vacation-gantt-head{display:flex;flex-direction:column;gap:2px;margin-bottom:2px;}
 .vacation-gantt-touch-hint{font-size:11px;color:#6b7280;}
 .vacation-helper{color:#6b7280;font-size:12px;line-height:1.5;}
-.vacation-view{display:flex;flex-direction:column;gap:12px;}
+.vacation-view{display:flex;flex-direction:column;gap:6px;}
 .long-vacation-modal .vacation-table-wrap{max-height:unset;}
 .vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
 .vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}

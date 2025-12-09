@@ -313,6 +313,29 @@
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
       ['pointerup','pointercancel','pointerleave'].forEach(ev => tableEl.addEventListener(ev, handlePointerUp));
+      
+      // 行ホバー時、対応する日付列もハイライト
+      const tbody = tableEl.querySelector('tbody');
+      const thead = tableEl.querySelector('thead');
+      if(tbody && thead){
+        tbody.addEventListener('mouseover', (e) => {
+          const row = e.target.closest('tr');
+          if(!row) return;
+          const cells = row.querySelectorAll('td.vac-cell');
+          const headerCells = thead.querySelectorAll('th');
+          cells.forEach((cell, idx) => {
+            const dateHeaderIdx = idx + 2; // グループ名+氏名の2列分オフセット
+            if(headerCells[dateHeaderIdx]){
+              headerCells[dateHeaderIdx].classList.add('hover-highlight');
+            }
+          });
+        });
+        tbody.addEventListener('mouseout', (e) => {
+          const row = e.target.closest('tr');
+          if(!row) return;
+          thead.querySelectorAll('th.hover-highlight').forEach(th => th.classList.remove('hover-highlight'));
+        });
+      }
     }
 
     function rebuild(){
