@@ -426,8 +426,13 @@ function parseVacationMembers(bitsStr){
 }
 
 function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
+  console.log('parseVacationMembersForDate called:', { targetDate, startDate, endDate, bitsStr });
+  
   const members=getRosterOrdering().flatMap(g => g.members || []);
-  if(!members.length) return { memberIds: [], memberNames: '' };
+  if(!members.length) {
+    console.warn('No members found');
+    return { memberIds: [], memberNames: '' };
+  }
   
   // 日付の正規化
   function normalizeDate(dateStr){
@@ -441,10 +446,18 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
   const start = normalizeDate(startDate);
   const end = normalizeDate(endDate);
   
-  if(!target || !start || !end) return { memberIds: [], memberNames: '' };
+  console.log('Normalized dates:', { target, start, end });
+  
+  if(!target || !start || !end) {
+    console.warn('Invalid dates after normalization');
+    return { memberIds: [], memberNames: '' };
+  }
   
   // 対象日が期間内かチェック
-  if(target < start || target > end) return { memberIds: [], memberNames: '' };
+  if(target < start || target > end) {
+    console.warn('Target date outside range:', { target, start, end });
+    return { memberIds: [], memberNames: '' };
+  }
   
   // 日付スロットを生成
   const dateSlots = [];
@@ -455,16 +468,29 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
     current.setDate(current.getDate() + 1);
   }
   
+  console.log('Date slots generated:', dateSlots.length, 'slots');
+  
   // 対象日のインデックスを取得
   const targetIdx = dateSlots.indexOf(target);
-  if(targetIdx < 0) return { memberIds: [], memberNames: '' };
+  console.log('Target index:', targetIdx);
+  
+  if(targetIdx < 0) {
+    console.warn('Target date not found in slots');
+    return { memberIds: [], memberNames: '' };
+  }
   
   // ビット文字列をパース
   const parts = (bitsStr||'').split(';').map(s => s.trim()).filter(Boolean);
-  if(parts.length === 0 || targetIdx >= parts.length) return { memberIds: [], memberNames: '' };
+  console.log('Bits parts:', parts.length, 'parts');
+  
+  if(parts.length === 0 || targetIdx >= parts.length) {
+    console.warn('No bits for target index:', { partsLength: parts.length, targetIdx });
+    return { memberIds: [], memberNames: '' };
+  }
   
   const part = parts[targetIdx];
   const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
+  console.log('Bits for target date:', bits);
   
   const onSet = new Set();
   for(let i=0;i<bits.length && i<members.length;i++){
@@ -473,6 +499,8 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
   
   const memberIds = members.map(m => m.id!=null?String(m.id):'').filter((_,idx)=> onSet.has(idx) );
   const memberNames = members.filter((_,idx)=> onSet.has(idx)).map(m => m.name||'').filter(Boolean).join('、');
+  
+  console.log('Result:', { memberIds, memberNames, onSetSize: onSet.size });
   
   return { memberIds, memberNames };
 }
@@ -486,7 +514,14 @@ function getVacationPeriodText(item){
 
 function applyLongVacationHighlight(memberIds, vacationTitle){
   const idSet=new Set((memberIds||[]).map(id=>String(id)));
-  if(!board) return;
+  if(!board) {
+    console.warn('applyLongVacationHighlight: board element not found');
+    return;
+  }
+  
+  const title = vacationTitle || '長期休暇';
+  console.log('applyLongVacationHighlight called:', { memberIds, vacationTitle: title, idSetSize: idSet.size });
+  
   board.querySelectorAll('tbody tr').forEach(tr=>{
     const key=String(tr.dataset.key||'');
     const on=idSet.has(key);
@@ -496,14 +531,20 @@ function applyLongVacationHighlight(memberIds, vacationTitle){
     const statusSelect = statusTd?.querySelector('select[name="status"]');
     
     if(on) {
+      console.log('Setting vacation highlight for:', key, 'title:', title);
       tr.dataset.longVacation='1';
-      tr.dataset.longVacationTitle=vacationTitle||'長期休暇';
+      tr.dataset.longVacationTitle=title;
       
       // ステータス欄をテキスト表示に置き換え
-      if(statusTd && statusSelect && vacationTitle){
-        // selectを非表示にしてテキストを表示
+      if(statusTd && statusSelect){
+        // 元の値を保存（まだ保存されていない場合のみ）
+        if(statusSelect.dataset.originalValue === undefined){
+          statusSelect.dataset.originalValue = statusSelect.value || '';
+        }
+        
+        // selectを非表示
         statusSelect.style.display = 'none';
-        statusSelect.dataset.originalValue = statusSelect.value; // 元の値を保存
+        statusSelect.disabled = true;
         
         // 長期休暇タイトルを表示する要素を作成または更新
         let vacationLabel = statusTd.querySelector('.vacation-status-label');
@@ -512,12 +553,20 @@ function applyLongVacationHighlight(memberIds, vacationTitle){
           vacationLabel.className = 'vacation-status-label';
           statusTd.appendChild(vacationLabel);
         }
-        vacationLabel.textContent = vacationTitle;
+        vacationLabel.textContent = title;
         vacationLabel.style.display = 'block';
         
         // 内部的にステータスを「休み」に設定
         statusSelect.value = '休み';
-        statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        // recolorを呼び出して行の色を更新
+        const statusClassMap = new Map([
+          ['在席','st-here'], ['外出','st-out'], ['会議','st-meeting'],
+          ['在宅勤務','st-remote'], ['出張','st-trip'], ['研修','st-training'],
+          ['健康診断','st-health'], ['コアドック','st-coadoc'], ['帰宅','st-home'], ['休み','st-off']
+        ]);
+        statusClassMap.forEach(cls=>tr.classList.remove(cls));
+        tr.classList.add('st-off');
+        tr.dataset.status='休み';
       }
     } else {
       delete tr.dataset.longVacation;
@@ -526,19 +575,35 @@ function applyLongVacationHighlight(memberIds, vacationTitle){
       // ステータス欄を元に戻す
       if(statusTd && statusSelect){
         statusSelect.style.display = '';
+        statusSelect.disabled = false;
+        
         const vacationLabel = statusTd.querySelector('.vacation-status-label');
         if(vacationLabel){
           vacationLabel.style.display = 'none';
         }
+        
         // 元の値を復元
         if(statusSelect.dataset.originalValue !== undefined){
-          statusSelect.value = statusSelect.dataset.originalValue;
+          const originalValue = statusSelect.dataset.originalValue;
+          statusSelect.value = originalValue;
           delete statusSelect.dataset.originalValue;
-          statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          // 行の色を更新
+          const statusClassMap = new Map([
+            ['在席','st-here'], ['外出','st-out'], ['会議','st-meeting'],
+            ['在宅勤務','st-remote'], ['出張','st-trip'], ['研修','st-training'],
+            ['健康診断','st-health'], ['コアドック','st-coadoc'], ['帰宅','st-home'], ['休み','st-off']
+          ]);
+          statusClassMap.forEach(cls=>tr.classList.remove(cls));
+          const cls = statusClassMap.get(originalValue);
+          if(cls) tr.classList.add(cls);
+          tr.dataset.status = originalValue;
         }
       }
     }
   });
+  
+  console.log('applyLongVacationHighlight completed');
 }
 
 function updateLongVacationBanner(item, memberNames){
