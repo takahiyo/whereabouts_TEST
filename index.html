@@ -198,6 +198,11 @@
       <div id="tabLongVacation" class="tab-panel active">
         <div class="vacation-view">
           <p class="vacation-helper">可視設定されている長期休暇を自動で読み込み、対象メンバーをガントで確認・編集できます。</p>
+          <div class="vacation-actions" style="margin-bottom:16px;display:flex;gap:8px;justify-content:flex-end;">
+            <button id="btnClearVacationDisplay" class="btn-secondary">表示クリア</button>
+            <button id="btnLongVacationSave" class="btn-secondary">保存</button>
+            <button id="btnApplyVacationDisplay" class="btn-primary">表示</button>
+          </div>
           <div id="vacationRadioList" class="vacation-radio-list" style="display:none;"></div>
           <div id="longVacationGanttWrap" class="vacation-gantt-head">
             <div class="vacation-gantt-title" id="longVacationTitleText">長期休暇</div>
@@ -209,11 +214,6 @@
             <input id="longVacationStart" type="hidden" />
             <input id="longVacationEnd" type="hidden" />
             <input id="longVacationBits" type="hidden" />
-          </div>
-          <div class="vacation-actions" style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
-            <button id="btnClearVacationDisplay" class="btn-secondary">表示クリア</button>
-            <button id="btnLongVacationSave" class="btn-secondary">保存</button>
-            <button id="btnApplyVacationDisplay" class="btn-primary">表示</button>
           </div>
         </div>
       </div>

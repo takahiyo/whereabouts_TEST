@@ -391,7 +391,7 @@
 .vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
 .vacation-radio-members{color:#6b7280;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.long-vacation-banner{max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
+.long-vacation-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
 .long-vacation-banner__title{font-weight:700;margin-bottom:4px;}
 .long-vacation-banner__detail{font-size:13px;}
 .long-vacation-banner__members{font-size:13px;color:#b45309;}

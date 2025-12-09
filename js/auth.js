@@ -2,7 +2,8 @@
 function logoutButtonsCleanup(){
   closeMenu(); showAdminModal(false); showManualModal(false); showLongVacationModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
-  try{ if(typeof updateLongVacationBanner==='function'){ updateLongVacationBanner(null); } }catch{}
+  // 長期休暇バナーは削除されたため、この行はコメントアウト
+  // try{ if(typeof updateLongVacationBanner==='function'){ updateLongVacationBanner(null); } }catch{}
   if(longVacationListBody){
     longVacationListBody.textContent='';
     const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);

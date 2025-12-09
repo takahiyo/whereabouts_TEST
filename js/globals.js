@@ -50,6 +50,7 @@ let currentLongVacationOfficeId='';
 let cachedLongVacations={ officeId:'', list:[] };
 let appliedLongVacationId='';
 let appliedLongVacationOfficeId='';
+let appliedLongVacationTitle='';
 let longVacationGanttController=null;
 let longVacationSelectedId='';
 
@@ -424,6 +425,58 @@ function parseVacationMembers(bitsStr){
   return { memberIds, memberNames: summarizeVacationMembers(bitsStr) };
 }
 
+function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
+  const members=getRosterOrdering().flatMap(g => g.members || []);
+  if(!members.length) return { memberIds: [], memberNames: '' };
+  
+  // 日付の正規化
+  function normalizeDate(dateStr){
+    if(!dateStr) return '';
+    const d = new Date(dateStr);
+    if(Number.isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  
+  const target = normalizeDate(targetDate);
+  const start = normalizeDate(startDate);
+  const end = normalizeDate(endDate);
+  
+  if(!target || !start || !end) return { memberIds: [], memberNames: '' };
+  
+  // 対象日が期間内かチェック
+  if(target < start || target > end) return { memberIds: [], memberNames: '' };
+  
+  // 日付スロットを生成
+  const dateSlots = [];
+  const current = new Date(start);
+  const endD = new Date(end);
+  while(current <= endD){
+    dateSlots.push(normalizeDate(current));
+    current.setDate(current.getDate() + 1);
+  }
+  
+  // 対象日のインデックスを取得
+  const targetIdx = dateSlots.indexOf(target);
+  if(targetIdx < 0) return { memberIds: [], memberNames: '' };
+  
+  // ビット文字列をパース
+  const parts = (bitsStr||'').split(';').map(s => s.trim()).filter(Boolean);
+  if(parts.length === 0 || targetIdx >= parts.length) return { memberIds: [], memberNames: '' };
+  
+  const part = parts[targetIdx];
+  const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
+  
+  const onSet = new Set();
+  for(let i=0;i<bits.length && i<members.length;i++){
+    if(bits[i] === '1') onSet.add(i);
+  }
+  
+  const memberIds = members.map(m => m.id!=null?String(m.id):'').filter((_,idx)=> onSet.has(idx) );
+  const memberNames = members.filter((_,idx)=> onSet.has(idx)).map(m => m.name||'').filter(Boolean).join('、');
+  
+  return { memberIds, memberNames };
+}
+
 function getVacationPeriodText(item){
   const start=item?.startDate||item?.start||item?.from||'';
   const end=item?.endDate||item?.end||item?.to||'';
@@ -431,14 +484,42 @@ function getVacationPeriodText(item){
   return '期間未設定';
 }
 
-function applyLongVacationHighlight(memberIds){
+function applyLongVacationHighlight(memberIds, vacationTitle){
   const idSet=new Set((memberIds||[]).map(id=>String(id)));
   if(!board) return;
   board.querySelectorAll('tbody tr').forEach(tr=>{
     const key=String(tr.dataset.key||'');
     const on=idSet.has(key);
     tr.classList.toggle('long-vacation-highlight', on);
-    if(on) tr.dataset.longVacation='1'; else delete tr.dataset.longVacation;
+    if(on) {
+      tr.dataset.longVacation='1';
+      tr.dataset.longVacationTitle=vacationTitle||'長期休暇';
+      
+      // ステータスを「休み」に設定（現在のステータスが空または「在席」の場合のみ）
+      const statusSelect = tr.querySelector('td.status select[name="status"]');
+      if(statusSelect && vacationTitle){
+        const currentVal = statusSelect.value;
+        if(!currentVal || currentVal === '' || currentVal === '在席'){
+          statusSelect.value = '休み';
+          // ステータス変更イベントを発火
+          statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      
+      // 備考欄に長期休暇タイトルを設定（現在の備考が空の場合のみ）
+      const noteInput = tr.querySelector('td.note input[name="note"]');
+      if(noteInput && vacationTitle){
+        const currentNote = noteInput.value || '';
+        if(!currentNote.trim()){
+          noteInput.value = vacationTitle;
+          // 備考変更イベントを発火
+          noteInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    } else {
+      delete tr.dataset.longVacation;
+      delete tr.dataset.longVacationTitle;
+    }
   });
 }
 
@@ -521,11 +602,23 @@ async function applyLongVacationDisplay(selectedId){
     toast('長期休暇の情報を取得できませんでした', false);
     return false;
   }
-  const { memberIds, memberNames } = parseVacationMembers(item.membersBits||item.bits||'');
-  applyLongVacationHighlight(memberIds);
-  updateLongVacationBanner(item, memberNames);
+  
+  // 今日の日付を取得
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  
+  // 今日の日付に対してビットが立っているメンバーのみを取得
+  const { memberIds, memberNames } = parseVacationMembersForDate(
+    item.membersBits||item.bits||'',
+    todayStr,
+    item.startDate||item.start||item.from||'',
+    item.endDate||item.end||item.to||''
+  );
+  
+  applyLongVacationHighlight(memberIds, item.title||'長期休暇');
   appliedLongVacationId=String(item.id||item.vacationId||id);
   appliedLongVacationOfficeId=item.office||officeId;
+  appliedLongVacationTitle=item.title||'長期休暇';
   saveLongVacationId(appliedLongVacationOfficeId, appliedLongVacationId);
   return true;
 }
@@ -533,8 +626,8 @@ async function applyLongVacationDisplay(selectedId){
 async function clearLongVacationDisplay(){
   appliedLongVacationId='';
   appliedLongVacationOfficeId='';
+  appliedLongVacationTitle='';
   applyLongVacationHighlight([]);
-  updateLongVacationBanner(null);
   return true;
 }
 
