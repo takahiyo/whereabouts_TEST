@@ -185,29 +185,21 @@
   <div id="longVacationModal" class="admin-modal long-vacation-modal" aria-modal="true" role="dialog">
     <div class="admin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3>長期休暇</h3><button id="longVacationClose">閉じる</button>
+        <h3>長期休暇の表示</h3><button id="longVacationClose">閉じる</button>
       </div>
 
-      <!-- タブナビゲーション -->
-      <div class="admin-tabs">
-        <div class="tab-buttons">
-          <button class="tab-btn active" data-tab="longVacation">🌴 長期休暇</button>
-        </div>
-      </div>
-
-      <!-- タブパネル: 長期休暇 -->
+      <!-- タブパネル: 長期休暇選択 -->
       <div id="tabLongVacation" class="tab-panel active">
         <div class="vacation-view">
-          <p class="vacation-helper">拠点別の長期休暇を一覧表示します。休暇設定は管理画面から登録できます。</p>
-          <div class="vacation-table-wrap">
-            <table class="vacation-table">
-              <thead>
-                <tr><th>タイトル</th><th>期間</th><th>対象メンバー</th><th>備考</th><th>表示</th></tr>
-              </thead>
-              <tbody id="longVacationListBody">
-                <tr><td colspan="5" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
-              </tbody>
-            </table>
+          <p class="vacation-helper">表示する長期休暇を選択してください。選択した長期休暇が在席確認表に反映されます。</p>
+          <div class="vacation-select-wrap">
+            <div id="vacationRadioList" class="vacation-radio-list">
+              <div style="text-align:center;padding:20px;color:#6b7280;">読み込み中...</div>
+            </div>
+          </div>
+          <div class="vacation-actions" style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+            <button id="btnClearVacationDisplay" class="btn-secondary">表示クリア</button>
+            <button id="btnApplyVacationDisplay" class="btn-primary">表示</button>
           </div>
         </div>
       </div>
