@@ -374,10 +374,11 @@
 .vacation-gantt tbody tr:hover{background:#f0f9ff;}
 .vacation-gantt tbody tr:hover th.member-name{background:#dbeafe;color:#1e40af;font-weight:700;}
 .vacation-gantt tbody tr:hover td{background:#e0f2fe;}
-.vacation-gantt thead th.hover-highlight{background:#dbeafe !important;color:#1e40af;}
-.vacation-gantt .vac-day-label{display:flex;flex-direction:row;gap:2px;align-items:center;font-weight:600;white-space:nowrap;justify-content:center;}
+.vacation-gantt thead th.hover-highlight,.vacation-gantt td.hover-highlight{background:#dbeafe !important;color:#1e40af;}
+.vacation-gantt tbody tr .hover-highlight{font-weight:700;}
+.vacation-gantt .vac-day-label{display:flex;flex-direction:column;gap:2px;align-items:center;font-weight:600;white-space:nowrap;justify-content:center;line-height:1.1;}
 .vacation-gantt .vac-day-label .vac-month{font-size:11px;}
-.vacation-gantt .vac-day-label .vac-date{font-size:11px;}
+.vacation-gantt .vac-day-label .vac-date{font-size:12px;font-weight:700;}
 .vacation-gantt .vac-day-label .vac-day{font-size:10px;color:#6b7280;}
 .vacation-gantt .vacation-gantt-help{margin:4px 0;color:#6b7280;font-size:12px;}
 .vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;display:none;}
@@ -385,6 +386,11 @@
 .vacation-gantt-touch-hint{font-size:11px;color:#6b7280;}
 .vacation-helper{color:#6b7280;font-size:12px;line-height:1.5;}
 .vacation-view{display:flex;flex-direction:column;gap:6px;}
+.vacation-group-jumps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 4px;}
+.vacation-group-jumps .jump-label{font-weight:700;color:#0f172a;font-size:12px;}
+.vacation-group-jumps .jump-btn{padding:4px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;color:#0f172a;transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;}
+.vacation-group-jumps .jump-btn:hover{background:#e0f2fe;border-color:#93c5fd;box-shadow:0 1px 2px rgba(0,0,0,0.08);}
+.vacation-group-jumps .jump-btn:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
 .long-vacation-modal .vacation-table-wrap{max-height:unset;}
 .vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
 .vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
