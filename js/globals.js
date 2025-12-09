@@ -711,7 +711,46 @@ async function clearLongVacationDisplay(){
   appliedLongVacationOfficeId='';
   appliedLongVacationTitle='';
   applyLongVacationHighlight([]);
+  saveLongVacationId(CURRENT_OFFICE_ID, '');
   return true;
+}
+
+async function autoApplySavedLongVacation(){
+  console.log('autoApplySavedLongVacation called');
+  const officeId = CURRENT_OFFICE_ID || '';
+  if(!officeId) {
+    console.log('No office ID, skipping auto-apply');
+    return;
+  }
+  
+  const savedId = loadSavedLongVacationId(officeId);
+  console.log('Saved vacation ID:', savedId);
+  
+  if(!savedId) {
+    console.log('No saved vacation ID, skipping auto-apply');
+    return;
+  }
+  
+  // ボードが存在するまで待機（最大3秒）
+  let retries = 0;
+  const maxRetries = 30;
+  while(!board && retries < maxRetries){
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
+  }
+  
+  if(!board) {
+    console.warn('Board not ready after waiting, skipping auto-apply');
+    return;
+  }
+  
+  console.log('Applying saved vacation:', savedId);
+  try{
+    await applyLongVacationDisplay(savedId);
+    console.log('Auto-apply completed successfully');
+  }catch(err){
+    console.error('Auto-apply failed:', err);
+  }
 }
 
 /* レイアウト（JS + CSS両方で冗長に制御） */

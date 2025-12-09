@@ -66,6 +66,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(!SESSION_TOKEN) return;
     startRemoteSync(true); startConfigWatch(); startNoticesPolling();
     await longVacationP;
+    
+    // 保存されている長期休暇を自動適用
+    if(typeof autoApplySavedLongVacation === 'function'){
+      await autoApplySavedLongVacation();
+    }
   }
 
   // 既存セッション
@@ -92,6 +97,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(!SESSION_TOKEN) return;
       startRemoteSync(true); startConfigWatch(); startNoticesPolling();
       await longVacationP;
+      
+      // 保存されている長期休暇を自動適用
+      if(typeof autoApplySavedLongVacation === 'function'){
+        await autoApplySavedLongVacation();
+      }
     })();
   }else{
     loginEl.style.display='flex';
