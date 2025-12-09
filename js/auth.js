@@ -165,12 +165,11 @@ longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
 
 if(btnApplyVacationDisplay){
   btnApplyVacationDisplay.addEventListener('click', async ()=>{
-    const selectedRadio=vacationRadioList?.querySelector('input[name="vacationRadio"]:checked');
-    if(!selectedRadio){ toast('表示する長期休暇を選択してください', false); return; }
-    const selectedId=selectedRadio.value;
+    const targetId=longVacationSelectedId || currentLongVacationId || '';
+    if(!targetId){ toast('表示する長期休暇がありません', false); return; }
     const applyFn=typeof applyLongVacationDisplay==='function'?applyLongVacationDisplay:null;
     try{
-      const result=applyFn?await applyFn(selectedId):true;
+      const result=applyFn?await applyFn(targetId):true;
       if(result===false){ toast('長期休暇の表示に失敗しました', false); return; }
       showLongVacationModal(false);
       toast('長期休暇を表示しました');
