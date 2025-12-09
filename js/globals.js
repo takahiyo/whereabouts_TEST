@@ -14,6 +14,7 @@ const menuEl=document.getElementById('groupMenu'), menuList=document.getElementB
 const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
 const longVacationBtn=document.getElementById('longVacationBtn'), longVacationModal=document.getElementById('longVacationModal'), longVacationClose=document.getElementById('longVacationClose');
 const longVacationListBody=document.getElementById('longVacationListBody');
+const vacationRadioList=document.getElementById('vacationRadioList');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -126,29 +127,102 @@ function renderLongVacationRows(list, canToggle){
   });
 }
 
+function renderVacationRadioMessage(message){
+  if(!vacationRadioList) return;
+  vacationRadioList.textContent='';
+  const div=document.createElement('div');
+  div.style.textAlign='center';
+  div.style.padding='20px';
+  div.style.color='#6b7280';
+  div.textContent=message;
+  vacationRadioList.appendChild(div);
+}
+
+function renderVacationRadioList(list){
+  if(!vacationRadioList) return;
+  vacationRadioList.textContent='';
+  if(!Array.isArray(list) || list.length===0){
+    renderVacationRadioMessage('登録された長期休暇はありません');
+    return;
+  }
+
+  const updateSelectionState=()=>{
+    vacationRadioList.querySelectorAll('.vacation-radio-item').forEach(item=>{
+      const input=item.querySelector('input[type="radio"]');
+      item.classList.toggle('selected', !!(input&&input.checked));
+    });
+  };
+
+  list.forEach((item, idx)=>{
+    const radioId=`vacation-radio-${item.id||item.vacationId||idx}`;
+    const wrapper=document.createElement('label');
+    wrapper.className='vacation-radio-item';
+
+    const input=document.createElement('input');
+    input.type='radio';
+    input.name='vacationRadio';
+    input.id=radioId;
+    input.value=String(item.id||item.vacationId||idx);
+    input.addEventListener('change', updateSelectionState);
+
+    const content=document.createElement('div');
+    content.className='vacation-radio-content';
+
+    const titleDiv=document.createElement('div');
+    titleDiv.className='vacation-radio-title';
+    titleDiv.textContent=item.title||'';
+
+    const start=item.startDate||item.start||item.from||'';
+    const end=item.endDate||item.end||item.to||'';
+    const period=start||end?`${start||''}〜${end||''}`:'-';
+    const periodDiv=document.createElement('div');
+    periodDiv.className='vacation-radio-period';
+    periodDiv.textContent=period;
+
+    const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
+    if(membersText){
+      const membersDiv=document.createElement('div');
+      membersDiv.className='vacation-radio-members';
+      membersDiv.textContent=membersText;
+      content.append(titleDiv, periodDiv, membersDiv);
+    }else{
+      content.append(titleDiv, periodDiv);
+    }
+
+    wrapper.append(input, content);
+    vacationRadioList.appendChild(wrapper);
+  });
+  updateSelectionState();
+}
+
 async function loadLongVacations(officeId, showToastOnSuccess=false){
   if(!longVacationListBody){ return; }
   longVacationListBody.textContent='';
   const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=5; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  renderVacationRadioMessage('読み込み中...');
   const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
   if(!SESSION_TOKEN || !targetOfficeId){
     loadingTd.textContent='拠点にログインすると表示できます';
+    renderVacationRadioMessage('拠点にログインすると表示できます');
     return;
   }
   try{
     const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:targetOfficeId, nocache:'1' });
     if(res?.error==='unauthorized'){
       if(typeof logout==='function'){ await logout(); }
+      renderVacationRadioMessage('拠点にログインすると表示できます');
       return;
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
     const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId }));
     const filteredList=isOfficeAdmin()?normalizedList:normalizedList.filter(item=>item.visible!==false);
     renderLongVacationRows(filteredList, isOfficeAdmin());
+    renderVacationRadioList(filteredList);
     if(showToastOnSuccess) toast('長期休暇を読み込みました');
   }catch(err){
     console.error('loadLongVacations error',err);
     loadingTd.textContent='読み込みに失敗しました';
+    renderVacationRadioMessage('読み込みに失敗しました');
     if(showToastOnSuccess) toast('長期休暇の取得に失敗しました', false);
   }
 }
