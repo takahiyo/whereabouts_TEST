@@ -152,10 +152,14 @@
     function createHeaderRow(){
       const thead = document.createElement('thead');
       const tr = document.createElement('tr');
-      const blank = document.createElement('th');
-      blank.textContent = 'メンバー';
-      blank.className = 'group-name';
-      tr.appendChild(blank);
+      const groupHeader = document.createElement('th');
+      groupHeader.textContent = 'グループ';
+      groupHeader.className = 'group-name';
+      tr.appendChild(groupHeader);
+      const nameHeader = document.createElement('th');
+      nameHeader.textContent = '氏名';
+      nameHeader.className = 'member-name';
+      tr.appendChild(nameHeader);
       dateSlots.forEach(date => {
         const th = document.createElement('th');
         const d = new Date(date);
