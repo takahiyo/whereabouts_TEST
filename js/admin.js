@@ -148,32 +148,37 @@ btnSetPw.addEventListener('click', async ()=>{
 });
 
 /* 管理モーダルのタブ切り替え */
-document.querySelectorAll('.admin-tabs .tab-btn').forEach(btn => {
-  btn.addEventListener('click', async ()=> {
-    const targetTab = btn.dataset.tab;
+if(adminModal){
+  const adminTabButtons = adminModal.querySelectorAll('.admin-tabs .tab-btn');
+  const adminTabPanels = adminModal.querySelectorAll('.tab-panel');
 
-    document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  adminTabButtons.forEach(btn => {
+    btn.addEventListener('click', async ()=> {
+      const targetTab = btn.dataset.tab;
 
-    document.querySelectorAll('.admin-modal .tab-panel').forEach(panel => panel.classList.remove('active'));
-    const panelMap={
-      basic: document.getElementById('tabBasic'),
-      notices: document.getElementById('tabNotices'),
-      vacations: document.getElementById('tabVacations')
-    };
-    const panel=panelMap[targetTab];
-    if(panel) panel.classList.add('active');
+      adminTabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
 
-    if(targetTab === 'notices'){
-      if(typeof autoLoadNoticesOnAdminOpen === 'function'){
-        await autoLoadNoticesOnAdminOpen();
+      adminTabPanels.forEach(panel => panel.classList.remove('active'));
+      const panelMap={
+        basic: adminModal.querySelector('#tabBasic'),
+        notices: adminModal.querySelector('#tabNotices'),
+        vacations: adminModal.querySelector('#tabVacations')
+      };
+      const panel=panelMap[targetTab];
+      if(panel) panel.classList.add('active');
+
+      if(targetTab === 'notices'){
+        if(typeof autoLoadNoticesOnAdminOpen === 'function'){
+          await autoLoadNoticesOnAdminOpen();
+        }
+      } else if(targetTab === 'vacations'){
+        refreshVacationOfficeOptions();
+        await loadVacationsList();
       }
-    } else if(targetTab === 'vacations'){
-      refreshVacationOfficeOptions();
-      await loadVacationsList();
-    }
+    });
   });
-});
+}
 
 /* お知らせ管理UI */
 btnAddNotice.addEventListener('click', ()=> addNoticeEditorItem());
