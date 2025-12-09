@@ -455,7 +455,8 @@ async function updateVacationVisibility(item, visible){
     end:item.endDate||item.end||item.to||'',
     note:item.note||item.memo||'',
     membersBits:item.membersBits||item.bits||'',
-    visible
+    visible,
+    hideOthers: visible === true
   };
   const id=item.id||item.vacationId||'';
   if(id) payload.id=id;
@@ -466,7 +467,11 @@ async function updateVacationVisibility(item, visible){
         currentVacationVisible = visible;
       }
       toast('表示設定を更新しました');
-      await loadVacationsList(false, office);
+      if(Array.isArray(res.vacations)){
+        renderVacationRows(res.vacations);
+      }else{
+        await loadVacationsList(false, office);
+      }
       if(office){ await loadLongVacations(office, false); }
       return true;
     }
@@ -513,7 +518,16 @@ async function handleVacationSave(){
   if(!title){ toast('タイトルを入力してください',false); return; }
   if(start && end && start>end){ toast('開始日と終了日の指定を確認してください',false); return; }
 
-  const payload={ office, title, start, end, note, membersBits, visible: currentVacationVisible };
+  const payload={
+    office,
+    title,
+    start,
+    end,
+    note,
+    membersBits,
+    visible: currentVacationVisible,
+    hideOthers: currentVacationVisible === true
+  };
   if(id) payload.id=id;
 
   try{
@@ -524,7 +538,11 @@ async function handleVacationSave(){
         currentVacationVisible = res.vacation.visible === true;
       }
       toast('長期休暇を保存しました');
-      await loadVacationsList(false, office);
+      if(Array.isArray(res.vacations)){
+        renderVacationRows(res.vacations);
+      }else{
+        await loadVacationsList(false, office);
+      }
       await loadLongVacations(office, false);
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
