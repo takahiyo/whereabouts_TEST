@@ -117,10 +117,25 @@ if(noticesBtn){
 if(longVacationBtn){
   longVacationBtn.addEventListener('click', async ()=>{
     if(!longVacationModal) return;
-    
+
+    if(!SESSION_TOKEN){
+      toast('セッションの有効期限が切れました。再度ログインしてください', false);
+      return;
+    }
+
+    if(!CURRENT_OFFICE_ID){
+      toast('拠点情報が取得できません。再度ログインしてください', false);
+      return;
+    }
+
     // モーダルを表示
     longVacationModal.style.display = 'flex';
-    
+
+    if(!CURRENT_OFFICE_ID){
+      toast('拠点情報が取得できません。再度ログインしてください', false);
+      return;
+    }
+
     // 長期休暇データを読み込み
     await loadLongVacations(CURRENT_OFFICE_ID, false);
   });
