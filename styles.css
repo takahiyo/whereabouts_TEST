@@ -414,11 +414,36 @@
   text-overflow:ellipsis;
 }
 @media (max-width:640px){
-  .vacation-gantt table{font-size:11px;}
-  .vacation-gantt .vac-cell{min-width:30px;}
-  .vacation-gantt{padding:6px;}
-  .vacation-gantt th.group-name{min-width:28px;width:28px;font-size:10px;padding:6px 3px;}
-  .vacation-gantt th.member-name{min-width:70px;max-width:85px;font-size:11px;}
+  .vacation-gantt table{font-size:10px;}
+  .vacation-gantt .vac-cell{min-width:28px;padding:2px;}
+  .vacation-gantt{padding:4px;max-height:50vh;}
+  .vacation-gantt th.group-name{min-width:24px;width:24px;font-size:9px;padding:4px 2px;letter-spacing:0;}
+  .vacation-gantt th.member-name{min-width:60px;max-width:75px;font-size:10px;padding:2px;}
+  .vacation-gantt .vac-day-label{gap:1px;}
+  .vacation-gantt .vac-day-label span{font-size:9px;}
+  .vacation-gantt .vac-day-label .vac-day{font-size:8px;}
+  .vacation-gantt thead th{padding:2px;}
+  .vacation-gantt-sticky-header{padding-bottom:2px;}
+  .vacation-gantt-help{font-size:10px;}
+  .vacation-gantt-touch-hint{font-size:9px;}
+  .vacation-actions{margin-bottom:2px !important;}
+  .vacation-actions button{font-size:11px;padding:4px 8px;}
+}
+
+@media (max-width:480px){
+  .vacation-gantt table{font-size:9px;}
+  .vacation-gantt .vac-cell{min-width:24px;padding:1px;}
+  .vacation-gantt{padding:3px;max-height:45vh;}
+  .vacation-gantt th.group-name{min-width:20px;width:20px;font-size:8px;padding:3px 1px;}
+  .vacation-gantt th.member-name{min-width:50px;max-width:65px;font-size:9px;padding:1px;left:20px;}
+  .vacation-gantt .vac-day-label span{font-size:8px;}
+  .vacation-gantt .vac-day-label .vac-day{font-size:7px;}
+  .vacation-gantt thead th{padding:1px;}
+  .vacation-gantt-help{font-size:9px;gap:4px !important;}
+  .vacation-gantt-touch-hint{font-size:8px;}
+  .vacation-actions button{font-size:10px;padding:3px 6px;}
+  .vacation-view{gap:4px;}
+  .vacation-helper{font-size:10px;}
 }
 
 /* マニュアルモーダル */
