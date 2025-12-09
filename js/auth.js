@@ -40,7 +40,8 @@ function ensureAuthUI(){
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
-  longVacationBtn.style.display = loggedIn ? 'inline-block' : 'none';
+  longVacationBtn.style.display = 'none';
+  updateLongVacationButtonVisibility();
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }

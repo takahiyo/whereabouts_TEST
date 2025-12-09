@@ -241,6 +241,21 @@ function renderVacationRadioList(list, options){
   updateSelectionState();
 }
 
+function updateLongVacationButtonVisibility(officeId, list){
+  if(!longVacationBtn) return;
+  const loggedIn=!!SESSION_TOKEN;
+  const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
+  let sourceList=null;
+  if(Array.isArray(list)){
+    sourceList=list;
+  }else if(cachedLongVacations.officeId===targetOfficeId){
+    sourceList=cachedLongVacations.list;
+  }
+  const hasVisible=loggedIn && Array.isArray(sourceList)
+    && sourceList.some(item=> item?.visible===true && (!targetOfficeId || String(item.office||targetOfficeId)===targetOfficeId));
+  longVacationBtn.style.display=hasVisible?'inline-block':'none';
+}
+
 async function loadLongVacations(officeId, showToastOnSuccess=false){
   let loadingTd=null;
   if(longVacationListBody){
@@ -253,6 +268,7 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
     cachedLongVacations={ officeId:'', list:[] };
     if(loadingTd){ loadingTd.textContent='拠点にログインすると表示できます'; }
     renderVacationRadioMessage('拠点にログインすると表示できます');
+    updateLongVacationButtonVisibility(targetOfficeId, []);
     return;
   }
   try{
@@ -261,6 +277,7 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
       if(typeof logout==='function'){ await logout(); }
       cachedLongVacations={ officeId:'', list:[] };
       renderVacationRadioMessage('拠点にログインすると表示できます');
+      updateLongVacationButtonVisibility(targetOfficeId, []);
       return;
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
@@ -272,12 +289,14 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
     cachedLongVacations={ officeId: targetOfficeId, list: filteredList };
     renderLongVacationRows(filteredList, isOfficeAdmin(), emptyMessage);
     renderVacationRadioList(filteredList, { emptyMessage });
+    updateLongVacationButtonVisibility(targetOfficeId, normalizedList);
     if(showToastOnSuccess) toast('長期休暇を読み込みました');
   }catch(err){
     console.error('loadLongVacations error',err);
     cachedLongVacations={ officeId:'', list:[] };
     if(loadingTd){ loadingTd.textContent='読み込みに失敗しました'; }
     renderVacationRadioMessage('読み込みに失敗しました');
+    updateLongVacationButtonVisibility(targetOfficeId, []);
     if(showToastOnSuccess) toast('長期休暇の取得に失敗しました', false);
   }
 }
