@@ -196,13 +196,15 @@ function renderVacationRadioList(list){
 }
 
 async function loadLongVacations(officeId, showToastOnSuccess=false){
-  if(!longVacationListBody){ return; }
-  longVacationListBody.textContent='';
-  const loadingTr=document.createElement('tr'); const loadingTd=document.createElement('td'); loadingTd.colSpan=5; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  let loadingTd=null;
+  if(longVacationListBody){
+    longVacationListBody.textContent='';
+    const loadingTr=document.createElement('tr'); loadingTd=document.createElement('td'); loadingTd.colSpan=5; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); longVacationListBody.appendChild(loadingTr);
+  }
   renderVacationRadioMessage('読み込み中...');
   const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
   if(!SESSION_TOKEN || !targetOfficeId){
-    loadingTd.textContent='拠点にログインすると表示できます';
+    if(loadingTd){ loadingTd.textContent='拠点にログインすると表示できます'; }
     renderVacationRadioMessage('拠点にログインすると表示できます');
     return;
   }
@@ -221,7 +223,7 @@ async function loadLongVacations(officeId, showToastOnSuccess=false){
     if(showToastOnSuccess) toast('長期休暇を読み込みました');
   }catch(err){
     console.error('loadLongVacations error',err);
-    loadingTd.textContent='読み込みに失敗しました';
+    if(loadingTd){ loadingTd.textContent='読み込みに失敗しました'; }
     renderVacationRadioMessage('読み込みに失敗しました');
     if(showToastOnSuccess) toast('長期休暇の取得に失敗しました', false);
   }
