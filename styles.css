@@ -351,14 +351,14 @@
 .vacation-table th,.vacation-table td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top;}
 .vacation-table th{background:#f9fafb;color:#374151;position:sticky;top:0;z-index:1;}
 .vacation-table tr:last-child td{border-bottom:none;}
-.vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow-x:auto;}
+.vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow:auto;max-height:70vh;}
 .vacation-gantt table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;}
-.vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:5;}
+.vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:5;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
 .vacation-gantt th,.vacation-gantt td{border:1px solid #e5e7eb;padding:4px;white-space:nowrap;text-align:center;}
 .vacation-gantt th.group-name{background:#f3f4f6;position:sticky;left:0;z-index:10;min-width:32px;width:32px;writing-mode:vertical-rl;text-orientation:mixed;padding:8px 4px;font-size:11px;letter-spacing:0.05em;border-right:2px solid #d1d5db;}
 .vacation-gantt th.member-name{background:#fff;position:sticky;left:32px;z-index:10;text-align:left;font-weight:600;width:var(--w-name);min-width:85px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:2px solid #9ca3af;}
-.vacation-gantt thead th.group-name{z-index:15;}
-.vacation-gantt thead th.member-name{z-index:15;}
+.vacation-gantt thead th.group-name{z-index:20;background:#f3f4f6;}
+.vacation-gantt thead th.member-name{z-index:20;background:#fff;}
 .vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease;}
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.weekend-sat{background:#e0f2fe;}
