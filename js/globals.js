@@ -102,6 +102,18 @@ function summarizeVacationMembers(bitsStr){
   return `${names.slice(0,3).join('、')} ほか${names.length-3}名`;
 }
 
+function coerceVacationVisibleFlag(raw){
+  if(raw === true) return true;
+  if(raw === false) return false;
+  if(typeof raw === 'number') return raw !== 0;
+  if(typeof raw === 'string'){
+    const s = raw.trim().toLowerCase();
+    if(!s) return false;
+    return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+  }
+  return false;
+}
+
 function renderLongVacationRows(list, canToggle, emptyMessage){
   if(!longVacationListBody) return;
   longVacationListBody.textContent = '';
@@ -124,7 +136,7 @@ function renderLongVacationRows(list, canToggle, emptyMessage){
     if(canToggle){
       const visibleToggle=document.createElement('input');
       visibleToggle.type='checkbox';
-      visibleToggle.checked=item.visible === true;
+      visibleToggle.checked=coerceVacationVisibleFlag(item.visible);
       visibleToggle.addEventListener('change', async ()=>{
         visibleToggle.disabled=true;
         const updater=typeof updateVacationVisibility==='function'?updateVacationVisibility:null;
@@ -137,7 +149,7 @@ function renderLongVacationRows(list, canToggle, emptyMessage){
       });
       visibleTd.appendChild(visibleToggle);
     }else{
-      visibleTd.textContent = item.visible === true ? '表示' : '非表示';
+      visibleTd.textContent = coerceVacationVisibleFlag(item.visible) ? '表示' : '非表示';
     }
     tr.append(titleTd,periodTd,membersTd,noteTd,visibleTd);
     longVacationListBody.appendChild(tr);
@@ -319,7 +331,7 @@ function updateLongVacationButtonVisibility(officeId, list){
     sourceList=cachedLongVacations.list;
   }
   const hasVisible=loggedIn && Array.isArray(sourceList)
-    && sourceList.some(item=> item?.visible===true && (!targetOfficeId || String(item.office||targetOfficeId)===targetOfficeId));
+    && sourceList.some(item=> coerceVacationVisibleFlag(item?.visible) && (!targetOfficeId || String(item.office||targetOfficeId)===targetOfficeId));
   longVacationBtn.style.display=hasVisible?'inline-block':'none';
 }
 
@@ -349,7 +361,7 @@ async function loadLongVacations(officeId, showToastOnSuccess=false, options={})
       return [];
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
-    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId, visible: item?.visible === true }));
+    const normalizedList=list.map(item=>({ ...item, office: item?.office || targetOfficeId, visible: coerceVacationVisibleFlag(item?.visible) }));
     const filteredList=(isOfficeAdmin() && opts.visibleOnly!==true)
       ? normalizedList
       : normalizedList.filter(item=>item.visible===true);
