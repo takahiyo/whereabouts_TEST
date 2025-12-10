@@ -38,7 +38,6 @@
     <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="eventBtn" class="event-btn" title="イベント">📅 イベント</button>
-    <div id="eventLegend" class="event-legend" aria-live="polite"></div>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
@@ -231,6 +230,7 @@
                 <span id="eventPeriodText"></span>
                 <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
               </div>
+              <div id="eventLegendModal" class="event-legend" aria-live="polite"></div>
             </div>
             <div id="eventGantt" class="vacation-gantt" aria-live="polite"></div>
             <input id="eventStart" type="hidden" />
