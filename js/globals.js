@@ -301,7 +301,46 @@ function openRelatedNotice(item, options={}){
   if(noticesArea?.classList.contains('collapsed') && typeof toggleNoticesArea==='function'){
     toggleNoticesArea();
   }
-  return true;
+
+  const normalizeKeyFn = typeof normalizeNoticeKey === 'function'
+    ? normalizeNoticeKey
+    : (value)=>{
+        if(value==null) return '';
+        return String(value).replace(/\s+/g,' ').trim().toLowerCase();
+      };
+  const noticesList=document.getElementById('noticesList');
+  const noticeId=item?.noticeId||item?.id||'';
+  const noticeKey=item?.noticeKey||'';
+  const noticeTitle=item?.noticeTitle||item?.title||'';
+  let targetEl=null;
+
+  if(noticesList){
+    const items=Array.from(noticesList.querySelectorAll('.notice-item'));
+    if(noticeId){
+      const normalizedId=normalizeKeyFn(noticeId);
+      targetEl=items.find(el=> normalizeKeyFn(el.dataset.noticeId)===normalizedId );
+    }
+    if(!targetEl && noticeKey){
+      const normalizedKey=normalizeKeyFn(noticeKey);
+      targetEl=items.find(el=> normalizeKeyFn(el.dataset.noticeKey||el.dataset.noticeId||'')===normalizedKey );
+    }
+    if(!targetEl && noticeTitle){
+      const normalizedTitle=normalizeKeyFn(noticeTitle);
+      targetEl=items.find(el=> {
+        const titleText=el.querySelector('.notice-title')?.textContent||'';
+        return normalizeKeyFn(titleText)===normalizedTitle;
+      });
+    }
+  }
+
+  if(targetEl){
+    targetEl.classList.add('expanded');
+    targetEl.scrollIntoView({ behavior:'smooth', block:'center' });
+    return true;
+  }
+
+  if(opts.toastOnMissing!==false) toast('該当するお知らせが見つかりませんでした', false);
+  return false;
 }
 
 function getEventGanttController(){
