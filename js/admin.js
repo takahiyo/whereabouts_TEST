@@ -402,17 +402,36 @@ function fillVacationForm(item){
 
 function getVacationTypeLabel(isVacation){ return (isVacation === false)?'予定のみ':'休暇固定'; }
 
-function renderVacationRows(list){
+let cachedVacationList=[];
+
+function normalizeVacationList(list, officeId){
+  if(!Array.isArray(list)) return [];
+  const prevList=Array.isArray(cachedVacationList)?cachedVacationList:[];
+  const targetOffice=officeId==null?'':String(officeId);
+  return list.map(item=>{
+    const idStr=String(item?.id||item?.vacationId||'');
+    const itemOffice=String(item?.office||targetOffice||'');
+    const prev=prevList.find(v=> String(v?.id||v?.vacationId||'') === idStr && String(v?.office||targetOffice||'') === itemOffice);
+    const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
+    const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
+    const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : undefined);
+    return { ...item, office:itemOffice || (item?.office||''), isVacation };
+  });
+}
+
+function renderVacationRows(list, officeId){
   if(!vacationListBody) return;
+  const normalizedList=normalizeVacationList(list, officeId);
+  cachedVacationList=normalizedList;
   vacationListBody.textContent='';
-  if(!Array.isArray(list) || list.length===0){
+  if(!Array.isArray(normalizedList) || normalizedList.length===0){
     const tr=document.createElement('tr');
     const td=document.createElement('td');
     td.colSpan=8; td.style.textAlign='center'; td.textContent='イベントはありません';
     tr.appendChild(td); vacationListBody.appendChild(tr); return;
   }
 
-  list.forEach(item=>{
+  normalizedList.forEach(item=>{
     const tr=document.createElement('tr');
     const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
     const start=item.startDate||item.start||item.from||'';
@@ -495,7 +514,7 @@ async function updateVacationFlags(item, overrides={}){
       }
       toast('イベント設定を更新しました');
       if(Array.isArray(res.vacations)){
-        renderVacationRows(res.vacations);
+        renderVacationRows(res.vacations, office);
       }else{
         await loadVacationsList(false, office);
       }
@@ -519,7 +538,7 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
   try{
     const res=await adminGetVacation(office);
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
-    renderVacationRows(list);
+    renderVacationRows(list, office);
     if(showToastOnSuccess) toast('イベントを読み込みました');
   }catch(err){
     console.error('loadVacationsList error',err);
@@ -569,7 +588,7 @@ async function handleVacationSave(){
       }
       toast('イベントを保存しました');
       if(Array.isArray(res.vacations)){
-        renderVacationRows(res.vacations);
+        renderVacationRows(res.vacations, office);
       }else{
         await loadVacationsList(false, office);
       }

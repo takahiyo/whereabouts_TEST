@@ -352,13 +352,21 @@ async function loadEvents(officeId, showToastOnSuccess=false, options={}){
       return [];
     }
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
-    const normalizedList=list.map(item=>({
-      ...item,
-      office: item?.office || targetOfficeId,
-      visible: coerceVacationVisibleFlag(item?.visible),
-      isVacation: item?.isVacation !== false,
-      color: item?.color || 'amber'
-    }));
+    const prevList=(cachedEvents.officeId===targetOfficeId && Array.isArray(cachedEvents.list))?cachedEvents.list:[];
+    const normalizedList=list.map(item=>{
+      const idStr=String(item?.id||item?.vacationId||'');
+      const prev=prevList.find(v=> String(v?.id||v?.vacationId||'') === idStr);
+      const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
+      const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
+      const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : undefined);
+      return {
+        ...item,
+        office: item?.office || targetOfficeId,
+        visible: coerceVacationVisibleFlag(item?.visible),
+        isVacation,
+        color: item?.color || 'amber'
+      };
+    });
     const filteredList=(isOfficeAdmin() && opts.visibleOnly!==true)
       ? normalizedList
       : normalizedList.filter(item=>item.visible===true);
