@@ -35,6 +35,7 @@
     let latestRequestedState = null;
     let lastSavedState = null;
     let statusEl = null;
+    let saveMode = opts.saveMode || 'vacation';
     let initialized = false;
     let groupAnchors = [];
 
@@ -118,7 +119,14 @@
       renderStatus('error', '保存に失敗しました。再試行するかロールバックできます。', actions);
     }
 
+    function isEventModalSaveMode(){
+      return saveMode === 'event-modal';
+    }
+
     async function invokeSaveHandler(){
+      if(isEventModalSaveMode() && typeof window.saveEventFromModal === 'function'){
+        return await window.saveEventFromModal();
+      }
       if(typeof window.saveLongVacationFromModal === 'function'){
         return await window.saveLongVacationFromModal();
       }
@@ -728,7 +736,8 @@
       init,
       setRangeAndBits,
       getBitsString,
-      applyBitsToCells
+      applyBitsToCells,
+      setSaveMode: (mode)=>{ saveMode = mode || 'vacation'; }
     };
   }
 

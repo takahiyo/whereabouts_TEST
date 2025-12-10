@@ -494,11 +494,12 @@ function getEventGanttController(){
     startInput: eventStartInput,
     endInput: eventEndInput,
     bitsInput: eventBitsInput,
-    autoBind: false,
+    autoBind: true,
     autoInit: false,
     groupJumpContainer: eventGroupJumps,
     scrollContainer: eventGantt,
-    groupJumpMode: 'select'
+    groupJumpMode: 'select',
+    saveMode: 'event-modal'
   });
   if(eventGanttController && typeof eventGanttController.init==='function'){
     eventGanttController.init();
