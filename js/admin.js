@@ -482,7 +482,6 @@ async function updateVacationVisibility(item, visible){
     note:item.note||item.memo||'',
     membersBits:item.membersBits||item.bits||'',
     visible,
-    hideOthers: visible === true,
     isVacation: item.isVacation !== false,
     color: item.color || 'amber'
   };
@@ -554,7 +553,6 @@ async function handleVacationSave(){
     note,
     membersBits,
     visible: currentVacationVisible,
-    hideOthers: currentVacationVisible === true,
     isVacation: currentVacationIsHoliday,
     color: currentVacationColor||'amber'
   };

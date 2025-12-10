@@ -688,8 +688,6 @@ function doPost(e){
       const note = String(payload.note || '').substring(0, 2000);
       const membersBits = String(payload.membersBits || '');
       const visible = coerceVacationVisibleFlag_(payload.visible);
-      const hideOthers = payload && payload.hideOthers === true;
-
       const base = { id, office, title, startDate, endDate, note, membersBits, visible, updated: now_() };
       const newItem = normalizeVacationItem_(base, office);
 
@@ -699,11 +697,6 @@ function doPost(e){
         vacations[existingIndex] = newItem;
       }else{
         vacations.push(newItem);
-      }
-
-      // visible: true または hideOthers指定の場合、他の全ての休暇をvisible: falseにする
-      if(visible || hideOthers){
-        vacations = vacations.map(v => v.id === id ? v : { ...v, visible: false });
       }
 
       // 保存
