@@ -703,11 +703,11 @@ async function saveEventFromModal(){
     noticeId: item.noticeId||item.noticeKey||'',
     noticeTitle: item.noticeTitle||'',
     membersBits,
-    visible: true,
     isVacation: item.isVacation!==false,
     color: item.color||''
   };
   const id=item.id||item.vacationId||selectedId;
+  if('visible' in item) payload.visible=item.visible;
   if(id) payload.id=id;
   try{
     const res=await adminSetVacation(officeId,payload);
