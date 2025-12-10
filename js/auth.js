@@ -199,6 +199,16 @@ if(btnClearEventDisplay){
   });
 }
 
+if(btnOpenEventNotice){
+  btnOpenEventNotice.addEventListener('click', ()=>{
+    const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
+    const targetId=(Array.isArray(selectedEventIds)&&selectedEventIds[0])||eventSelectedId||'';
+    const item=targetId?findCachedEvent(officeId, targetId):null;
+    if(!item){ toast('関連するお知らせがありません', false); return; }
+    openRelatedNotice(item);
+  });
+}
+
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));
 document.addEventListener('keydown', (e)=>{

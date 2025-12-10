@@ -23,6 +23,7 @@ const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
 const btnApplyEventDisplay=document.getElementById('btnApplyEventDisplay');
 const btnClearEventDisplay=document.getElementById('btnClearEventDisplay');
+const btnOpenEventNotice=document.getElementById('btnOpenEventNotice');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -178,6 +179,10 @@ function renderVacationRadioList(list, options){
   const onSelectChange = typeof opts.onSelectChange==='function' ? opts.onSelectChange : null;
   const onFocus = typeof opts.onFocus==='function' ? opts.onFocus : null;
   const selectedIds = new Set((opts.selectedIds||[]).map(v=>String(v)));
+  const syncSelectedIds=()=>{
+    selectedIds.clear();
+    (selectedEventIds||[]).forEach(v=> selectedIds.add(String(v)) );
+  };
   if(!Array.isArray(list) || list.length===0){
     renderVacationRadioMessage(opts.emptyMessage||'登録されたイベントはありません');
     return;
@@ -186,55 +191,51 @@ function renderVacationRadioList(list, options){
   const officeId=list[0]?.office||CURRENT_OFFICE_ID||'';
   vacationRadioList.style.display='flex';
 
+  const itemMap=new Map();
+
+  const setSelected=(id, enabled)=>{
+    syncSelectedIds();
+    if(enabled){ selectedIds.add(id); }
+    else { selectedIds.delete(id); }
+    const arr=Array.from(selectedIds);
+    selectedEventIds=arr;
+    saveEventIds(officeId, arr);
+    const item=itemMap.get(id)||null;
+    updateEventCardStates();
+    if(onSelectChange) onSelectChange(arr, item, id, enabled);
+  };
+
   list.forEach((item, idx)=>{
     const id=String(item.id||item.vacationId||idx);
-    const checkboxId=`vacation-check-${id}`;
-    const wrapper=document.createElement('label');
-    wrapper.className='vacation-radio-item multi';
-
-    const input=document.createElement('input');
-    input.type='checkbox';
-    input.name='vacationCheckbox';
-    input.id=checkboxId;
-    input.value=id;
-    input.checked=selectedIds.has(id);
-    input.addEventListener('change', ()=>{
-      const nextIds=new Set(selectedIds);
-      if(input.checked){ nextIds.add(id); }
-      else { nextIds.delete(id); }
-      const arr=Array.from(nextIds);
-      selectedIds.clear(); arr.forEach(v=>selectedIds.add(v));
-      saveEventIds(officeId, arr);
-      selectedEventIds=arr;
-      if(onSelectChange) onSelectChange(arr, item, id, input.checked);
-    });
+    const wrapper=document.createElement('div');
+    wrapper.className='vacation-radio-item';
+    wrapper.setAttribute('role','button');
+    wrapper.setAttribute('tabindex','0');
+    wrapper.dataset.eventId=id;
 
     const content=document.createElement('div');
     content.className='vacation-radio-content';
 
-    const note=(item.noticeTitle||item.note||item.memo||'').trim();
-    const isNoteLong=note.length>100;
-    const titleEl=isNoteLong?document.createElement('a'):document.createElement('div');
+    const titleRow=document.createElement('div');
+    titleRow.className='vacation-radio-header';
+
+    const titleEl=document.createElement('a');
     titleEl.className='vacation-radio-title';
+    titleEl.href='#noticesArea';
     titleEl.textContent=item.title||'';
-    if(isNoteLong){
-      titleEl.href='#noticesArea';
-      titleEl.addEventListener('click',(e)=>{
-        e.stopPropagation();
-        if(!input.checked){
-          input.checked=true;
-          input.dispatchEvent(new Event('change',{ bubbles:true }));
-        }
-        if(onFocus) onFocus(item, id);
-        const noticesArea=document.getElementById('noticesArea');
-        if(typeof toggleNoticesArea==='function'){ toggleNoticesArea(); }
-        if(noticesArea){
-          noticesArea.style.display='block';
-          noticesArea.classList.remove('collapsed');
-          noticesArea.scrollIntoView({ behavior:'smooth', block:'start' });
-        }
-      });
-    }
+    titleEl.addEventListener('click',(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      setSelected(id, true);
+      if(onFocus) onFocus(item, id);
+      openRelatedNotice(item);
+    });
+
+    const stateEl=document.createElement('span');
+    stateEl.className='vacation-radio-state';
+    stateEl.textContent='';
+
+    titleRow.append(titleEl, stateEl);
 
     const start=item.startDate||item.start||item.from||'';
     const end=item.endDate||item.end||item.to||'';
@@ -243,24 +244,64 @@ function renderVacationRadioList(list, options){
     periodDiv.className='vacation-radio-period';
     periodDiv.textContent=period;
 
-    const noteDiv=document.createElement('div');
-    noteDiv.className='vacation-radio-note';
-    noteDiv.textContent=note ? (isNoteLong ? `${note.slice(0,100)}…` : note) : '備考なし';
+    content.append(titleRow, periodDiv);
 
-    content.append(titleEl, periodDiv, noteDiv);
-
-    wrapper.append(input, content);
-    wrapper.addEventListener('click', (e)=>{
-      if(e.target===input) return;
+    wrapper.append(content);
+    wrapper.addEventListener('click', ()=>{
+      syncSelectedIds();
+      const willSelect=!selectedIds.has(id);
+      setSelected(id, willSelect);
       if(onFocus) onFocus(item, id);
     });
+    wrapper.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); wrapper.click(); }
+    });
+    wrapper.addEventListener('focus', ()=>{ if(onFocus) onFocus(item, id); });
     vacationRadioList.appendChild(wrapper);
+    itemMap.set(id, item);
   });
 
   const firstSelected=list.find(item=> selectedIds.has(String(item.id||item.vacationId||'')));
   if(firstSelected && onFocus){
     onFocus(firstSelected, String(firstSelected.id||firstSelected.vacationId||''));
   }
+
+  selectedEventIds=Array.from(selectedIds);
+  updateEventCardStates();
+}
+
+function updateEventCardStates(){
+  if(!vacationRadioList) return;
+  const selectedSet=new Set((selectedEventIds||[]).map(v=>String(v)));
+  const appliedSet=new Set((appliedEventIds||[]).map(v=>String(v)));
+  vacationRadioList.querySelectorAll('.vacation-radio-item').forEach(card=>{
+    const id=card.dataset.eventId||'';
+    const isSelected=selectedSet.has(id);
+    const isApplied=appliedSet.has(id);
+    card.classList.toggle('selected', isSelected);
+    card.classList.toggle('applied', isApplied);
+    const stateEl=card.querySelector('.vacation-radio-state');
+    if(stateEl){ stateEl.textContent=isApplied?'表示中':(isSelected?'選択中':'未選択'); }
+  });
+}
+
+function openRelatedNotice(item, options={}){
+  const opts=options||{};
+  const hasNotice = !!(item?.noticeTitle||item?.noticeId||item?.noticeKey||item?.note||item?.memo);
+  if(!hasNotice){
+    if(opts.toastOnMissing!==false) toast('関連するお知らせがありません', false);
+    return false;
+  }
+  const noticesArea=document.getElementById('noticesArea');
+  if(noticesArea){
+    noticesArea.style.display='block';
+    noticesArea.classList.remove('collapsed');
+    noticesArea.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  if(noticesArea?.classList.contains('collapsed') && typeof toggleNoticesArea==='function'){
+    toggleNoticesArea();
+  }
+  return true;
 }
 
 function getEventGanttController(){
@@ -702,6 +743,7 @@ async function applyEventDisplay(selected){
   selectedEventIds=ids;
   saveEventIds(officeId, ids);
   updateEventLegend(items);
+  updateEventCardStates();
   return true;
 }
 
@@ -713,6 +755,7 @@ async function clearEventDisplay(){
   updateEventLegend([]);
   saveEventIds(CURRENT_OFFICE_ID, []);
   selectedEventIds=[];
+  updateEventCardStates();
   return true;
 }
 

@@ -419,20 +419,17 @@
 .event-modal .vacation-table-wrap{max-height:unset;}
 .vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
 .vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
-.vacation-radio-item{display:flex;align-items:start;gap:8px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.vacation-radio-item{display:flex;flex-direction:column;gap:6px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;position:relative;}
 .vacation-radio-item:hover{background:#f9fafb;border-color:#d1d5db;}
+.vacation-radio-item:focus-visible{outline:2px solid #3b82f6;outline-offset:2px;}
 .vacation-radio-item.selected{background:#eff6ff;border-color:#3b82f6;}
-.vacation-radio-item input[type="radio"],.vacation-radio-item input[type="checkbox"]{margin-top:2px;cursor:pointer;}
+.vacation-radio-item.applied{background:#ecfdf3;border-color:#16a34a;}
 .vacation-radio-content{flex:1;display:flex;flex-direction:column;gap:4px;}
-.vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;text-decoration:none;}
+.vacation-radio-header{display:flex;align-items:center;gap:8px;justify-content:space-between;}
+.vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;text-decoration:none;flex:1;}
 .vacation-radio-title:hover{text-decoration:underline;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
-.vacation-radio-members{color:#6b7280;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.vacation-radio-note{color:#475569;font-size:12px;line-height:1.4;}
-.vacation-radio-meta{display:flex;align-items:center;gap:8px;color:#475569;font-size:12px;}
-.event-type-badge{background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;padding:2px 6px;border-radius:10px;font-size:11px;}
-.vacation-radio-item.multi{align-items:flex-start;}
-.vacation-radio-item.multi input[type="checkbox"]{margin-top:4px;}
+.vacation-radio-state{color:#475569;font-size:11px;white-space:nowrap;}
 .event-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
 .event-banner__title{font-weight:700;margin-bottom:4px;}
 .event-banner__detail{font-size:13px;}

@@ -202,7 +202,10 @@
   <!-- イベントモーダル -->
   <div id="eventModal" class="admin-modal event-modal" aria-modal="true" role="dialog" aria-label="イベント表示設定">
     <div class="admin-card">
-      <div class="event-modal-header"><button id="eventClose">閉じる</button></div>
+      <div class="event-modal-header">
+        <h3 class="event-modal-title">イベントカレンダー</h3>
+        <button id="eventClose">閉じる</button>
+      </div>
 
       <!-- タブパネル: イベント選択 -->
       <div id="tabEvent" class="tab-panel active">
@@ -215,6 +218,7 @@
                   <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
                 </div>
                 <div class="vacation-actions" style="margin-bottom:0;display:flex;gap:8px;justify-content:flex-end;">
+                  <button id="btnOpenEventNotice" class="btn-secondary">関連お知らせを開く</button>
                   <button id="btnClearEventDisplay" class="btn-secondary">表示クリア</button>
                   <button id="btnEventSave" class="btn-secondary">保存</button>
                   <button id="btnApplyEventDisplay" class="btn-primary">表示</button>
