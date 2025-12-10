@@ -210,21 +210,21 @@ function toggleNoticesArea() {
 }
 
 // お知らせを取得
-async function fetchNotices() {
+async function fetchNotices(requestedOfficeId) {
   if (!SESSION_TOKEN) {
     console.log('fetchNotices: SESSION_TOKEN is not set');
     return;
   }
-  
+
   try {
+    const targetOfficeId = requestedOfficeId || CURRENT_OFFICE_ID || '';
     const params = {
       action: 'getNotices',
       token: SESSION_TOKEN,
       nocache: '1'
     };
-    const officeId = CURRENT_OFFICE_ID || '';
-    if (officeId) {
-      params.office = officeId;
+    if (targetOfficeId) {
+      params.office = targetOfficeId;
     }
 
     console.log('fetchNotices params:', params);
