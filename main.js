@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     CURRENT_ROLE = res.role || res.userRole || (res.isAdmin===true?'officeAdmin':'user');
     saveSessionMeta(); titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     loginEl.style.display='none'; loginMsg.textContent=""; ensureAuthUI(); applyRoleToManual();
-    let longVacationP=loadLongVacations(CURRENT_OFFICE_ID, false);
+    let eventP=loadEvents(CURRENT_OFFICE_ID, false);
 
     // 役割確定（renewで上書き）
     try{
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=nextOfficeId; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME;
         if(nextOfficeId!==prevOfficeId){ adminSelectedOfficeId=''; }
         saveSessionMeta(); ensureAuthUI(); applyRoleToManual();
-        if(nextOfficeId!==prevOfficeId){ longVacationP=loadLongVacations(nextOfficeId, false); }
+        if(nextOfficeId!==prevOfficeId){ eventP=loadEvents(nextOfficeId, false); }
       }
     }catch{}
 
@@ -65,11 +65,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
     if(!SESSION_TOKEN) return;
     startRemoteSync(true); startConfigWatch(); startNoticesPolling();
-    await longVacationP;
+    await eventP;
     
-    // 保存されている長期休暇を自動適用
-    if(typeof autoApplySavedLongVacation === 'function'){
-      await autoApplySavedLongVacation();
+    // 保存されているイベントを自動適用
+    if(typeof autoApplySavedEvent === 'function'){
+      await autoApplySavedEvent();
     }
   }
 
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     SESSION_TOKEN=existing; loginEl.style.display='none';
     loadSessionMeta(); adminSelectedOfficeId=''; titleBtn.textContent=(CURRENT_OFFICE_NAME?`${CURRENT_OFFICE_NAME}　在席確認表`:'在席確認表');
     ensureAuthUI(); applyRoleToManual();
-    const longVacationP=loadLongVacations(CURRENT_OFFICE_ID, false);
+    const eventP=loadEvents(CURRENT_OFFICE_ID, false);
     (async()=>{
       const cfg=await apiPost({ action:'getConfig', token:SESSION_TOKEN, nocache:'1' });
       if(cfg?.error==='unauthorized'){
@@ -96,11 +96,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(d&&d.data) applyState(d.data);
       if(!SESSION_TOKEN) return;
       startRemoteSync(true); startConfigWatch(); startNoticesPolling();
-      await longVacationP;
+      await eventP;
       
-      // 保存されている長期休暇を自動適用
-      if(typeof autoApplySavedLongVacation === 'function'){
-        await autoApplySavedLongVacation();
+      // 保存されているイベントを自動適用
+      if(typeof autoApplySavedEvent === 'function'){
+        await autoApplySavedEvent();
       }
     })();
   }else{
