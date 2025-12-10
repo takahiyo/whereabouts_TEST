@@ -643,6 +643,18 @@ function findCachedEvent(officeId, id){
   return list.find(item=> String(item?.id||item?.vacationId||'') === idStr ) || null;
 }
 
+function updateCachedMembersBits(officeId, id, membersBits){
+  if(!officeId || !id || cachedEvents.officeId!==officeId) return null;
+  const list=Array.isArray(cachedEvents.list)?cachedEvents.list:[];
+  const idStr=String(id);
+  const target=list.find(item=> String(item?.id||item?.vacationId||'') === idStr ) || null;
+  if(target){
+    target.membersBits=membersBits;
+    target.bits=membersBits;
+  }
+  return target;
+}
+
 function parseVacationMembers(bitsStr){
   const members=getRosterOrdering().flatMap(g => g.members || []);
   if(!members.length) return { memberIds: [], memberNames: '' };
@@ -940,8 +952,9 @@ async function saveEventFromModal(){
     const res=await adminSetVacation(officeId,payload);
     if(res && res.ok!==false){
       toast('イベントを保存しました');
-      await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      updateCachedMembersBits(officeId, id, membersBits);
       await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+      await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
       return true;
     }
     throw new Error(res&&res.error?String(res.error):'save_failed');
@@ -955,7 +968,15 @@ async function saveEventFromModal(){
 async function applyEventDisplay(items){
   const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
   const sourceList=Array.isArray(items)
-    ? items
+    ? (()=>{
+        const itemsAreIds=items.every(v=>typeof v==='string' || typeof v==='number');
+        if(itemsAreIds){
+          const baseList=cachedEvents.officeId===officeId ? cachedEvents.list : [];
+          const idSet=new Set(items.map(v=>String(v)));
+          return (Array.isArray(baseList)?baseList:[]).filter(item=> idSet.has(String(item?.id||item?.vacationId||'')) );
+        }
+        return items;
+      })()
     : (cachedEvents.officeId===officeId ? cachedEvents.list : []);
   const visibleItems=(Array.isArray(sourceList)?sourceList:[])
     .filter(item=>coerceVacationVisibleFlag(item?.visible));
