@@ -528,6 +528,8 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
       const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
     }
     toast('イベントの取得に失敗しました',false);
+  }finally{
+    resetVacationForm();
   }
 }
 
@@ -572,6 +574,7 @@ async function handleVacationSave(){
         await loadVacationsList(false, office);
       }
       await loadEvents(office, false);
+      resetVacationForm();
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
