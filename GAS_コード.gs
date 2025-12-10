@@ -236,13 +236,16 @@ function normalizeNoticeItem_(raw){
     return { title, content, display: true, visible: true };
   }
   if(typeof raw !== 'object') return null;
+  const id = raw.id != null ? raw.id : (raw.noticeId != null ? raw.noticeId : (raw.uid != null ? raw.uid : undefined));
   const titleSrc = raw.title != null ? raw.title : (raw.subject != null ? raw.subject : raw.headline);
   const contentSrc = raw.content != null ? raw.content : (raw.body != null ? raw.body : (raw.text != null ? raw.text : raw.description));
   const title = titleSrc == null ? '' : String(titleSrc).substring(0, 200);
   const content = contentSrc == null ? '' : String(contentSrc).substring(0, 2000);
   const visible = coerceNoticeVisibleFlag_(raw.visible != null ? raw.visible : (raw.display != null ? raw.display : (raw.show != null ? raw.show : true)));
   if(!title.trim() && !content.trim()) return null;
-  return { title, content, display: visible, visible: visible };
+  const result = { title, content, display: visible, visible: visible };
+  if(id != null) result.id = id;
+  return result;
 }
 
 function normalizeNoticesArray_(raw){

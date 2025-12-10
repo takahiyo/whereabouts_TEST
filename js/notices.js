@@ -1,6 +1,7 @@
 /* お知らせ機能 */
 
 let CURRENT_NOTICES = [];
+window.CURRENT_NOTICES = CURRENT_NOTICES; // グローバルに公開してadmin.jsから参照可能にする
 const MAX_NOTICE_ITEMS = 100;
 
 // URLを自動リンク化する関数
@@ -62,12 +63,13 @@ function coerceNoticeArray(raw) {
 function normalizeNoticeEntries(raw) {
   const arr = coerceNoticeArray(raw);
   const normalized = arr
-    .map((item) => {
+    .map((item, idx) => {
       if (item == null) return null;
       if (typeof item === 'string') {
         const text = item.trim();
         if (!text) return null;
-        return { title: text.slice(0, 200), content: '', display: true, visible: true };
+        const id = `notice_str_${idx}`;
+        return { id, title: text.slice(0, 200), content: '', display: true, visible: true };
       }
       if (Array.isArray(item)) {
         const titleRaw = item[0] == null ? '' : String(item[0]);
@@ -75,7 +77,8 @@ function normalizeNoticeEntries(raw) {
         const title = titleRaw.slice(0, 200);
         const content = contentRaw.slice(0, 2000);
         if (!title.trim() && !content.trim()) return null;
-        return { title, content, display: true, visible: true };
+        const id = `notice_arr_${idx}`;
+        return { id, title, content, display: true, visible: true };
       }
       if (typeof item === 'object') {
         const titleSource =
@@ -90,7 +93,8 @@ function normalizeNoticeEntries(raw) {
           item.visible ?? item.display ?? item.show ?? true
         );
         if (!title.trim() && !content.trim()) return null;
-        return { title, content, display: visible, visible };
+        const id = item.id ?? item.noticeId ?? item.uid ?? `notice_obj_${idx}`;
+        return { id, title, content, display: visible, visible };
       }
       return null;
     })
@@ -104,6 +108,7 @@ function normalizeNoticeEntries(raw) {
 function applyNotices(raw) {
   const normalized = normalizeNoticeEntries(raw);
   CURRENT_NOTICES = normalized;
+  window.CURRENT_NOTICES = normalized; // グローバルに公開してadmin.jsから参照可能にする
   renderNotices(normalized);
 }
 
@@ -137,6 +142,7 @@ function renderNotices(notices) {
     noticesList.innerHTML = '';
     noticesArea.style.display = 'none';
     if (noticesBtn) noticesBtn.style.display = 'none';
+    window.CURRENT_NOTICES = []; // グローバルにも空配列を反映
     return;
   }
 

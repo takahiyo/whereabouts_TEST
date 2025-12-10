@@ -207,9 +207,10 @@ btnLoadNotices.addEventListener('click', async ()=>{
       if(res.notices.length === 0){
         addNoticeEditorItem();
       } else {
-        res.notices.forEach(n=> {
+        res.notices.forEach((n, idx)=> {
           const visible = (n && n.visible !== false) ? true : (n && n.display !== false);
-          addNoticeEditorItem(n.title, n.content, visible !== false);
+          const id = n && (n.id != null ? n.id : (n.noticeId != null ? n.noticeId : idx));
+          addNoticeEditorItem(n.title, n.content, visible !== false, id);
         });
       }
       toast('お知らせを読み込みました');
@@ -225,13 +226,14 @@ btnSaveNotices.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); if(!office) return;
   const items=noticesEditor.querySelectorAll('.notice-edit-item');
   const notices=[];
-  items.forEach(item=>{
+  items.forEach((item, idx)=>{
     const title=(item.querySelector('.notice-edit-title').value||'').trim();
     const content=(item.querySelector('.notice-edit-content').value||'').trim();
     const displayToggle = item.querySelector('.notice-display-toggle');
     const visible = displayToggle ? displayToggle.checked : true;
     if(title || content){
-      notices.push({ title, content, visible, display: visible });
+      const id = item.dataset.noticeId || `notice_${Date.now()}_${idx}`;
+      notices.push({ id, title, content, visible, display: visible });
     }
   });
   
@@ -241,10 +243,11 @@ btnSaveNotices.addEventListener('click', async ()=>{
   else toast('お知らせの保存に失敗',false);
 });
 
-function addNoticeEditorItem(title='', content='', visible=true){
+function addNoticeEditorItem(title='', content='', visible=true, id=null){
   const item=document.createElement('div');
   item.className='notice-edit-item' + (visible ? '' : ' hidden-notice');
   item.draggable=true;
+  if(id != null) item.dataset.noticeId = String(id);
   item.innerHTML=`
     <span class="notice-edit-handle">⋮⋮</span>
     <div class="notice-edit-row">
@@ -836,9 +839,10 @@ async function autoLoadNoticesOnAdminOpen(){
       if(res.notices.length === 0){
         addNoticeEditorItem();
       } else {
-        res.notices.forEach(n=> {
+        res.notices.forEach((n, idx)=> {
           const visible = (n && n.visible !== false) ? true : (n && n.display !== false);
-          addNoticeEditorItem(n.title, n.content, visible !== false);
+          const id = n && (n.id != null ? n.id : (n.noticeId != null ? n.noticeId : idx));
+          addNoticeEditorItem(n.title, n.content, visible !== false, id);
         });
       }
     }
