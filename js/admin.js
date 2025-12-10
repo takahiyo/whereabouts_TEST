@@ -532,12 +532,12 @@ function renderVacationRows(list, officeId){
     const idStr=String(item.id||item.vacationId||'');
     tr.dataset.vacationId=idStr;
     tr.dataset.order=String(item.order||idx+1);
-    tr.draggable=true;
     const dragTd=document.createElement('td');
     dragTd.className='vacation-drag-cell';
     const dragBtn=document.createElement('button');
     dragBtn.type='button';
     dragBtn.className='vacation-drag-handle';
+    dragBtn.draggable=true;
     dragBtn.title='ドラッグして並び替え';
     dragBtn.innerHTML='<span aria-hidden="true">☰</span>';
     dragTd.appendChild(dragBtn);
