@@ -488,7 +488,7 @@ function normalizeVacationList(list, officeId){
     const prev=prevList.find(v=> String(v?.id||v?.vacationId||'') === idStr && String(v?.office||targetOffice||'') === itemOffice);
     const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
     const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
-    const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : undefined);
+    const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : false);
     return { ...item, office:itemOffice || (item?.office||''), isVacation };
   });
 }
@@ -515,7 +515,7 @@ function renderVacationRows(list, officeId){
     const typeTd=document.createElement('td');
     const typeToggle=document.createElement('input');
     typeToggle.type='checkbox';
-    typeToggle.checked=item.isVacation !== false;
+    typeToggle.checked=item.isVacation === true;
     const typeLabel=document.createElement('span');
     typeLabel.className='vacation-type-label';
     typeLabel.textContent=getVacationTypeLabel(typeToggle.checked);
@@ -582,7 +582,7 @@ function renderVacationRows(list, officeId){
 async function updateVacationFlags(item, overrides={}){
   const office=item.office||getVacationTargetOffice(); if(!office) return false;
   const visible=(overrides.visible!==undefined)?overrides.visible:(item.visible === true);
-  const isVacation=(overrides.isVacation!==undefined)?overrides.isVacation:(item.isVacation !== false);
+  const isVacation=(overrides.isVacation!==undefined)?overrides.isVacation:(item.isVacation === true);
   const payload={
     office,
     title:item.title||'',
@@ -603,7 +603,7 @@ async function updateVacationFlags(item, overrides={}){
     if(res && res.ok!==false){
       if(res.vacation){
         item.visible = res.vacation.visible === true;
-        item.isVacation = res.vacation.isVacation !== false;
+        item.isVacation = res.vacation.isVacation === true;
         item.color = res.vacation.color || item.color;
       }else{
         item.visible = visible;
