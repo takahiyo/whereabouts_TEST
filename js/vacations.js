@@ -29,8 +29,140 @@
     let dateSlots = [];
     let bitsByDate = new Map(); // date -> Array<boolean>
     let draggingState = null;
+    let autoSaveTimer = null;
+    let saveInFlight = false;
+    let queuedSave = false;
+    let latestRequestedState = null;
+    let lastSavedState = null;
+    let statusEl = null;
     let initialized = false;
     let groupAnchors = [];
+
+    function captureCurrentState(){
+      const stateBits = getBitsString();
+      return {
+        start: startInput?.value || '',
+        end: endInput?.value || '',
+        bits: stateBits
+      };
+    }
+
+    function ensureStatusElement(){
+      if(statusEl) return statusEl;
+      const el = document.createElement('div');
+      el.className = 'vac-save-status';
+      statusEl = el;
+      if(ganttRoot){
+        ganttRoot.appendChild(el);
+      }
+      return el;
+    }
+
+    function renderStatus(type, message, actions){
+      const el = ensureStatusElement();
+      el.textContent = '';
+      el.dataset.state = type;
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'vac-save-message';
+      msgSpan.textContent = message;
+      el.appendChild(msgSpan);
+      if(type === 'saving'){
+        const spinner = document.createElement('span');
+        spinner.className = 'vac-save-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        el.prepend(spinner);
+      }
+      (actions || []).forEach(({ label, onClick, className }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.className = className || 'vac-save-action';
+        btn.addEventListener('click', onClick);
+        el.appendChild(btn);
+      });
+    }
+
+    function showSavingStatus(){
+      renderStatus('saving', '変更を保存しています…');
+    }
+
+    function showSavedStatus(){
+      renderStatus('saved', '自動保存済み');
+      setTimeout(() => {
+        if(statusEl && statusEl.dataset.state === 'saved'){
+          statusEl.textContent = '';
+          statusEl.dataset.state = '';
+        }
+      }, 2000);
+    }
+
+    function rollbackToLastSaved(){
+      if(!lastSavedState) return;
+      setRangeAndBits(lastSavedState.start, lastSavedState.end, lastSavedState.bits);
+      toast('保存前の状態に戻しました', false);
+    }
+
+    function showErrorStatus(){
+      const actions = [{
+        label: '再試行',
+        onClick: () => scheduleAutoSave('retry'),
+        className: 'vac-save-retry'
+      }];
+      if(lastSavedState){
+        actions.push({
+          label: 'ロールバック',
+          onClick: rollbackToLastSaved,
+          className: 'vac-save-rollback'
+        });
+      }
+      renderStatus('error', '保存に失敗しました。再試行するかロールバックできます。', actions);
+    }
+
+    async function invokeSaveHandler(){
+      if(typeof window.saveLongVacationFromModal === 'function'){
+        return await window.saveLongVacationFromModal();
+      }
+      if(typeof window.handleVacationSave === 'function'){
+        return await window.handleVacationSave();
+      }
+      throw new Error('save_handler_missing');
+    }
+
+    async function flushAutoSave(){
+      if(saveInFlight){
+        queuedSave = true;
+        return;
+      }
+      if(!latestRequestedState) return;
+      saveInFlight = true;
+      queuedSave = false;
+      showSavingStatus();
+      try{
+        await invokeSaveHandler();
+        lastSavedState = captureCurrentState();
+        showSavedStatus();
+      }catch(err){
+        console.error('自動保存に失敗しました', err);
+        showErrorStatus();
+      }finally{
+        saveInFlight = false;
+        if(queuedSave){
+          queuedSave = false;
+          flushAutoSave();
+        }
+      }
+    }
+
+    function scheduleAutoSave(reason){
+      latestRequestedState = captureCurrentState();
+      if(autoSaveTimer){
+        clearTimeout(autoSaveTimer);
+      }
+      autoSaveTimer = setTimeout(() => {
+        autoSaveTimer = null;
+        flushAutoSave();
+      }, 800);
+    }
 
     function getGroupTitle(group, idx){
       if(typeof fallbackGroupTitle === 'function'){
@@ -147,6 +279,7 @@
       arr[memberIdx] = on;
       bitsByDate.set(date, arr);
       updateBitsInput();
+      scheduleAutoSave('cell');
     }
 
     function applyBitsToCells(){
@@ -336,6 +469,9 @@
       tableEl.appendChild(createHeaderRow());
       tableEl.appendChild(createBodyRows());
       ganttRoot.appendChild(tableEl);
+      if(statusEl){
+        ganttRoot.appendChild(statusEl);
+      }
       applyBitsToCells();
       resolveHolidays().then(set => applyHolidayColor(set));
     }
@@ -525,18 +661,26 @@
       rebuild();
       if(opts.autoBind !== false){
         if(startInput){
-          startInput.addEventListener('change', rebuild);
+          startInput.addEventListener('change', () => {
+            rebuild();
+            scheduleAutoSave('date-change');
+          });
         }
         if(endInput){
-          endInput.addEventListener('change', rebuild);
+          endInput.addEventListener('change', () => {
+            rebuild();
+            scheduleAutoSave('date-change');
+          });
         }
         if(bitsInput){
           bitsInput.addEventListener('input', ()=>{
             parseBitsString(bitsInput.value);
             applyBitsToCells();
+            scheduleAutoSave('bits-input');
           });
         }
       }
+      lastSavedState = captureCurrentState();
     }
 
     function reset(){
