@@ -205,7 +205,14 @@
                 <button id="btnLongVacationSave" class="btn-secondary">保存</button>
                 <button id="btnApplyVacationDisplay" class="btn-primary">表示</button>
               </div>
-              <div id="longVacationGroupJumps" class="vacation-group-jumps" aria-label="グループジャンプ" style="display:none;"></div>
+              <div id="longVacationGroupJumps" class="vacation-group-jumps" aria-label="グループジャンプ" style="display:none;">
+                <span class="jump-label">グループ移動</span>
+                <div class="jump-buttons" aria-label="グループジャンプボタン"></div>
+                <label class="jump-select" aria-label="グループジャンプ選択" style="display:none;">
+                  <span class="sr-only">グループを選択</span>
+                  <select id="longVacationGroupJumpSelect"></select>
+                </label>
+              </div>
               <div class="vacation-gantt-title" id="longVacationTitleText">長期休暇</div>
               <div class="vacation-gantt-help" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <span id="longVacationPeriodText"></span>

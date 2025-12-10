@@ -291,7 +291,8 @@ function getLongVacationGanttController(){
     autoBind: false,
     autoInit: false,
     groupJumpContainer: longVacationGroupJumps,
-    scrollContainer: longVacationGantt
+    scrollContainer: longVacationGantt,
+    groupJumpMode: 'select'
   });
   if(longVacationGanttController && typeof longVacationGanttController.init==='function'){
     longVacationGanttController.init();

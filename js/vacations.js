@@ -22,6 +22,7 @@
     const bitsInput = opts.bitsInput || null;
     let ganttRoot = opts.rootEl || null;
     const jumpContainer = opts.groupJumpContainer || null;
+    const groupJumpMode = opts.groupJumpMode || 'buttons';
     const scrollContainer = opts.scrollContainer || null;
     let tableEl = null;
     let orderedMembers = [];
@@ -162,48 +163,77 @@
 
     function createHeaderRow(){
       const thead = document.createElement('thead');
-      const tr = document.createElement('tr');
+      const monthRow = document.createElement('tr');
+      monthRow.className = 'vac-month-row';
+      const dayRow = document.createElement('tr');
+      dayRow.className = 'vac-day-row';
+
       const groupHeader = document.createElement('th');
       groupHeader.textContent = 'グループ';
       groupHeader.className = 'group-name';
-      tr.appendChild(groupHeader);
+      groupHeader.rowSpan = 2;
+      monthRow.appendChild(groupHeader);
       const nameHeader = document.createElement('th');
       nameHeader.textContent = '氏名';
       nameHeader.className = 'member-name';
-      tr.appendChild(nameHeader);
-      dateSlots.forEach(date => {
-        const th = document.createElement('th');
-        th.dataset.date = date; // 日付を属性として追加
+      nameHeader.rowSpan = 2;
+      monthRow.appendChild(nameHeader);
+
+      const monthGroups = [];
+      let currentMonth = '';
+      let spanStart = 0;
+      dateSlots.forEach((date, idx) => {
         const d = new Date(date);
+        const monthLabel = `${d.getFullYear()}年${d.getMonth()+1}月`;
+        if(currentMonth === ''){
+          currentMonth = monthLabel;
+          spanStart = idx;
+        }else if(monthLabel !== currentMonth){
+          monthGroups.push({ label: currentMonth, start: spanStart, end: idx - 1 });
+          currentMonth = monthLabel;
+          spanStart = idx;
+        }
         const dow = d.getDay();
+        const dayTh = document.createElement('th');
+        dayTh.dataset.date = date;
+        dayTh.className = 'vac-day-header';
+        if(dow === 0) dayTh.classList.add('weekend-sun');
+        if(dow === 6) dayTh.classList.add('weekend-sat');
+
         const label = document.createElement('div');
         label.className = 'vac-day-label';
-        
-        // 月
-        const monthSpan = document.createElement('span');
-        monthSpan.className = 'vac-month';
-        monthSpan.textContent = `${d.getMonth()+1}月`;
-        
-        // 日
+
         const dateSpan = document.createElement('span');
         dateSpan.className = 'vac-date';
         dateSpan.textContent = `${d.getDate()}日`;
-        
-        // 曜日
+
         const daySpan = document.createElement('span');
         daySpan.textContent = ['日','月','火','水','木','金','土'][dow] || '';
         daySpan.className = 'vac-day';
-        
-        if(dow === 0) th.classList.add('weekend-sun');
-        if(dow === 6) th.classList.add('weekend-sat');
-        
-        label.appendChild(monthSpan);
+
         label.appendChild(dateSpan);
         label.appendChild(daySpan);
-        th.appendChild(label);
-        tr.appendChild(th);
+        dayTh.appendChild(label);
+        dayRow.appendChild(dayTh);
       });
-      thead.appendChild(tr);
+
+      if(currentMonth){
+        monthGroups.push({ label: currentMonth, start: spanStart, end: dateSlots.length - 1 });
+      }
+
+      monthGroups.forEach(group => {
+        const th = document.createElement('th');
+        th.className = 'vac-month-header';
+        th.colSpan = group.end - group.start + 1;
+        const span = document.createElement('span');
+        span.className = 'vac-month-text';
+        span.textContent = group.label;
+        th.appendChild(span);
+        monthRow.appendChild(th);
+      });
+
+      thead.appendChild(monthRow);
+      thead.appendChild(dayRow);
       return thead;
     }
 
@@ -260,7 +290,7 @@
 
     function applyHolidayColor(holidays){
       if(!holidays || !holidays.size || !tableEl) return;
-      tableEl.querySelectorAll('.vac-cell').forEach(cell => {
+      tableEl.querySelectorAll('.vac-cell, .vac-day-header').forEach(cell => {
         if(holidays.has(cell.dataset.date)){
           cell.classList.add('holiday');
         }
@@ -375,25 +405,82 @@
 
     function renderGroupJumps(){
       if(!jumpContainer) return;
-      jumpContainer.textContent = '';
       if(!groupAnchors.length){
         jumpContainer.style.display = 'none';
         return;
       }
       jumpContainer.style.display = 'flex';
-      const label = document.createElement('span');
-      label.className = 'jump-label';
-      label.textContent = 'グループジャンプ';
-      jumpContainer.appendChild(label);
-      groupAnchors.forEach(anchor => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'jump-btn';
-        const memberInfo = typeof anchor.memberCount === 'number' ? `（${anchor.memberCount}名）` : '';
-        btn.textContent = `${anchor.title}${memberInfo}`;
-        btn.addEventListener('click', () => scrollToGroup(anchor.id));
-        jumpContainer.appendChild(btn);
-      });
+      const label = jumpContainer.querySelector('.jump-label') || (() => {
+        const el = document.createElement('span');
+        el.className = 'jump-label';
+        el.textContent = 'グループジャンプ';
+        jumpContainer.appendChild(el);
+        return el;
+      })();
+
+      const buttonsWrap = jumpContainer.querySelector('.jump-buttons') || (() => {
+        const wrap = document.createElement('div');
+        wrap.className = 'jump-buttons';
+        jumpContainer.appendChild(wrap);
+        return wrap;
+      })();
+
+      const selectWrap = jumpContainer.querySelector('.jump-select') || (() => {
+        const wrap = document.createElement('label');
+        wrap.className = 'jump-select';
+        const select = document.createElement('select');
+        wrap.appendChild(select);
+        jumpContainer.appendChild(wrap);
+        return wrap;
+      })();
+      const selectEl = selectWrap.querySelector('select');
+
+      const showButtons = groupJumpMode === 'buttons' || groupJumpMode === 'both';
+      const showSelect = groupJumpMode === 'select' || groupJumpMode === 'both';
+
+      label.style.display = '';
+
+      buttonsWrap.textContent = '';
+      if(showButtons){
+        buttonsWrap.style.display = 'flex';
+        groupAnchors.forEach(anchor => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'jump-btn';
+          const memberInfo = typeof anchor.memberCount === 'number' ? `（${anchor.memberCount}名）` : '';
+          btn.textContent = `${anchor.title}${memberInfo}`;
+          btn.addEventListener('click', () => scrollToGroup(anchor.id));
+          buttonsWrap.appendChild(btn);
+        });
+      }else{
+        buttonsWrap.style.display = 'none';
+      }
+
+      if(showSelect){
+        selectWrap.style.display = 'inline-flex';
+        if(selectEl){
+          selectEl.innerHTML = '';
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'グループを選択';
+          selectEl.appendChild(placeholder);
+          groupAnchors.forEach(anchor => {
+            const opt = document.createElement('option');
+            opt.value = anchor.id;
+            const memberInfo = typeof anchor.memberCount === 'number' ? `（${anchor.memberCount}名）` : '';
+            opt.textContent = `${anchor.title}${memberInfo}`;
+            selectEl.appendChild(opt);
+          });
+          selectEl.onchange = (e) => {
+            const targetId = e.target.value;
+            if(targetId){
+              scrollToGroup(targetId);
+            }
+          };
+        }
+      }else{
+        selectWrap.style.display = 'none';
+      }
     }
 
     function bindTableEvents(){
