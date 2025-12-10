@@ -218,8 +218,11 @@ function normalizeVacationItem_(raw, office){
   const membersBits = String(raw.membersBits || raw.bits || '').trim();
   const visible = coerceVacationVisibleFlag_(raw.visible);
   const isVacation = coerceVacationTypeFlag_(raw.isVacation);
+  const color = String(raw.color || raw.eventColor || 'amber').trim() || 'amber';
+  const orderRaw = Number(raw.order || raw.sortOrder || raw.position || 0);
+  const order = Number.isFinite(orderRaw) && orderRaw > 0 ? orderRaw : 0;
   const updated = Number(raw.updated || raw.serverUpdated || 0) || now_();
-  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, noticeId, noticeTitle, membersBits, updated, visible, isVacation };
+  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, noticeId, noticeTitle, membersBits, updated, visible, isVacation, color, order };
 }
 
 function normalizeNoticeItem_(raw){
@@ -658,6 +661,15 @@ function doPost(e){
         vacations = [];
       }
     }
+    vacations = vacations.map((v, idx)=>{
+      const orderVal = Number(v.order || 0);
+      return { ...v, order: orderVal > 0 ? orderVal : (idx + 1) };
+    }).sort((a,b)=>{
+      const ao = Number(a.order || 0);
+      const bo = Number(b.order || 0);
+      if(ao !== bo) return ao - bo;
+      return (Number(a.updated||0)) - (Number(b.updated||0));
+    });
     return json_({ vacations, updated: now_() });
   }
 
@@ -709,7 +721,11 @@ function doPost(e){
       const membersBits = String(payload.membersBits || '');
       const visible = coerceVacationVisibleFlag_(payload.visible);
       const isVacation = coerceVacationTypeFlag_(payload.isVacation);
-      const base = { id, office, title, startDate, endDate, note, noticeId, noticeTitle, membersBits, visible, isVacation, updated: now_() };
+      const color = String(payload.color || payload.eventColor || 'amber').trim() || 'amber';
+      const orderRaw = Number(payload.order || payload.sortOrder || 0);
+      const hasOrder = Number.isFinite(orderRaw) && orderRaw > 0;
+      const base = { id, office, title, startDate, endDate, note, noticeId, noticeTitle, membersBits, visible, isVacation, color, updated: now_() };
+      if(hasOrder){ base.order = orderRaw; }
       const newItem = normalizeVacationItem_(base, office);
 
       // IDが存在する場合は更新、なければ追加
@@ -720,9 +736,20 @@ function doPost(e){
         vacations.push(newItem);
       }
 
+      vacations = vacations.map((v, idx)=>{
+        const orderVal = Number(v.order || 0);
+        return { ...v, order: orderVal > 0 ? orderVal : (idx + 1) };
+      }).sort((a,b)=>{
+        const ao = Number(a.order || 0);
+        const bo = Number(b.order || 0);
+        if(ao !== bo) return ao - bo;
+        return (Number(a.updated||0)) - (Number(b.updated||0));
+      }).map((v, idx)=> normalizeVacationItem_({ ...v, order: Number(v.order||0) || (idx+1) }, office));
+      const savedItem = vacations.find(v => v.id === id) || newItem;
+
       // 保存
       prop.setProperty(VACATIONS_KEY, JSON.stringify(vacations));
-      return json_({ ok:true, id, vacation: newItem, vacations });
+      return json_({ ok:true, id, vacation: savedItem, vacations });
     }catch(err){
       return json_({ error:'save_failed', debug:String(err) });
     }finally{

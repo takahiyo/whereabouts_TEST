@@ -707,6 +707,8 @@ function applyEventHighlightForItems(eventItems, targetDate){
     console.warn('applyEventHighlight: board element not found');
     return;
   }
+  // eventItems の順序はサーバーで設定された並びを保持する想定。
+  // 同日に複数のイベントが重複する場合、配列先頭（上位）を優先して色や休暇固定の適用を行う。
   const colorClasses=EVENT_COLOR_KEYS.map(key=>getEventColorClass(key)).filter(Boolean);
   const effectMap=new Map();
   (eventItems||[]).forEach(item=>{
