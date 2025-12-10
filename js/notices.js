@@ -34,6 +34,15 @@ function coerceNoticeVisibleFlag(raw) {
   return coerceNoticeDisplayFlag(raw);
 }
 
+function normalizeNoticeKey(value) {
+  if (value == null) return '';
+  return String(value)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+window.normalizeNoticeKey = normalizeNoticeKey;
+
 function coerceNoticeArray(raw) {
   if (raw == null) return [];
   if (Array.isArray(raw)) return raw;
@@ -152,6 +161,8 @@ function renderNotices(notices) {
     const title = notice && notice.title != null ? String(notice.title) : '';
     const content = notice && notice.content != null ? String(notice.content) : '';
     const hasContent = content.trim().length > 0;
+    const noticeId = notice?.id ?? notice?.noticeId ?? notice?.uid ?? '';
+    const noticeKey = notice?.noticeKey ?? notice?.key ?? normalizeNoticeKey(title);
 
     const item = document.createElement('div');
     if (hasContent) {
@@ -174,6 +185,8 @@ function renderNotices(notices) {
         </div>
       `;
     }
+    if (noticeId) item.dataset.noticeId = String(noticeId);
+    if (noticeKey) item.dataset.noticeKey = normalizeNoticeKey(noticeKey);
     noticesList.appendChild(item);
   });
 
