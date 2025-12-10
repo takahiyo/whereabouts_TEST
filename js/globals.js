@@ -314,7 +314,6 @@ function getEventGanttController(){
     startInput: eventStartInput,
     endInput: eventEndInput,
     bitsInput: eventBitsInput,
-    autoBind: false,
     autoInit: false,
     groupJumpContainer: eventGroupJumps,
     scrollContainer: eventGantt,
@@ -726,19 +725,26 @@ function updateEventLegend(items){
   });
 }
 
-async function saveEventFromModal(){
+async function saveEventFromModal(options={}){
+  const opts=options||{};
+  const silent=!!opts.silent;
+  const reload=opts.reload!==false;
+  const reapply=opts.reapply!==false;
+  const updateCache=opts.updateCache!==false;
   const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
   const selectedId=eventSelectedId || (selectedEventIds?.[0]||'');
-  if(!officeId || !selectedId){ toast('表示するイベントを取得できませんでした', false); return false; }
+  if(!officeId || !selectedId){ if(!silent) toast('表示するイベントを取得できませんでした', false); return false; }
   const item=findCachedEvent(officeId, selectedId);
-  if(!item){ toast('イベントの情報を取得できませんでした', false); return false; }
+  if(!item){ if(!silent) toast('イベントの情報を取得できませんでした', false); return false; }
   const ctrl=getEventGanttController();
   const membersBits=ctrl?ctrl.getBitsString():(eventBitsInput?.value||'');
+  const startValue=(eventStartInput?.value||'').trim()||(item.startDate||item.start||item.from||'');
+  const endValue=(eventEndInput?.value||'').trim()||(item.endDate||item.end||item.to||'');
   const payload={
     office: officeId,
     title: item.title||'',
-    start: item.startDate||item.start||item.from||'',
-    end: item.endDate||item.end||item.to||'',
+    start: startValue,
+    end: endValue,
     note: item.noticeTitle||item.note||item.memo||'',
     noticeId: item.noticeId||item.noticeKey||'',
     noticeTitle: item.noticeTitle||'',
@@ -752,18 +758,40 @@ async function saveEventFromModal(){
   try{
     const res=await adminSetVacation(officeId,payload);
     if(res && res.ok!==false){
-      toast('イベントを保存しました');
-      await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
-      await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+      if(updateCache && item){
+        item.membersBits=membersBits;
+        item.startDate=payload.start;
+        item.endDate=payload.end;
+        item.noticeId=payload.noticeId;
+        item.noticeTitle=payload.noticeTitle;
+        item.note=payload.note;
+        item.title=payload.title;
+        item.color=payload.color;
+        item.isVacation=payload.isVacation;
+      }
+      if(reload){
+        await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      }
+      if(reapply){
+        await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+      }
+      if(!silent) toast('イベントを保存しました');
       return true;
     }
     throw new Error(res&&res.error?String(res.error):'save_failed');
   }catch(err){
     console.error('saveEventFromModal error', err);
-    toast('イベントの保存に失敗しました', false);
+    if(!silent) toast('イベントの保存に失敗しました', false);
     return false;
   }
 }
+
+async function handleEventAutoSave(){
+  return await saveEventFromModal({ silent:true, reload:false, reapply:false });
+}
+
+window.saveEventFromModal = saveEventFromModal;
+window.handleEventAutoSave = handleEventAutoSave;
 
 async function applyEventDisplay(selected){
   const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';

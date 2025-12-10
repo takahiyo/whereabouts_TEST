@@ -122,6 +122,12 @@
       if(typeof window.saveLongVacationFromModal === 'function'){
         return await window.saveLongVacationFromModal();
       }
+      if(typeof window.handleEventAutoSave === 'function'){
+        return await window.handleEventAutoSave();
+      }
+      if(typeof window.saveEventFromModal === 'function'){
+        return await window.saveEventFromModal({ silent:true, reload:false, reapply:false });
+      }
       if(typeof window.handleVacationAutoSave === 'function'){
         return await window.handleVacationAutoSave();
       }
