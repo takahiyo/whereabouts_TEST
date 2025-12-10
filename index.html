@@ -136,16 +136,11 @@
                   <textarea id="vacationNote" rows="2" placeholder="社内共有したい備考を入力"></textarea>
                 </label>
               </div>
-              <div class="vacation-row">
-                <label class="vacation-visibility-toggle">
-                  <input id="vacationVisibleToggle" type="checkbox" checked />
-                  表示する（チェックを外すとイベントボタンに表示されません）
-                </label>
-              </div>
               <div class="vacation-row vacation-row-two-cols">
-                <label class="vacation-visibility-toggle">
-                  <input id="vacationIsHoliday" type="checkbox" checked />
-                  休暇としてステータスを固定する
+                <label>
+                  種別
+                  <input id="vacationTypeText" type="text" value="休暇固定（一覧で切替）" readonly />
+                  <span class="vacation-helper">※ 種別は一覧の「休暇固定」列で変更できます。</span>
                 </label>
                 <label>色/カテゴリー
                   <select id="vacationColor" aria-label="色/カテゴリー">
@@ -191,7 +186,7 @@
             <div class="vacation-table-wrap">
                 <table class="vacation-table">
                   <thead>
-                    <tr><th>タイトル</th><th>期間</th><th>対象拠点</th><th>種別</th><th>色</th><th>備考</th><th>表示</th><th>操作</th></tr>
+                    <tr><th>タイトル</th><th>期間</th><th>対象拠点</th><th>休暇固定（種別）</th><th>色</th><th>備考</th><th>表示</th><th>操作</th></tr>
                   </thead>
                   <tbody id="vacationListBody">
                     <tr><td colspan="8" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>

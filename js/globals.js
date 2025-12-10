@@ -37,8 +37,7 @@ const noticesEditor=document.getElementById('noticesEditor'), btnAddNotice=docum
 const vacationTitleInput=document.getElementById('vacationTitle'), vacationStartInput=document.getElementById('vacationStart'), vacationEndInput=document.getElementById('vacationEnd');
 const vacationNoteInput=document.getElementById('vacationNote'), vacationOfficeSelect=document.getElementById('vacationOffice'), vacationMembersBitsInput=document.getElementById('vacationMembersBits');
 const vacationIdInput=document.getElementById('vacationId'), vacationListBody=document.getElementById('vacationListBody');
-const vacationVisibleToggle=document.getElementById('vacationVisibleToggle');
-const vacationIsHolidayToggle=document.getElementById('vacationIsHoliday');
+const vacationTypeText=document.getElementById('vacationTypeText');
 const vacationColorSelect=document.getElementById('vacationColor');
 const btnVacationSave=document.getElementById('btnVacationSave'), btnVacationDelete=document.getElementById('btnVacationDelete'), btnVacationReload=document.getElementById('btnVacationReload'), btnVacationClear=document.getElementById('btnVacationClear');
 
