@@ -8,6 +8,15 @@ if(adminOfficeSel){
     }
   });
 }
+if(vacationOfficeSelect){
+  vacationOfficeSelect.addEventListener('change', async ()=>{
+    const officeId=vacationOfficeSelect.value||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
+    if(typeof fetchNotices==='function'){
+      await fetchNotices(officeId);
+    }
+    refreshVacationNoticeOptions();
+  });
+}
 btnExport.addEventListener('click', async ()=>{
   const office=selectedOfficeId(); if(!office) return;
   const cfg=await adminGetConfigFor(office);
@@ -173,10 +182,11 @@ if(adminModal){
           await autoLoadNoticesOnAdminOpen();
         }
       } else if(targetTab === 'events'){
-        if(typeof fetchNotices === 'function'){
-          await fetchNotices();
-        }
         refreshVacationOfficeOptions();
+        const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
+        if(typeof fetchNotices === 'function'){
+          await fetchNotices(officeId);
+        }
         refreshVacationNoticeOptions();
         await loadVacationsList();
       }
