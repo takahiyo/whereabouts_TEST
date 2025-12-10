@@ -649,8 +649,8 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
   }
 }
 
-async function handleVacationSave(){
-  const office=getVacationTargetOffice(); if(!office) return;
+function buildVacationPayload(){
+  const office=getVacationTargetOffice(); if(!office) return { error:'office_missing' };
   const title=(vacationTitleInput?.value||'').trim();
   const start=(vacationStartInput?.value||'').trim();
   const end=(vacationEndInput?.value||'').trim();
@@ -660,8 +660,6 @@ async function handleVacationSave(){
   const membersBits=(vacationMembersBitsInput?.value||'').trim();
   const id=(vacationIdInput?.value||'').trim();
   const color=(vacationColorSelect?.value||'amber');
-  if(!title){ toast('タイトルを入力してください',false); return; }
-  if(start && end && start>end){ toast('開始日と終了日の指定を確認してください',false); return; }
 
   const payload={ office, title, start, end, membersBits, color };
 
@@ -675,29 +673,54 @@ async function handleVacationSave(){
   }
   if(id) payload.id=id;
 
+  const errors=[];
+  if(!title) errors.push('missing_title');
+  if(start && end && start>end) errors.push('invalid_range');
+
+  return { payload, errors };
+}
+
+async function persistVacationPayload(payload,{ resetFormOnSuccess=true, showToast=true }={}){
+  if(!payload || !payload.office) return false;
   try{
-    const res=await adminSetVacation(office,payload);
+    const res=await adminSetVacation(payload.office,payload);
     if(res && res.ok!==false){
       if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
       if(res.vacation){
         if(vacationTypeText) vacationTypeText.value = getVacationTypeLabel(res.vacation.isVacation !== false);
         if(vacationColorSelect && res.vacation.color){ vacationColorSelect.value = res.vacation.color; }
       }
-      toast('イベントを保存しました');
+      if(showToast) toast('イベントを保存しました');
       if(Array.isArray(res.vacations)){
-        renderVacationRows(res.vacations, office);
+        renderVacationRows(res.vacations, payload.office);
       }else{
-        await loadVacationsList(false, office);
+        await loadVacationsList(false, payload.office);
       }
-      await loadEvents(office, false);
-      resetVacationForm();
-    }else{
-      throw new Error(res&&res.error?String(res.error):'save_failed');
+      await loadEvents(payload.office, false);
+      if(resetFormOnSuccess){
+        resetVacationForm();
+      }
+      return true;
     }
+    throw new Error(res&&res.error?String(res.error):'save_failed');
   }catch(err){
     console.error('handleVacationSave error',err);
-    toast('イベントの保存に失敗しました',false);
+    if(showToast) toast('イベントの保存に失敗しました',false);
+    return false;
   }
+}
+
+async function handleVacationSave(){
+  const { payload, errors } = buildVacationPayload();
+  if(!payload || errors?.includes('missing_title')){ toast('タイトルを入力してください',false); return; }
+  if(errors?.includes('invalid_range')){ toast('開始日と終了日の指定を確認してください',false); return; }
+  await persistVacationPayload(payload,{ resetFormOnSuccess:true, showToast:true });
+}
+
+async function handleVacationAutoSave(){
+  const { payload, errors } = buildVacationPayload();
+  if(!payload || (errors && errors.length)){ return false; }
+  return await persistVacationPayload(payload,{ resetFormOnSuccess:false, showToast:false });
 }
 
 async function handleVacationDelete(){
