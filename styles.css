@@ -441,9 +441,7 @@
 .event-color-teal{background:#e0f7f5 !important; box-shadow:inset 4px 0 0 #14b8a6;}
 .event-color-gray{background:#f1f5f9 !important; box-shadow:inset 4px 0 0 #64748b;}
 .event-color-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:1px solid #cbd5e1;}
-.event-color-dot.legend{margin-left:8px;}
-.event-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px;margin-left:8px;}
-.event-legend.modal-legend{margin:8px 0;}
+.event-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px;margin:8px 0;}
 .event-legend-item{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;font-size:12px;}
 .event-legend-text{color:#0f172a;font-weight:600;}
 .event-legend-type{color:#475569;font-size:11px;}

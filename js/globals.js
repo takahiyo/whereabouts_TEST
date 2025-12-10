@@ -614,7 +614,7 @@ function applyEventHighlightForItems(eventItems, targetDate){
 }
 
 function updateEventLegend(items){
-  const target=document.getElementById('eventLegend');
+  const target=document.getElementById('eventLegendModal')||document.getElementById('eventLegend');
   if(!target) return;
   target.textContent='';
   if(!items || items.length===0){
