@@ -4,10 +4,7 @@ function logoutButtonsCleanup(){
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
   // イベントバナーは削除されたため、この行はコメントアウト
   // try{ if(typeof updateEventBanner==='function'){ updateEventBanner(null); } }catch{}
-  if(eventListBody){
-    eventListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); eventListBody.appendChild(tr);
-  }
+  if(typeof renderVacationRadioMessage==='function'){ renderVacationRadioMessage('読み込み待ち'); }
   if(typeof updateEventDetail==='function'){ updateEventDetail(null); }
   window.scrollTo(0,0);
 }

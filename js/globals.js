@@ -13,7 +13,6 @@ const loginEl=document.getElementById('login'), loginMsg=document.getElementById
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
 const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
 const eventBtn=document.getElementById('eventBtn'), eventModal=document.getElementById('eventModal'), eventClose=document.getElementById('eventClose');
-const eventListBody=document.getElementById('eventListBody');
 const vacationRadioList=document.getElementById('vacationRadioList');
 const eventModalTitle=document.getElementById('eventModalTitle');
 const eventTitleText=document.getElementById('eventTitleText');
@@ -120,86 +119,9 @@ function coerceVacationVisibleFlag(raw){
   return false;
 }
 
-function renderEventRows(list, canToggleOrOptions, emptyMessage){
-  if(!eventListBody) return;
-  const opts=(typeof canToggleOrOptions==='object' && canToggleOrOptions!==null)
-    ? canToggleOrOptions
-    : { canToggle: !!canToggleOrOptions, emptyMessage };
-  const canToggle=opts.canToggle===true;
-  const selectedIds=new Set((opts.selectedIds||[]).map(v=>String(v)));
-  const onSelectChange=typeof opts.onSelectChange==='function'?opts.onSelectChange:null;
-
-  eventListBody.textContent = '';
-  if(!Array.isArray(list) || list.length === 0){
-    const tr=document.createElement('tr');
-    const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent=opts.emptyMessage||'登録されたイベントはありません';
-    tr.appendChild(td); eventListBody.appendChild(tr); return;
-  }
-  list.forEach(item => {
-    const tr=document.createElement('tr');
-    const start=item.startDate||item.start||item.from||'';
-    const end=item.endDate||item.end||item.to||'';
-    const period=start||end?`${start||''}〜${end||''}`:'-';
-    const eventId=String(item.id||item.vacationId||'');
-
-    const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
-    const periodTd=document.createElement('td'); periodTd.textContent=period;
-
-    const typeTd=document.createElement('td');
-    typeTd.textContent=item.isVacation===false?'予定のみ':'休暇固定';
-
-    const colorTd=document.createElement('td');
-    const colorBadge=document.createElement('span');
-    colorBadge.className=`event-color-dot ${getEventColorClass(item.color)} legend`.trim();
-    colorBadge.title=EVENT_COLOR_LABELS[item.color]||'';
-    colorTd.appendChild(colorBadge);
-
-    const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
-    const membersTd=document.createElement('td'); membersTd.textContent=membersText||'—';
-    const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
-    const visibleTd=document.createElement('td');
-    if(canToggle){
-      const visibleToggle=document.createElement('input');
-      visibleToggle.type='checkbox';
-      visibleToggle.checked=coerceVacationVisibleFlag(item.visible);
-      visibleToggle.addEventListener('change', async ()=>{
-        visibleToggle.disabled=true;
-        const updater=typeof updateVacationVisibility==='function'?updateVacationVisibility:null;
-        let success=true;
-        if(updater){ success=await updater(item, visibleToggle.checked); }
-        if(!success){
-          visibleToggle.checked=!visibleToggle.checked;
-        }
-        visibleToggle.disabled=false;
-      });
-      visibleTd.appendChild(visibleToggle);
-    }else{
-      visibleTd.textContent = coerceVacationVisibleFlag(item.visible) ? '表示' : '非表示';
-    }
-
-    const selectTd=document.createElement('td');
-    if(item.visible===true){
-      const check=document.createElement('input');
-      check.type='checkbox';
-      check.checked=selectedIds.has(eventId);
-      check.addEventListener('change', ()=>{
-        const next=new Set(selectedIds);
-        if(check.checked) next.add(eventId); else next.delete(eventId);
-        const arr=Array.from(next);
-        selectedIds.clear(); arr.forEach(v=>selectedIds.add(v));
-        if(onSelectChange) onSelectChange(arr, item, eventId, check.checked);
-      });
-      selectTd.appendChild(check);
-    }else{
-      selectTd.textContent='—';
-    }
-    tr.append(titleTd,periodTd,typeTd,colorTd,membersTd,noteTd,visibleTd,selectTd);
-    eventListBody.appendChild(tr);
-  });
-}
-
 function renderVacationRadioMessage(message){
   if(!vacationRadioList) return;
+  vacationRadioList.style.display='block';
   vacationRadioList.textContent='';
   const div=document.createElement('div');
   div.style.textAlign='center';
@@ -408,16 +330,12 @@ function updateEventButtonVisibility(officeId, list){
 }
 
 async function loadEvents(officeId, showToastOnSuccess=false, options={}){
-  let loadingTd=null;
-  if(eventListBody){
-    eventListBody.textContent='';
-    const loadingTr=document.createElement('tr'); loadingTd=document.createElement('td'); loadingTd.colSpan=8; loadingTd.style.textAlign='center'; loadingTd.textContent='読み込み中...'; loadingTr.appendChild(loadingTd); eventListBody.appendChild(loadingTr);
-  }
   const opts=options||{};
   const targetOfficeId=officeId||CURRENT_OFFICE_ID||'';
+  renderVacationRadioMessage('読み込み中...');
   if(!SESSION_TOKEN || !targetOfficeId){
     cachedEvents={ officeId:'', list:[] };
-    if(loadingTd){ loadingTd.textContent='拠点にログインすると表示できます'; }
+    renderVacationRadioMessage('拠点にログインすると表示できます');
     updateEventDetail(null, targetOfficeId);
     updateEventButtonVisibility(targetOfficeId, []);
     selectedEventIds=[];
@@ -450,16 +368,6 @@ async function loadEvents(officeId, showToastOnSuccess=false, options={}){
     const savedIds=loadSavedEventIds(targetOfficeId);
     selectedEventIds=savedIds;
     cachedEvents={ officeId: targetOfficeId, list: filteredList };
-    renderEventRows(filteredList, {
-      canToggle: isOfficeAdmin(),
-      emptyMessage,
-      selectedIds: savedIds,
-      onSelectChange: (ids)=>{
-        selectedEventIds=ids;
-        saveEventIds(targetOfficeId, ids);
-        updateEventLegend(ids.map(id=>findCachedEvent(targetOfficeId, id)).filter(Boolean));
-      }
-    });
     renderVacationRadioList(filteredList, {
       selectedIds: savedIds,
       emptyMessage,
@@ -488,7 +396,7 @@ async function loadEvents(officeId, showToastOnSuccess=false, options={}){
   }catch(err){
     console.error('loadEvents error',err);
     cachedEvents={ officeId:'', list:[] };
-    if(loadingTd){ loadingTd.textContent='読み込みに失敗しました'; }
+    renderVacationRadioMessage('読み込みに失敗しました');
     updateEventDetail(null, targetOfficeId);
     updateEventButtonVisibility(targetOfficeId, []);
     if(showToastOnSuccess) toast('イベントの取得に失敗しました', false);
@@ -706,31 +614,30 @@ function applyEventHighlightForItems(eventItems, targetDate){
 }
 
 function updateEventLegend(items){
-  const legendTargets=[document.getElementById('eventLegend'), document.getElementById('eventLegendModal')].filter(Boolean);
-  legendTargets.forEach(target=>{
-    target.textContent='';
-    if(!items || items.length===0){
-      const span=document.createElement('span');
-      span.className='event-legend-empty';
-      span.textContent='選択されたイベントはありません';
-      target.appendChild(span);
-      return;
-    }
-    items.forEach(item=>{
-      const pill=document.createElement('div');
-      pill.className='event-legend-item';
-      const dot=document.createElement('span');
-      dot.className=`event-color-dot ${getEventColorClass(item.color)}`.trim();
-      dot.title=EVENT_COLOR_LABELS[item.color]||'';
-      const text=document.createElement('span');
-      text.className='event-legend-text';
-      text.textContent=item.title||'イベント';
-      const type=document.createElement('span');
-      type.className='event-legend-type';
-      type.textContent=item.isVacation===false?'予定のみ':'休暇固定';
-      pill.append(dot, text, type);
-      target.appendChild(pill);
-    });
+  const target=document.getElementById('eventLegend');
+  if(!target) return;
+  target.textContent='';
+  if(!items || items.length===0){
+    const span=document.createElement('span');
+    span.className='event-legend-empty';
+    span.textContent='選択されたイベントはありません';
+    target.appendChild(span);
+    return;
+  }
+  items.forEach(item=>{
+    const pill=document.createElement('div');
+    pill.className='event-legend-item';
+    const dot=document.createElement('span');
+    dot.className=`event-color-dot ${getEventColorClass(item.color)}`.trim();
+    dot.title=EVENT_COLOR_LABELS[item.color]||'';
+    const text=document.createElement('span');
+    text.className='event-legend-text';
+    text.textContent=item.title||'イベント';
+    const type=document.createElement('span');
+    type.className='event-legend-type';
+    type.textContent=item.isVacation===false?'予定のみ':'休暇固定';
+    pill.append(dot, text, type);
+    target.appendChild(pill);
   });
 }
 
