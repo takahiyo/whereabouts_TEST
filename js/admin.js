@@ -173,7 +173,11 @@ if(adminModal){
           await autoLoadNoticesOnAdminOpen();
         }
       } else if(targetTab === 'events'){
+        if(typeof fetchNotices === 'function'){
+          await fetchNotices();
+        }
         refreshVacationOfficeOptions();
+        refreshVacationNoticeOptions();
         await loadVacationsList();
       }
     });
@@ -365,11 +369,75 @@ function getVacationTargetOffice(){
   return office;
 }
 
+function getNoticesForLookup(){
+  return Array.isArray(window.CURRENT_NOTICES)?window.CURRENT_NOTICES:[];
+}
+
+function getNoticesForSelection(){
+  return getNoticesForLookup().filter(n=> n && n.visible !== false && n.display !== false);
+}
+
+function refreshVacationNoticeOptions(selectedId){
+  if(!vacationNoticeSelect) return;
+  const notices=getNoticesForSelection();
+  const prev=selectedId!==undefined?String(selectedId||''):(vacationNoticeSelect.value||'');
+  vacationNoticeSelect.textContent='';
+  const placeholder=document.createElement('option');
+  placeholder.value='';
+  placeholder.textContent='お知らせを選択';
+  vacationNoticeSelect.appendChild(placeholder);
+
+  notices.forEach((notice, idx)=>{
+    const id=String(notice.id || notice.noticeId || notice.title || idx);
+    const title=(notice.title||'(無題)').trim();
+    const opt=document.createElement('option');
+    opt.value=id;
+    opt.textContent=title;
+    opt.dataset.title=title;
+    vacationNoticeSelect.appendChild(opt);
+  });
+
+  const match=Array.from(vacationNoticeSelect.options||[]).find(o=>o.value===prev);
+  vacationNoticeSelect.value=match?prev:'';
+}
+
+function findNoticeSelectionForItem(item){
+  if(!item) return null;
+  const notices=getNoticesForLookup();
+  const desiredId=item.noticeId || item.noticeKey || '';
+  const desiredTitle=item.noticeTitle || '';
+  const legacyNote=item.note || item.memo || '';
+  const candidates=[
+    notices.find(n=> String(n?.id||n?.noticeId||'')===String(desiredId)),
+    notices.find(n=> (n?.title||'') === desiredTitle),
+    notices.find(n=> (n?.title||'') === legacyNote)
+  ].filter(Boolean);
+  const picked=candidates[0];
+  if(picked){
+    return { id:String(picked.id||picked.noticeId||picked.title||notices.indexOf(picked)), title:picked.title||desiredTitle||legacyNote||'' };
+  }
+  if(desiredId || desiredTitle){
+    return { id:String(desiredId||desiredTitle), title:desiredTitle||legacyNote||'' };
+  }
+  return null;
+}
+
+function getSelectedNoticeInfo(){
+  if(!vacationNoticeSelect) return null;
+  const val=vacationNoticeSelect.value||'';
+  if(!val) return null;
+  const notices=getNoticesForLookup();
+  const found=notices.find(n=> String(n?.id||n?.noticeId||n?.title||'')===val);
+  const title=(found?.title || vacationNoticeSelect.selectedOptions?.[0]?.textContent || '').trim();
+  return { id:val, title };
+}
+
 function resetVacationForm(){
   if(vacationTitleInput) vacationTitleInput.value='';
   if(vacationStartInput) vacationStartInput.value='';
   if(vacationEndInput) vacationEndInput.value='';
-  if(vacationNoteInput) vacationNoteInput.value='';
+  if(vacationNoticeSelect){ vacationNoticeSelect.value=''; refreshVacationNoticeOptions(); }
+  cachedVacationLegacyNote='';
   if(vacationMembersBitsInput) vacationMembersBitsInput.value='';
   if(vacationIdInput) vacationIdInput.value='';
   if(vacationTypeText) vacationTypeText.value='休暇固定（一覧で切替）';
@@ -384,7 +452,12 @@ function fillVacationForm(item){
   if(vacationTitleInput) vacationTitleInput.value=item.title||'';
   if(vacationStartInput) vacationStartInput.value=item.startDate||item.start||item.from||'';
   if(vacationEndInput) vacationEndInput.value=item.endDate||item.end||item.to||'';
-  if(vacationNoteInput) vacationNoteInput.value=item.note||item.memo||'';
+  cachedVacationLegacyNote=item.note||item.memo||'';
+  const noticeSel=findNoticeSelectionForItem(item);
+  refreshVacationNoticeOptions(noticeSel?.id);
+  if(vacationNoticeSelect){
+    vacationNoticeSelect.value=noticeSel?.id||'';
+  }
   if(vacationMembersBitsInput) vacationMembersBitsInput.value=item.membersBits||item.bits||'';
   if(vacationIdInput) vacationIdInput.value=item.id||item.vacationId||'';
   if(vacationTypeText) vacationTypeText.value = getVacationTypeLabel(item.isVacation !== false);
@@ -403,6 +476,7 @@ function fillVacationForm(item){
 function getVacationTypeLabel(isVacation){ return (isVacation === false)?'予定のみ':'休暇固定'; }
 
 let cachedVacationList=[];
+let cachedVacationLegacyNote='';
 
 function normalizeVacationList(list, officeId){
   if(!Array.isArray(list)) return [];
@@ -461,7 +535,28 @@ function renderVacationRows(list, officeId){
     colorBadge.className=`event-color-dot ${getEventColorClass(item.color)}`.trim();
     colorBadge.title=EVENT_COLOR_LABELS[item.color]||'';
     colorTd.appendChild(colorBadge);
-    const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
+    const noteTd=document.createElement('td');
+    const noticeSel=findNoticeSelectionForItem(item);
+    if(noticeSel && noticeSel.title){
+      const link=document.createElement('a');
+      link.href='#noticesArea';
+      link.textContent=noticeSel.title;
+      link.addEventListener('click',(e)=>{
+        e.preventDefault();
+        if(typeof toggleNoticesArea==='function'){ toggleNoticesArea(); }
+        const noticesArea=document.getElementById('noticesArea');
+        if(noticesArea){
+          noticesArea.style.display='block';
+          noticesArea.classList.remove('collapsed');
+          noticesArea.scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+      });
+      noteTd.appendChild(link);
+    }else if(item.note||item.memo){
+      noteTd.textContent=item.note||item.memo||'';
+    }else{
+      noteTd.textContent='-';
+    }
     const visibleTd=document.createElement('td');
     const visibleToggle=document.createElement('input');
     visibleToggle.type='checkbox';
@@ -493,7 +588,9 @@ async function updateVacationFlags(item, overrides={}){
     title:item.title||'',
     start:item.startDate||item.start||item.from||'',
     end:item.endDate||item.end||item.to||'',
-    note:item.note||item.memo||'',
+    note:item.note||item.memo||item.noticeTitle||'',
+    noticeId:item.noticeId||item.noticeKey||'',
+    noticeTitle:item.noticeTitle||'',
     membersBits:item.membersBits||item.bits||'',
     visible,
     isVacation,
@@ -557,7 +654,6 @@ async function handleVacationSave(){
   const title=(vacationTitleInput?.value||'').trim();
   const start=(vacationStartInput?.value||'').trim();
   const end=(vacationEndInput?.value||'').trim();
-  const note=(vacationNoteInput?.value||'').trim();
   if(window.VacationGantt){
     window.VacationGantt.syncInput();
   }
@@ -567,15 +663,16 @@ async function handleVacationSave(){
   if(!title){ toast('タイトルを入力してください',false); return; }
   if(start && end && start>end){ toast('開始日と終了日の指定を確認してください',false); return; }
 
-  const payload={
-    office,
-    title,
-    start,
-    end,
-    note,
-    membersBits,
-    color
-  };
+  const payload={ office, title, start, end, membersBits, color };
+
+  const noticeSel=getSelectedNoticeInfo();
+  if(noticeSel){
+    payload.noticeId=noticeSel.id;
+    payload.noticeTitle=noticeSel.title;
+    if(noticeSel.title) payload.note=noticeSel.title;
+  }else if(cachedVacationLegacyNote){
+    payload.note=cachedVacationLegacyNote;
+  }
   if(id) payload.id=id;
 
   try{
