@@ -200,11 +200,9 @@
   </div>
 
   <!-- イベントモーダル -->
-  <div id="eventModal" class="admin-modal event-modal" aria-modal="true" role="dialog">
+  <div id="eventModal" class="admin-modal event-modal" aria-modal="true" role="dialog" aria-label="イベント表示設定">
     <div class="admin-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3 id="eventModalTitle">イベント</h3><button id="eventClose">閉じる</button>
-      </div>
+      <div class="event-modal-header"><button id="eventClose">閉じる</button></div>
 
       <!-- タブパネル: イベント選択 -->
       <div id="tabEvent" class="tab-panel active">
@@ -212,10 +210,15 @@
           <div id="vacationRadioList" class="vacation-radio-list"></div>
           <div id="eventGanttWrap" class="vacation-gantt-head">
             <div class="vacation-gantt-sticky-header">
-              <div class="vacation-actions" style="margin-bottom:4px;display:flex;gap:8px;justify-content:flex-end;">
-                <button id="btnClearEventDisplay" class="btn-secondary">表示クリア</button>
-                <button id="btnEventSave" class="btn-secondary">保存</button>
-                <button id="btnApplyEventDisplay" class="btn-primary">表示</button>
+              <div class="event-toolbar">
+                <div class="event-toolbar__hint">
+                  <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
+                </div>
+                <div class="vacation-actions" style="margin-bottom:0;display:flex;gap:8px;justify-content:flex-end;">
+                  <button id="btnClearEventDisplay" class="btn-secondary">表示クリア</button>
+                  <button id="btnEventSave" class="btn-secondary">保存</button>
+                  <button id="btnApplyEventDisplay" class="btn-primary">表示</button>
+                </div>
               </div>
               <div id="eventGroupJumps" class="vacation-group-jumps" aria-label="グループジャンプ" style="display:none;">
                 <span class="jump-label">グループ移動</span>
@@ -225,12 +228,7 @@
                   <select id="eventGroupJumpSelect"></select>
                 </label>
               </div>
-              <div class="vacation-gantt-title" id="eventTitleText">イベント</div>
-              <div class="vacation-gantt-help" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <span id="eventPeriodText"></span>
-                <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
-              </div>
-              <div id="eventLegendModal" class="event-legend" aria-live="polite"></div>
+              <div id="eventLegendModal" class="event-legend event-legend-compact" aria-live="polite"></div>
             </div>
             <div id="eventGantt" class="vacation-gantt" aria-live="polite"></div>
             <input id="eventStart" type="hidden" />

@@ -14,9 +14,6 @@ const menuEl=document.getElementById('groupMenu'), menuList=document.getElementB
 const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
 const eventBtn=document.getElementById('eventBtn'), eventModal=document.getElementById('eventModal'), eventClose=document.getElementById('eventClose');
 const vacationRadioList=document.getElementById('vacationRadioList');
-const eventModalTitle=document.getElementById('eventModalTitle');
-const eventTitleText=document.getElementById('eventTitleText');
-const eventPeriodText=document.getElementById('eventPeriodText');
 const eventGanttWrap=document.getElementById('eventGanttWrap');
 const eventGantt=document.getElementById('eventGantt');
 const eventGroupJumps=document.getElementById('eventGroupJumps');
@@ -215,19 +212,29 @@ function renderVacationRadioList(list, options){
     const content=document.createElement('div');
     content.className='vacation-radio-content';
 
-    const metaRow=document.createElement('div');
-    metaRow.className='vacation-radio-meta';
-    const colorDot=document.createElement('span');
-    colorDot.className=`event-color-dot ${getEventColorClass(item.color)}`.trim();
-    colorDot.title=EVENT_COLOR_LABELS[item.color]||'';
-    const typeBadge=document.createElement('span');
-    typeBadge.className='event-type-badge';
-    typeBadge.textContent=item.isVacation===false?'予定のみ':'休暇固定';
-    metaRow.append(colorDot, typeBadge);
-
-    const titleDiv=document.createElement('div');
-    titleDiv.className='vacation-radio-title';
-    titleDiv.textContent=item.title||'';
+    const note=(item.note||item.memo||'').trim();
+    const isNoteLong=note.length>100;
+    const titleEl=isNoteLong?document.createElement('a'):document.createElement('div');
+    titleEl.className='vacation-radio-title';
+    titleEl.textContent=item.title||'';
+    if(isNoteLong){
+      titleEl.href='#noticesArea';
+      titleEl.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        if(!input.checked){
+          input.checked=true;
+          input.dispatchEvent(new Event('change',{ bubbles:true }));
+        }
+        if(onFocus) onFocus(item, id);
+        const noticesArea=document.getElementById('noticesArea');
+        if(typeof toggleNoticesArea==='function'){ toggleNoticesArea(); }
+        if(noticesArea){
+          noticesArea.style.display='block';
+          noticesArea.classList.remove('collapsed');
+          noticesArea.scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+      });
+    }
 
     const start=item.startDate||item.start||item.from||'';
     const end=item.endDate||item.end||item.to||'';
@@ -236,15 +243,11 @@ function renderVacationRadioList(list, options){
     periodDiv.className='vacation-radio-period';
     periodDiv.textContent=period;
 
-    const membersText=summarizeVacationMembers(item.membersBits||item.bits||'');
-    if(membersText){
-      const membersDiv=document.createElement('div');
-      membersDiv.className='vacation-radio-members';
-      membersDiv.textContent=membersText;
-      content.append(metaRow, titleDiv, periodDiv, membersDiv);
-    }else{
-      content.append(metaRow, titleDiv, periodDiv);
-    }
+    const noteDiv=document.createElement('div');
+    noteDiv.className='vacation-radio-note';
+    noteDiv.textContent=note ? (isNoteLong ? `${note.slice(0,100)}…` : note) : '備考なし';
+
+    content.append(titleEl, periodDiv, noteDiv);
 
     wrapper.append(input, content);
     wrapper.addEventListener('click', (e)=>{
@@ -286,9 +289,6 @@ function updateEventDetail(item, officeId){
   const ctrl=getEventGanttController();
   if(!item){
     eventSelectedId='';
-    if(eventModalTitle) eventModalTitle.textContent='イベント';
-    if(eventTitleText) eventTitleText.textContent='イベント';
-    if(eventPeriodText) eventPeriodText.textContent='期間未設定';
     if(ctrl){
       ctrl.setRangeAndBits('', '', '');
       ctrl.applyBitsToCells();
@@ -298,10 +298,6 @@ function updateEventDetail(item, officeId){
   const start=item.startDate||item.start||item.from||'';
   const end=item.endDate||item.end||item.to||'';
   eventSelectedId=String(item.id||item.vacationId||'');
-  const title=item.title||'(無題)';
-  if(eventModalTitle) eventModalTitle.textContent=title;
-  if(eventTitleText) eventTitleText.textContent=title;
-  if(eventPeriodText) eventPeriodText.textContent=(start||end)?`${start||''}〜${end||''}`:'期間未設定';
   if(ctrl){
     ctrl.setRangeAndBits(start, end, item.membersBits||item.bits||'');
     ctrl.applyBitsToCells();
