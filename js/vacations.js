@@ -122,6 +122,9 @@
       if(typeof window.saveLongVacationFromModal === 'function'){
         return await window.saveLongVacationFromModal();
       }
+      if(typeof window.handleVacationAutoSave === 'function'){
+        return await window.handleVacationAutoSave();
+      }
       if(typeof window.handleVacationSave === 'function'){
         return await window.handleVacationSave();
       }
