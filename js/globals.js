@@ -21,8 +21,6 @@ const eventStartInput=document.getElementById('eventStart');
 const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
-const btnApplyEventDisplay=document.getElementById('btnApplyEventDisplay');
-const btnClearEventDisplay=document.getElementById('btnClearEventDisplay');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -474,17 +472,16 @@ async function loadEvents(officeId, showToastOnSuccess=false, options={}){
     const savedIds=loadSavedEventIds(targetOfficeId);
     selectedEventIds=savedIds;
     cachedEvents={ officeId: targetOfficeId, list: filteredList };
+    const visibleItems=filteredList.filter(item=>item.visible===true);
     renderVacationRadioList(filteredList, {
       selectedIds: savedIds,
       emptyMessage,
       onSelectChange: (ids)=>{
         selectedEventIds=ids;
         saveEventIds(targetOfficeId, ids);
-        updateEventLegend(ids.map(id=>findCachedEvent(targetOfficeId, id)).filter(Boolean));
       },
       onFocus: handleEventSelection
     });
-    const visibleItems=filteredList.filter(item=>item.visible===true);
     const initialSelection=savedIds.map(id=>findCachedEvent(targetOfficeId, id)).find(Boolean)
       || (opts.visibleOnly===true?visibleItems[0]:(visibleItems[0]||filteredList[0]))
       || null;
@@ -495,8 +492,9 @@ async function loadEvents(officeId, showToastOnSuccess=false, options={}){
       updateEventDetail(null, targetOfficeId);
       if(opts.onSelect){ opts.onSelect(null, ''); }
     }
-    updateEventLegend(savedIds.map(id=>findCachedEvent(targetOfficeId, id)).filter(Boolean));
+    updateEventLegend(visibleItems);
     updateEventButtonVisibility(targetOfficeId, normalizedList);
+    await applyEventDisplay(visibleItems);
     if(showToastOnSuccess) toast('イベントを読み込みました');
     return filteredList;
   }catch(err){
@@ -826,24 +824,23 @@ async function saveEventFromModal(){
   }
 }
 
-async function applyEventDisplay(selected){
+async function applyEventDisplay(items){
   const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  const ids=Array.isArray(selected)
-    ? selected.map(v=>String(v)).filter(Boolean)
-    : (selected? [String(selected)] : []);
-  if(ids.length===0 || !officeId){ toast('イベントを選択できませんでした', false); return false; }
-  if(cachedEvents.officeId!==officeId){
-    await loadEvents(officeId);
-  }
-  const items=ids.map(id=>findCachedEvent(officeId, id)).filter(Boolean);
-  if(items.length===0){ toast('イベントの情報を取得できませんでした', false); return false; }
-  applyEventHighlightForItems(items);
+  const sourceList=Array.isArray(items)
+    ? items
+    : (cachedEvents.officeId===officeId ? cachedEvents.list : []);
+  const visibleItems=(Array.isArray(sourceList)?sourceList:[])
+    .filter(item=>coerceVacationVisibleFlag(item?.visible));
+
+  if(!officeId){ return false; }
+
+  const ids=visibleItems.map(v=>String(v.id||v.vacationId||'')).filter(Boolean);
   appliedEventIds=ids;
   appliedEventOfficeId=officeId;
-  appliedEventTitles=items.map(v=>v.title||'イベント');
-  selectedEventIds=ids;
-  saveEventIds(officeId, ids);
-  updateEventLegend(items);
+  appliedEventTitles=visibleItems.map(v=>v.title||'イベント');
+
+  applyEventHighlightForItems(visibleItems);
+  updateEventLegend(visibleItems);
   updateEventCardStates();
   return true;
 }
@@ -854,8 +851,6 @@ async function clearEventDisplay(){
   appliedEventTitles=[];
   applyEventHighlightForItems([]);
   updateEventLegend([]);
-  saveEventIds(CURRENT_OFFICE_ID, []);
-  selectedEventIds=[];
   updateEventCardStates();
   return true;
 }
@@ -863,8 +858,6 @@ async function clearEventDisplay(){
 async function autoApplySavedEvent(){
   const officeId = CURRENT_OFFICE_ID || '';
   if(!officeId) { return; }
-  const savedIds = loadSavedEventIds(officeId);
-  if(!Array.isArray(savedIds) || savedIds.length===0) { return; }
   let retries = 0;
   const maxRetries = 30;
   while(!board && retries < maxRetries){
@@ -873,7 +866,7 @@ async function autoApplySavedEvent(){
   }
   if(!board) { return; }
   try{
-    await applyEventDisplay(savedIds);
+    await applyEventDisplay();
   }catch(err){
     console.error('Auto-apply failed:', err);
   }
