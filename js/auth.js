@@ -157,6 +157,10 @@ eventBtn.addEventListener('click', async ()=>{
   const targetOfficeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
   const list=await loadEvents(targetOfficeId, true, { visibleOnly:true, onSelect: handleEventSelection });
   if(!Array.isArray(list) || list.length===0){ toast('表示対象なし'); return; }
+  const ctrl=getEventGanttController();
+  if(ctrl?.setSaveMode){
+    ctrl.setSaveMode('event-modal');
+  }
   showEventModal(true);
 });
 eventClose.addEventListener('click', ()=> showEventModal(false));
