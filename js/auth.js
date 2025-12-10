@@ -6,7 +6,7 @@ function logoutButtonsCleanup(){
   // try{ if(typeof updateEventBanner==='function'){ updateEventBanner(null); } }catch{}
   if(eventListBody){
     eventListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); eventListBody.appendChild(tr);
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); eventListBody.appendChild(tr);
   }
   if(typeof updateEventDetail==='function'){ updateEventDetail(null); }
   window.scrollTo(0,0);
@@ -166,11 +166,11 @@ eventClose.addEventListener('click', ()=> showEventModal(false));
 
 if(btnApplyEventDisplay){
   btnApplyEventDisplay.addEventListener('click', async ()=>{
-    const targetId=eventSelectedId || currentEventId || '';
-    if(!targetId){ toast('表示するイベントがありません', false); return; }
+    const targets=(Array.isArray(selectedEventIds)&&selectedEventIds.length)?selectedEventIds:(eventSelectedId?[eventSelectedId]:[]);
+    if(targets.length===0){ toast('表示するイベントがありません', false); return; }
     const applyFn=typeof applyEventDisplay==='function'?applyEventDisplay:null;
     try{
-      const result=applyFn?await applyFn(targetId):true;
+      const result=applyFn?await applyFn(targets):true;
       if(result===false){ toast('イベントの表示に失敗しました', false); return; }
       showEventModal(false);
       toast('イベントを表示しました');

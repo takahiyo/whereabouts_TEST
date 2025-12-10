@@ -325,6 +325,8 @@ function updateMoveButtons(){
 
 /* イベント管理UI */
 let currentVacationVisible = true;
+let currentVacationIsHoliday = true;
+let currentVacationColor = 'amber';
 if(btnVacationSave){ btnVacationSave.addEventListener('click', handleVacationSave); }
 if(btnVacationDelete){ btnVacationDelete.addEventListener('click', handleVacationDelete); }
 if(btnVacationReload){ btnVacationReload.addEventListener('click', ()=> loadVacationsList(true)); }
@@ -332,6 +334,16 @@ if(btnVacationClear){ btnVacationClear.addEventListener('click', resetVacationFo
 if(vacationVisibleToggle){
   vacationVisibleToggle.addEventListener('change', ()=>{
     currentVacationVisible = vacationVisibleToggle.checked;
+  });
+}
+if(vacationIsHolidayToggle){
+  vacationIsHolidayToggle.addEventListener('change', ()=>{
+    currentVacationIsHoliday = vacationIsHolidayToggle.checked;
+  });
+}
+if(vacationColorSelect){
+  vacationColorSelect.addEventListener('change', ()=>{
+    currentVacationColor = vacationColorSelect.value || 'amber';
   });
 }
 
@@ -380,6 +392,10 @@ function resetVacationForm(){
   if(vacationIdInput) vacationIdInput.value='';
   currentVacationVisible = true;
   if(vacationVisibleToggle) vacationVisibleToggle.checked = true;
+  currentVacationIsHoliday = true;
+  if(vacationIsHolidayToggle) vacationIsHolidayToggle.checked = true;
+  currentVacationColor = 'amber';
+  if(vacationColorSelect) vacationColorSelect.value = 'amber';
   if(window.VacationGantt){
     window.VacationGantt.reset();
   }
@@ -395,6 +411,10 @@ function fillVacationForm(item){
   if(vacationIdInput) vacationIdInput.value=item.id||item.vacationId||'';
   currentVacationVisible = item.visible === true;
   if(vacationVisibleToggle) vacationVisibleToggle.checked = item.visible === true;
+  currentVacationIsHoliday = item.isVacation !== false;
+  if(vacationIsHolidayToggle) vacationIsHolidayToggle.checked = currentVacationIsHoliday;
+  currentVacationColor = item.color || 'amber';
+  if(vacationColorSelect) vacationColorSelect.value = currentVacationColor;
   if(vacationOfficeSelect && item.office){
     refreshVacationOfficeOptions();
     if(vacationOfficeSelect.querySelector(`option[value="${item.office}"]`)){
@@ -412,7 +432,7 @@ function renderVacationRows(list){
   if(!Array.isArray(list) || list.length===0){
     const tr=document.createElement('tr');
     const td=document.createElement('td');
-    td.colSpan=6; td.style.textAlign='center'; td.textContent='イベントはありません';
+    td.colSpan=8; td.style.textAlign='center'; td.textContent='イベントはありません';
     tr.appendChild(td); vacationListBody.appendChild(tr); return;
   }
 
@@ -423,6 +443,12 @@ function renderVacationRows(list){
     const end=item.endDate||item.end||item.to||'';
     const periodTd=document.createElement('td'); periodTd.textContent=start||end?`${start||''}〜${end||''}`:'-';
     const officeTd=document.createElement('td'); officeTd.textContent=item.office||'';
+    const typeTd=document.createElement('td'); typeTd.textContent=item.isVacation===false?'予定のみ':'休暇固定';
+    const colorTd=document.createElement('td');
+    const colorBadge=document.createElement('span');
+    colorBadge.className=`event-color-dot ${getEventColorClass(item.color)}`.trim();
+    colorBadge.title=EVENT_COLOR_LABELS[item.color]||'';
+    colorTd.appendChild(colorBadge);
     const noteTd=document.createElement('td'); noteTd.textContent=item.note||item.memo||'';
     const visibleTd=document.createElement('td');
     const visibleToggle=document.createElement('input');
@@ -441,7 +467,7 @@ function renderVacationRows(list){
     const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
     editBtn.addEventListener('click', ()=> fillVacationForm(item));
     actionTd.appendChild(editBtn);
-    tr.append(titleTd, periodTd, officeTd, noteTd, visibleTd, actionTd);
+    tr.append(titleTd, periodTd, officeTd, typeTd, colorTd, noteTd, visibleTd, actionTd);
     vacationListBody.appendChild(tr);
   });
 }
@@ -456,7 +482,9 @@ async function updateVacationVisibility(item, visible){
     note:item.note||item.memo||'',
     membersBits:item.membersBits||item.bits||'',
     visible,
-    hideOthers: visible === true
+    hideOthers: visible === true,
+    isVacation: item.isVacation !== false,
+    color: item.color || 'amber'
   };
   const id=item.id||item.vacationId||'';
   if(id) payload.id=id;
@@ -487,7 +515,7 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
   const office=officeOverride||getVacationTargetOffice(); if(!office) return;
   if(vacationListBody){
     vacationListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=6; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
   }
   try{
     const res=await adminGetVacation(office);
@@ -498,7 +526,7 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
     console.error('loadVacationsList error',err);
     if(vacationListBody){
       vacationListBody.textContent='';
-      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=6; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
+      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
     }
     toast('イベントの取得に失敗しました',false);
   }
@@ -526,7 +554,9 @@ async function handleVacationSave(){
     note,
     membersBits,
     visible: currentVacationVisible,
-    hideOthers: currentVacationVisible === true
+    hideOthers: currentVacationVisible === true,
+    isVacation: currentVacationIsHoliday,
+    color: currentVacationColor||'amber'
   };
   if(id) payload.id=id;
 
@@ -536,6 +566,8 @@ async function handleVacationSave(){
       if(res.id && vacationIdInput){ vacationIdInput.value=res.id; }
       if(res.vacation){
         currentVacationVisible = res.vacation.visible === true;
+        currentVacationIsHoliday = res.vacation.isVacation !== false;
+        currentVacationColor = res.vacation.color || currentVacationColor;
       }
       toast('イベントを保存しました');
       if(Array.isArray(res.vacations)){
