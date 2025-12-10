@@ -161,41 +161,9 @@ eventBtn.addEventListener('click', async ()=>{
 });
 eventClose.addEventListener('click', ()=> showEventModal(false));
 
-if(btnApplyEventDisplay){
-  btnApplyEventDisplay.addEventListener('click', async ()=>{
-    const targets=(Array.isArray(selectedEventIds)&&selectedEventIds.length)?selectedEventIds:(eventSelectedId?[eventSelectedId]:[]);
-    if(targets.length===0){ toast('表示するイベントがありません', false); return; }
-    const applyFn=typeof applyEventDisplay==='function'?applyEventDisplay:null;
-    try{
-      const result=applyFn?await applyFn(targets):true;
-      if(result===false){ toast('イベントの表示に失敗しました', false); return; }
-      showEventModal(false);
-      toast('イベントを表示しました');
-    }catch(err){
-      console.error('applyEventDisplay error', err);
-      toast('イベントの表示に失敗しました', false);
-    }
-  });
-}
-
 if(btnEventSave){
   btnEventSave.addEventListener('click', async ()=>{
     await saveEventFromModal();
-  });
-}
-
-if(btnClearEventDisplay){
-  btnClearEventDisplay.addEventListener('click', async ()=>{
-    const clearFn=typeof clearEventDisplay==='function'?clearEventDisplay:null;
-    try{
-      const result=clearFn?await clearFn():true;
-      if(result===false){ toast('イベントの表示をクリアできませんでした', false); return; }
-      showEventModal(false);
-      toast('イベントの表示をクリアしました');
-    }catch(err){
-      console.error('clearEventDisplay error', err);
-      toast('イベントの表示をクリアできませんでした', false);
-    }
   });
 }
 
