@@ -474,13 +474,13 @@ function parseVacationMembers(bitsStr){
 
 function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
   console.log('parseVacationMembersForDate called:', { targetDate, startDate, endDate, bitsStr });
-  
+
   const members=getRosterOrdering().flatMap(g => g.members || []);
   if(!members.length) {
     console.warn('No members found');
     return { memberIds: [], memberNames: '' };
   }
-  
+
   // 日付の正規化
   function normalizeDate(dateStr){
     if(!dateStr) return '';
@@ -488,24 +488,60 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
     if(Number.isNaN(d.getTime())) return '';
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  
+
   const target = normalizeDate(targetDate);
   const start = normalizeDate(startDate);
   const end = normalizeDate(endDate);
-  
-  console.log('Normalized dates:', { target, start, end });
-  
-  if(!target || !start || !end) {
-    console.warn('Invalid dates after normalization');
+
+  const parts = (bitsStr||'').split(';').map(s => s.trim()).filter(Boolean);
+  console.log('Normalized dates:', { target, start, end }, 'parts:', parts.length);
+
+  const buildResultFromBits = (bits)=>{
+    const onSet = new Set();
+    for(let i=0;i<bits.length && i<members.length;i++){
+      if(bits[i] === '1') onSet.add(i);
+    }
+    const memberIds = members.map(m => m.id!=null?String(m.id):'').filter((_,idx)=> onSet.has(idx) );
+    const memberNames = members.filter((_,idx)=> onSet.has(idx)).map(m => m.name||'').filter(Boolean).join('、');
+    console.log('Result from bits:', { memberIds, memberNames, onSetSize: onSet.size });
+    return { memberIds, memberNames };
+  };
+
+  const fallbackByParts = ()=>{
+    if(parts.length===0 || !target){
+      console.warn('Fallback: no parts or invalid target');
+      return { memberIds: [], memberNames: '' };
+    }
+    const matchedPart = parts.find(p=>{
+      if(!p.includes(':')) return false;
+      const [pDate] = p.split(':');
+      return normalizeDate(pDate) === target;
+    }) || (parts.length===1 ? parts[0] : null);
+    if(!matchedPart){
+      console.warn('Fallback: target not matched in parts');
+      return { memberIds: [], memberNames: '' };
+    }
+    const bits = matchedPart.includes(':') ? (matchedPart.split(':')[1] || '') : matchedPart;
+    console.log('Fallback bits used:', bits);
+    return buildResultFromBits(bits);
+  };
+
+  if(!target){
+    console.warn('Invalid target date after normalization');
     return { memberIds: [], memberNames: '' };
   }
-  
-  // 対象日が期間内かチェック
+
+  if(!start || !end){
+    console.warn('Invalid start/end; using fallback path');
+    return fallbackByParts();
+  }
+
+  // 対象日が期間内かチェック。範囲外の場合もビット列直接評価を試みる
   if(target < start || target > end) {
-    console.warn('Target date outside range:', { target, start, end });
-    return { memberIds: [], memberNames: '' };
+    console.warn('Target date outside range, trying fallback:', { target, start, end });
+    return fallbackByParts();
   }
-  
+
   // 日付スロットを生成
   const dateSlots = [];
   const current = new Date(start);
@@ -514,42 +550,31 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
     dateSlots.push(normalizeDate(current));
     current.setDate(current.getDate() + 1);
   }
-  
+
   console.log('Date slots generated:', dateSlots.length, 'slots');
-  
+
   // 対象日のインデックスを取得
   const targetIdx = dateSlots.indexOf(target);
   console.log('Target index:', targetIdx);
-  
+
   if(targetIdx < 0) {
-    console.warn('Target date not found in slots');
-    return { memberIds: [], memberNames: '' };
+    console.warn('Target date not found in slots; using fallback');
+    return fallbackByParts();
   }
-  
+
   // ビット文字列をパース
-  const parts = (bitsStr||'').split(';').map(s => s.trim()).filter(Boolean);
   console.log('Bits parts:', parts.length, 'parts');
-  
+
   if(parts.length === 0 || targetIdx >= parts.length) {
-    console.warn('No bits for target index:', { partsLength: parts.length, targetIdx });
-    return { memberIds: [], memberNames: '' };
+    console.warn('No bits for target index; using fallback', { partsLength: parts.length, targetIdx });
+    return fallbackByParts();
   }
-  
+
   const part = parts[targetIdx];
   const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
   console.log('Bits for target date:', bits);
-  
-  const onSet = new Set();
-  for(let i=0;i<bits.length && i<members.length;i++){
-    if(bits[i] === '1') onSet.add(i);
-  }
-  
-  const memberIds = members.map(m => m.id!=null?String(m.id):'').filter((_,idx)=> onSet.has(idx) );
-  const memberNames = members.filter((_,idx)=> onSet.has(idx)).map(m => m.name||'').filter(Boolean).join('、');
-  
-  console.log('Result:', { memberIds, memberNames, onSetSize: onSet.size });
-  
-  return { memberIds, memberNames };
+
+  return buildResultFromBits(bits);
 }
 
 function getVacationPeriodText(item){
@@ -627,6 +652,16 @@ function applyEventHighlightForItems(eventItems, targetDate){
   const effectMap=new Map();
   (eventItems||[]).forEach(item=>{
     const { memberIds } = getEventMembersForDate(item, targetDate);
+    if(!memberIds.length){
+      console.warn('applyEventHighlight: memberIds empty', {
+        id: item.id||item.vacationId||'',
+        title: item.title||'',
+        targetDate,
+        isVacation: item.isVacation!==false,
+        start: item.startDate||item.start||item.from||'',
+        end: item.endDate||item.end||item.to||''
+      });
+    }
     memberIds.forEach(id=>{
       const key=String(id);
       const ref=effectMap.get(key)||{ vacations:[], highlights:[] };
@@ -648,6 +683,11 @@ function applyEventHighlightForItems(eventItems, targetDate){
       tr.classList.add('event-highlight');
       if(colorClass){ tr.classList.add(colorClass); }
       if(effect.vacations.length>0){
+        console.debug('applyEventHighlight: applying vacation status', {
+          targetDate,
+          memberKey: key,
+          vacations: effect.vacations.map(v=>v.id||v.vacationId||v.title||'')
+        });
         applyVacationStatus(tr, statusTd, statusSelect, effect.vacations.map(v=>v.title||'イベント'));
       }else{
         restoreStatusField(tr, statusTd, statusSelect);
