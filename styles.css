@@ -416,16 +416,35 @@
 .vacation-radio-item{display:flex;align-items:start;gap:8px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;}
 .vacation-radio-item:hover{background:#f9fafb;border-color:#d1d5db;}
 .vacation-radio-item.selected{background:#eff6ff;border-color:#3b82f6;}
-.vacation-radio-item input[type="radio"]{margin-top:2px;cursor:pointer;}
+.vacation-radio-item input[type="radio"],.vacation-radio-item input[type="checkbox"]{margin-top:2px;cursor:pointer;}
 .vacation-radio-content{flex:1;display:flex;flex-direction:column;gap:4px;}
 .vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
 .vacation-radio-members{color:#6b7280;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vacation-radio-meta{display:flex;align-items:center;gap:8px;color:#475569;font-size:12px;}
+.event-type-badge{background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;padding:2px 6px;border-radius:10px;font-size:11px;}
+.vacation-radio-item.multi{align-items:flex-start;}
+.vacation-radio-item.multi input[type="checkbox"]{margin-top:4px;}
 .event-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
 .event-banner__title{font-weight:700;margin-bottom:4px;}
 .event-banner__detail{font-size:13px;}
 .event-banner__members{font-size:13px;color:#b45309;}
-.event-highlight{background:#fef9c3 !important; box-shadow:inset 4px 0 0 #f59e0b;}
+.event-highlight{background:#f8fafc !important; box-shadow:inset 4px 0 0 #94a3b8;}
+.event-color-amber{background:#fef9c3 !important; box-shadow:inset 4px 0 0 #f59e0b;}
+.event-color-blue{background:#e0f2fe !important; box-shadow:inset 4px 0 0 #3b82f6;}
+.event-color-green{background:#dcfce7 !important; box-shadow:inset 4px 0 0 #22c55e;}
+.event-color-pink{background:#fdf2f8 !important; box-shadow:inset 4px 0 0 #ec4899;}
+.event-color-purple{background:#f3e8ff !important; box-shadow:inset 4px 0 0 #a855f7;}
+.event-color-teal{background:#e0f7f5 !important; box-shadow:inset 4px 0 0 #14b8a6;}
+.event-color-gray{background:#f1f5f9 !important; box-shadow:inset 4px 0 0 #64748b;}
+.event-color-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:1px solid #cbd5e1;}
+.event-color-dot.legend{margin-left:8px;}
+.event-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px;margin-left:8px;}
+.event-legend.modal-legend{margin:8px 0;}
+.event-legend-item{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;font-size:12px;}
+.event-legend-text{color:#0f172a;font-weight:600;}
+.event-legend-type{color:#475569;font-size:11px;}
+.event-legend-empty{color:#94a3b8;font-size:12px;}
 .vacation-status-label{
   display:none;
   font-weight:700;

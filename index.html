@@ -38,6 +38,7 @@
     <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
     <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="eventBtn" class="event-btn" title="イベント">📅 イベント</button>
+    <div id="eventLegend" class="event-legend" aria-live="polite"></div>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
@@ -141,6 +142,23 @@
                   表示する（チェックを外すとイベントボタンに表示されません）
                 </label>
               </div>
+              <div class="vacation-row vacation-row-two-cols">
+                <label class="vacation-visibility-toggle">
+                  <input id="vacationIsHoliday" type="checkbox" checked />
+                  休暇としてステータスを固定する
+                </label>
+                <label>色/カテゴリー
+                  <select id="vacationColor" aria-label="色/カテゴリー">
+                    <option value="amber">サニー</option>
+                    <option value="blue">ブルー</option>
+                    <option value="green">グリーン</option>
+                    <option value="pink">ピンク</option>
+                    <option value="purple">パープル</option>
+                    <option value="teal">ティール</option>
+                    <option value="gray">グレー</option>
+                  </select>
+                </label>
+              </div>
               <div class="vacation-row" style="display:none;">
                 <label>メンバーの休暇指定（ガントで自動入力）
                   <input id="vacationMembersBits" type="text" placeholder="ガント入力で自動反映されます" readonly />
@@ -171,16 +189,16 @@
           <div class="admin-box">
             <h4>登録済みのイベント</h4>
             <div class="vacation-table-wrap">
-              <table class="vacation-table">
-                <thead>
-                  <tr><th>タイトル</th><th>期間</th><th>対象拠点</th><th>備考</th><th>表示</th><th>操作</th></tr>
-                </thead>
-                <tbody id="vacationListBody">
-                  <tr><td colspan="6" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
-                </tbody>
-              </table>
+                <table class="vacation-table">
+                  <thead>
+                    <tr><th>タイトル</th><th>期間</th><th>対象拠点</th><th>種別</th><th>色</th><th>備考</th><th>表示</th><th>操作</th></tr>
+                  </thead>
+                  <tbody id="vacationListBody">
+                    <tr><td colspan="8" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
         </div>
       </div>
 
@@ -200,13 +218,14 @@
           <div class="vacation-table-wrap">
             <table class="vacation-table">
               <thead>
-                <tr><th>タイトル</th><th>期間</th><th>対象メンバー</th><th>備考</th><th>表示</th></tr>
+                <tr><th>タイトル</th><th>期間</th><th>種別</th><th>色</th><th>対象メンバー</th><th>備考</th><th>表示</th><th>選択</th></tr>
               </thead>
               <tbody id="eventListBody">
-                <tr><td colspan="5" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
               </tbody>
             </table>
           </div>
+          <div id="eventLegendModal" class="event-legend modal-legend" aria-live="polite"></div>
           <div id="vacationRadioList" class="vacation-radio-list" style="display:none;"></div>
           <div id="eventGanttWrap" class="vacation-gantt-head">
             <div class="vacation-gantt-sticky-header">
