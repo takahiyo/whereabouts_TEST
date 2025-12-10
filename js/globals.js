@@ -28,6 +28,7 @@ const adminOfficeRow=document.getElementById('adminOfficeRow'), adminOfficeSel=d
 const manualBtn=document.getElementById('manualBtn'), manualModal=document.getElementById('manualModal'), manualClose=document.getElementById('manualClose'), manualUser=document.getElementById('manualUser'), manualAdmin=document.getElementById('manualAdmin');
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 const noticesEditor=document.getElementById('noticesEditor'), btnAddNotice=document.getElementById('btnAddNotice'), btnLoadNotices=document.getElementById('btnLoadNotices'), btnSaveNotices=document.getElementById('btnSaveNotices');
+const noticeModal=document.getElementById('noticeModal'), noticeModalTitle=document.getElementById('noticeModalTitle'), noticeModalBody=document.getElementById('noticeModalBody'), noticeModalClose=document.getElementById('noticeModalClose');
 const vacationTitleInput=document.getElementById('vacationTitle'), vacationStartInput=document.getElementById('vacationStart'), vacationEndInput=document.getElementById('vacationEnd');
 const vacationNoticeSelect=document.getElementById('vacationNotice'), vacationOfficeSelect=document.getElementById('vacationOffice'), vacationMembersBitsInput=document.getElementById('vacationMembersBits');
 const vacationIdInput=document.getElementById('vacationId'), vacationListBody=document.getElementById('vacationListBody');
@@ -259,7 +260,7 @@ function renderVacationRadioList(list, options){
     noticeBtn.addEventListener('click',(e)=>{
       e.preventDefault();
       e.stopPropagation();
-      openRelatedNotice(item);
+      openRelatedNotice(item, { fromEventCalendar:true, openMode:'modal' });
     });
 
     actions.appendChild(noticeBtn);
@@ -305,11 +306,122 @@ function updateEventCardStates(){
   });
 }
 
+function findNoticeFromCache(item){
+  const normalizeKeyFn = typeof normalizeNoticeKey === 'function'
+    ? normalizeNoticeKey
+    : (value)=>{ if(value==null) return ''; return String(value).replace(/\s+/g,' ').trim().toLowerCase(); };
+
+  const noticeId=item?.noticeId||item?.id||'';
+  const noticeKey=item?.noticeKey||'';
+  const noticeTitle=item?.noticeTitle||item?.title||'';
+  const normalizedId=normalizeKeyFn(noticeId);
+  const normalizedKey=normalizeKeyFn(noticeKey);
+  const normalizedTitle=normalizeKeyFn(noticeTitle);
+  const list=Array.isArray(window.CURRENT_NOTICES)?window.CURRENT_NOTICES:[];
+
+  let target=list.find(n=> normalizedId && normalizeKeyFn(n?.id||n?.noticeId||n?.uid||'')===normalizedId) || null;
+  if(!target){
+    target=list.find(n=> normalizedKey && normalizeKeyFn(n?.noticeKey||n?.key||'')===normalizedKey) || null;
+  }
+  if(!target){
+    target=list.find(n=> normalizedTitle && normalizeKeyFn(n?.title||'')===normalizedTitle) || null;
+  }
+  if(!target) return null;
+
+  return {
+    ...target,
+    id: target?.id||target?.noticeId||target?.uid||'',
+    noticeKey: target?.noticeKey||target?.key||'',
+    title: target?.title||'',
+    content: target?.content||''
+  };
+}
+
+function hideNoticeModal(){
+  if(!noticeModal) return;
+  noticeModal.classList.remove('show');
+  noticeModal.setAttribute('aria-hidden','true');
+}
+
+function showNoticeModal(notice){
+  if(!noticeModal || !noticeModalTitle || !noticeModalBody) return false;
+  hideNoticeModal();
+  noticeModalTitle.textContent=notice?.title||'関連お知らせ';
+  noticeModalBody.textContent='';
+  const content=document.createElement('div');
+  content.className='notice-modal-content';
+  const bodyText=notice?.content||'';
+  if(bodyText){
+    if(typeof linkifyText==='function'){
+      content.innerHTML=linkifyText(bodyText).replace(/\n/g,'<br>');
+    }else{
+      content.textContent=bodyText;
+    }
+  }else{
+    content.textContent='本文が設定されていません';
+  }
+  noticeModalBody.appendChild(content);
+  noticeModal.classList.add('show');
+  noticeModal.setAttribute('aria-hidden','false');
+  return true;
+}
+
+function openNoticeInNewWindow(notice){
+  try{
+    const win=window.open('', '_blank', 'noopener');
+    if(!win) return false;
+    const title=notice?.title||'関連お知らせ';
+    const contentStr=notice?.content||'';
+    win.document.title=title;
+    const wrapper=win.document.createElement('div');
+    wrapper.style.fontFamily='sans-serif';
+    wrapper.style.maxWidth='720px';
+    wrapper.style.margin='24px auto';
+    wrapper.style.padding='12px';
+    wrapper.style.lineHeight='1.6';
+    const heading=win.document.createElement('h1');
+    heading.textContent=title;
+    heading.style.fontSize='20px';
+    heading.style.marginBottom='12px';
+    const body=win.document.createElement('div');
+    body.style.whiteSpace='pre-wrap';
+    body.style.fontSize='14px';
+    body.textContent=contentStr||'本文が設定されていません';
+    wrapper.appendChild(heading);
+    wrapper.appendChild(body);
+    win.document.body.appendChild(wrapper);
+    return true;
+  }catch(err){
+    console.error('openNoticeInNewWindow error', err);
+    return false;
+  }
+}
+
+function renderRelatedNoticePopup(notice, options={}){
+  const opts=options||{};
+  const mode=(opts.openMode||'modal').toLowerCase();
+  if(mode==='window'){
+    const opened=openNoticeInNewWindow(notice);
+    if(opened) return true;
+  }
+  return showNoticeModal(notice);
+}
+
 function openRelatedNotice(item, options={}){
   const opts=options||{};
   const hasNotice = hasRelatedNotice(item);
+  const fromEvent = opts.fromEventCalendar===true || opts.fromEvent===true;
   if(!hasNotice){
     if(opts.toastOnMissing!==false) toast('関連するお知らせがありません', false);
+    return false;
+  }
+
+  if(fromEvent){
+    const targetNotice=findNoticeFromCache(item);
+    if(targetNotice){
+      return renderRelatedNoticePopup(targetNotice, opts);
+    }
+    if(opts.toastOnMissing!==false) toast('該当するお知らせが見つかりませんでした', false);
     return false;
   }
   const noticesArea=document.getElementById('noticesArea');
@@ -361,6 +473,15 @@ function openRelatedNotice(item, options={}){
 
   if(opts.toastOnMissing!==false) toast('該当するお知らせが見つかりませんでした', false);
   return false;
+}
+
+if(noticeModalClose){
+  noticeModalClose.addEventListener('click', hideNoticeModal);
+}
+if(noticeModal){
+  noticeModal.addEventListener('click', (e)=>{
+    if(e.target===noticeModal) hideNoticeModal();
+  });
 }
 
 function getEventGanttController(){
