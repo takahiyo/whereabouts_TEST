@@ -430,6 +430,9 @@
 .vacation-radio-title:hover{text-decoration:underline;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
 .vacation-radio-state{color:#475569;font-size:11px;white-space:nowrap;}
+.vacation-radio-actions{display:flex;justify-content:flex-end;align-items:center;margin-top:4px;min-height:32px;}
+.vacation-radio-actions .btn-open-notice{padding:6px 12px;font-size:12px;line-height:1.4;}
+.vacation-radio-actions .btn-open-notice:disabled{opacity:0.6;cursor:not-allowed;}
 .event-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
 .event-banner__title{font-weight:700;margin-bottom:4px;}
 .event-banner__detail{font-size:13px;}

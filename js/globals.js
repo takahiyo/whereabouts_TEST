@@ -23,7 +23,6 @@ const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
 const btnApplyEventDisplay=document.getElementById('btnApplyEventDisplay');
 const btnClearEventDisplay=document.getElementById('btnClearEventDisplay');
-const btnOpenEventNotice=document.getElementById('btnOpenEventNotice');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -172,6 +171,10 @@ function saveEventIds(officeId, ids){
   catch{}
 }
 
+function hasRelatedNotice(item){
+  return !!(item?.noticeTitle||item?.noticeId||item?.noticeKey||item?.note||item?.memo);
+}
+
 function renderVacationRadioList(list, options){
   if(!vacationRadioList) return;
   vacationRadioList.textContent='';
@@ -228,7 +231,6 @@ function renderVacationRadioList(list, options){
       e.stopPropagation();
       setSelected(id, true);
       if(onFocus) onFocus(item, id);
-      openRelatedNotice(item);
     });
 
     const stateEl=document.createElement('span');
@@ -244,7 +246,27 @@ function renderVacationRadioList(list, options){
     periodDiv.className='vacation-radio-period';
     periodDiv.textContent=period;
 
-    content.append(titleRow, periodDiv);
+    const hasNotice=hasRelatedNotice(item);
+    const actions=document.createElement('div');
+    actions.className='vacation-radio-actions';
+
+    const noticeBtn=document.createElement('button');
+    noticeBtn.type='button';
+    noticeBtn.className='btn-secondary btn-open-notice';
+    noticeBtn.textContent='関連お知らせ';
+    noticeBtn.disabled=!hasNotice;
+    if(!hasNotice){
+      noticeBtn.title='関連するお知らせがありません';
+    }
+    noticeBtn.addEventListener('click',(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openRelatedNotice(item);
+    });
+
+    actions.appendChild(noticeBtn);
+
+    content.append(titleRow, periodDiv, actions);
 
     wrapper.append(content);
     wrapper.addEventListener('click', ()=>{
@@ -287,7 +309,7 @@ function updateEventCardStates(){
 
 function openRelatedNotice(item, options={}){
   const opts=options||{};
-  const hasNotice = !!(item?.noticeTitle||item?.noticeId||item?.noticeKey||item?.note||item?.memo);
+  const hasNotice = hasRelatedNotice(item);
   if(!hasNotice){
     if(opts.toastOnMissing!==false) toast('関連するお知らせがありません', false);
     return false;
