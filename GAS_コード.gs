@@ -194,6 +194,18 @@ function coerceVacationVisibleFlag_(raw){
   return false;
 }
 
+function coerceVacationTypeFlag_(raw){
+  if(raw === true) return true;
+  if(raw === false) return false;
+  if(typeof raw === 'string'){
+    const s = raw.trim().toLowerCase();
+    if(!s) return true;
+    return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+  }
+  if(typeof raw === 'number') return raw !== 0;
+  return true;
+}
+
 function normalizeVacationItem_(raw, office){
   if(raw == null) return null;
   const id = String(raw.id || raw.vacationId || '').trim();
@@ -203,8 +215,9 @@ function normalizeVacationItem_(raw, office){
   const note = String(raw.note || raw.memo || '').substring(0, 2000);
   const membersBits = String(raw.membersBits || raw.bits || '').trim();
   const visible = coerceVacationVisibleFlag_(raw.visible);
+  const isVacation = coerceVacationTypeFlag_(raw.isVacation);
   const updated = Number(raw.updated || raw.serverUpdated || 0) || now_();
-  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, membersBits, updated, visible };
+  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, membersBits, updated, visible, isVacation };
 }
 
 function normalizeNoticeItem_(raw){
@@ -688,7 +701,8 @@ function doPost(e){
       const note = String(payload.note || '').substring(0, 2000);
       const membersBits = String(payload.membersBits || '');
       const visible = coerceVacationVisibleFlag_(payload.visible);
-      const base = { id, office, title, startDate, endDate, note, membersBits, visible, updated: now_() };
+      const isVacation = coerceVacationTypeFlag_(payload.isVacation);
+      const base = { id, office, title, startDate, endDate, note, membersBits, visible, isVacation, updated: now_() };
       const newItem = normalizeVacationItem_(base, office);
 
       // IDが存在する場合は更新、なければ追加
