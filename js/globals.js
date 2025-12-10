@@ -197,8 +197,12 @@ function renderVacationRadioList(list, options){
 
   const setSelected=(id, enabled)=>{
     syncSelectedIds();
-    if(enabled){ selectedIds.add(id); }
-    else { selectedIds.delete(id); }
+    if(enabled){
+      selectedIds.clear();
+      selectedIds.add(id);
+    } else {
+      selectedIds.delete(id);
+    }
     const arr=Array.from(selectedIds);
     selectedEventIds=arr;
     saveEventIds(officeId, arr);
