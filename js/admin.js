@@ -3,7 +3,7 @@ if(adminOfficeSel){
   adminOfficeSel.addEventListener('change', ()=>{
     adminSelectedOfficeId=adminOfficeSel.value||'';
     refreshVacationOfficeOptions();
-    if(document.getElementById('tabVacations')?.classList.contains('active')){
+    if(document.getElementById('tabEvents')?.classList.contains('active')){
       loadVacationsList();
     }
   });
@@ -163,7 +163,7 @@ if(adminModal){
       const panelMap={
         basic: adminModal.querySelector('#tabBasic'),
         notices: adminModal.querySelector('#tabNotices'),
-        vacations: adminModal.querySelector('#tabVacations')
+        events: adminModal.querySelector('#tabEvents')
       };
       const panel=panelMap[targetTab];
       if(panel) panel.classList.add('active');
@@ -172,7 +172,7 @@ if(adminModal){
         if(typeof autoLoadNoticesOnAdminOpen === 'function'){
           await autoLoadNoticesOnAdminOpen();
         }
-      } else if(targetTab === 'vacations'){
+      } else if(targetTab === 'events'){
         refreshVacationOfficeOptions();
         await loadVacationsList();
       }
@@ -323,7 +323,7 @@ function updateMoveButtons(){
   });
 }
 
-/* 長期休暇管理UI */
+/* イベント管理UI */
 let currentVacationVisible = true;
 if(btnVacationSave){ btnVacationSave.addEventListener('click', handleVacationSave); }
 if(btnVacationDelete){ btnVacationDelete.addEventListener('click', handleVacationDelete); }
@@ -412,7 +412,7 @@ function renderVacationRows(list){
   if(!Array.isArray(list) || list.length===0){
     const tr=document.createElement('tr');
     const td=document.createElement('td');
-    td.colSpan=6; td.style.textAlign='center'; td.textContent='長期休暇はありません';
+    td.colSpan=6; td.style.textAlign='center'; td.textContent='イベントはありません';
     tr.appendChild(td); vacationListBody.appendChild(tr); return;
   }
 
@@ -472,7 +472,7 @@ async function updateVacationVisibility(item, visible){
       }else{
         await loadVacationsList(false, office);
       }
-      if(office){ await loadLongVacations(office, false); }
+      if(office){ await loadEvents(office, false); }
       return true;
     }
     throw new Error(res&&res.error?String(res.error):'update_failed');
@@ -493,14 +493,14 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
     const res=await adminGetVacation(office);
     const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
     renderVacationRows(list);
-    if(showToastOnSuccess) toast('長期休暇を読み込みました');
+    if(showToastOnSuccess) toast('イベントを読み込みました');
   }catch(err){
     console.error('loadVacationsList error',err);
     if(vacationListBody){
       vacationListBody.textContent='';
       const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=6; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
     }
-    toast('長期休暇の取得に失敗しました',false);
+    toast('イベントの取得に失敗しました',false);
   }
 }
 
@@ -537,19 +537,19 @@ async function handleVacationSave(){
       if(res.vacation){
         currentVacationVisible = res.vacation.visible === true;
       }
-      toast('長期休暇を保存しました');
+      toast('イベントを保存しました');
       if(Array.isArray(res.vacations)){
         renderVacationRows(res.vacations);
       }else{
         await loadVacationsList(false, office);
       }
-      await loadLongVacations(office, false);
+      await loadEvents(office, false);
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
   }catch(err){
     console.error('handleVacationSave error',err);
-    toast('長期休暇の保存に失敗しました',false);
+    toast('イベントの保存に失敗しました',false);
   }
 }
 
@@ -557,7 +557,7 @@ async function handleVacationDelete(){
   const office=getVacationTargetOffice(); if(!office) return;
   const id=(vacationIdInput?.value||'').trim();
   if(!id){ toast('削除する項目のIDを選択してください',false); return; }
-  if(!confirm('選択中の長期休暇を削除しますか？')) return;
+  if(!confirm('選択中のイベントを削除しますか？')) return;
   try{
     const res=await adminDeleteVacation(office,id);
     if(res && res.ok!==false){
@@ -569,7 +569,7 @@ async function handleVacationDelete(){
     }
   }catch(err){
     console.error('handleVacationDelete error',err);
-    toast('長期休暇の削除に失敗しました',false);
+    toast('イベントの削除に失敗しました',false);
   }
 }
 

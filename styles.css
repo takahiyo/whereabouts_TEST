@@ -45,14 +45,14 @@
     padding:6px 0; box-shadow: 0 1px 0 rgba(0,0,0,.06);
   }
   .title-wrap{ position:relative; }
-  header .title-btn, header .notices-btn, header .admin-btn, header .long-vacation-btn, header .logout-btn, header .manual-btn{
+  header .title-btn, header .notices-btn, header .admin-btn, header .event-btn, header .logout-btn, header .manual-btn{
     font-size:14px; font-weight:600; color:#1f2937;
     padding:.35rem .9rem; border-radius:999px; line-height:1.2; border:1px solid transparent; cursor:pointer;
   }
   header .title-btn{ background:#dff1ff; border-color:#bfe4ff; }
   header .notices-btn{ background:#fffbeb; border-color:#fbbf24; display:none; }
   header .admin-btn{ background:#e7f8e7; border-color:#b7e6b7; display:none; }
-  header .long-vacation-btn{ background:#fdf2f8; border-color:#fbcfe8; display:none; }
+  header .event-btn{ background:#fdf2f8; border-color:#fbcfe8; display:none; }
   header .logout-btn{ background:#fee2e2; border-color:#fecaca; display:none; }
   header .manual-btn{ background:#eef2ff; border-color:#c7d2fe; display:none; }
 
@@ -403,7 +403,7 @@
 .vacation-group-jumps .jump-select{display:inline-flex;align-items:center;gap:4px;}
 .vacation-group-jumps .jump-select select{padding:4px 8px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;min-width:180px;}
 .vacation-group-jumps .jump-buttons{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-.long-vacation-modal .vacation-table-wrap{max-height:unset;}
+.event-modal .vacation-table-wrap{max-height:unset;}
 .vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
 .vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
 .vacation-radio-item{display:flex;align-items:start;gap:8px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;}
@@ -414,11 +414,11 @@
 .vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
 .vacation-radio-members{color:#6b7280;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.long-vacation-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
-.long-vacation-banner__title{font-weight:700;margin-bottom:4px;}
-.long-vacation-banner__detail{font-size:13px;}
-.long-vacation-banner__members{font-size:13px;color:#b45309;}
-.long-vacation-highlight{background:#fef9c3 !important; box-shadow:inset 4px 0 0 #f59e0b;}
+.event-banner{display:none !important;max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.04);}
+.event-banner__title{font-weight:700;margin-bottom:4px;}
+.event-banner__detail{font-size:13px;}
+.event-banner__members{font-size:13px;color:#b45309;}
+.event-highlight{background:#fef9c3 !important; box-shadow:inset 4px 0 0 #f59e0b;}
 .vacation-status-label{
   display:none;
   font-weight:700;

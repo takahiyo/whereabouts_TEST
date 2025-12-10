@@ -1,14 +1,14 @@
 /* 認証UI + 管理UI + マニュアルUI */
 function logoutButtonsCleanup(){
-  closeMenu(); showAdminModal(false); showManualModal(false); showLongVacationModal(false);
+  closeMenu(); showAdminModal(false); showManualModal(false); showEventModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
-  // 長期休暇バナーは削除されたため、この行はコメントアウト
-  // try{ if(typeof updateLongVacationBanner==='function'){ updateLongVacationBanner(null); } }catch{}
-  if(longVacationListBody){
-    longVacationListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); longVacationListBody.appendChild(tr);
+  // イベントバナーは削除されたため、この行はコメントアウト
+  // try{ if(typeof updateEventBanner==='function'){ updateEventBanner(null); } }catch{}
+  if(eventListBody){
+    eventListBody.textContent='';
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=5; td.style.textAlign='center'; td.textContent='読み込み待ち'; tr.appendChild(td); eventListBody.appendChild(tr);
   }
-  if(typeof updateLongVacationDetail==='function'){ updateLongVacationDetail(null); }
+  if(typeof updateEventDetail==='function'){ updateEventDetail(null); }
   window.scrollTo(0,0);
 }
 async function logout(){
@@ -42,14 +42,14 @@ function ensureAuthUI(){
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
-  longVacationBtn.style.display = 'none';
-  if(btnLongVacationSave) btnLongVacationSave.style.display = loggedIn ? 'inline-block' : 'none';
-  updateLongVacationButtonVisibility();
+  eventBtn.style.display = 'none';
+  if(btnEventSave) btnEventSave.style.display = loggedIn ? 'inline-block' : 'none';
+  updateEventButtonVisibility();
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
-function showLongVacationModal(yes){ longVacationModal.classList.toggle('show', !!yes); }
+function showEventModal(yes){ eventModal.classList.toggle('show', !!yes); }
 async function applyRoleToAdminPanel(){
   if(!(adminOfficeRow&&adminOfficeSel)) return;
   if(CURRENT_ROLE!=='superAdmin'){
@@ -156,48 +156,48 @@ adminBtn.addEventListener('click', async ()=>{
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);
 
-longVacationBtn.addEventListener('click', async ()=>{
+eventBtn.addEventListener('click', async ()=>{
   const targetOfficeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
-  const list=await loadLongVacations(targetOfficeId, true, { visibleOnly:true, onSelect: handleLongVacationSelection });
+  const list=await loadEvents(targetOfficeId, true, { visibleOnly:true, onSelect: handleEventSelection });
   if(!Array.isArray(list) || list.length===0){ toast('表示対象なし'); return; }
-  showLongVacationModal(true);
+  showEventModal(true);
 });
-longVacationClose.addEventListener('click', ()=> showLongVacationModal(false));
+eventClose.addEventListener('click', ()=> showEventModal(false));
 
-if(btnApplyVacationDisplay){
-  btnApplyVacationDisplay.addEventListener('click', async ()=>{
-    const targetId=longVacationSelectedId || currentLongVacationId || '';
-    if(!targetId){ toast('表示する長期休暇がありません', false); return; }
-    const applyFn=typeof applyLongVacationDisplay==='function'?applyLongVacationDisplay:null;
+if(btnApplyEventDisplay){
+  btnApplyEventDisplay.addEventListener('click', async ()=>{
+    const targetId=eventSelectedId || currentEventId || '';
+    if(!targetId){ toast('表示するイベントがありません', false); return; }
+    const applyFn=typeof applyEventDisplay==='function'?applyEventDisplay:null;
     try{
       const result=applyFn?await applyFn(targetId):true;
-      if(result===false){ toast('長期休暇の表示に失敗しました', false); return; }
-      showLongVacationModal(false);
-      toast('長期休暇を表示しました');
+      if(result===false){ toast('イベントの表示に失敗しました', false); return; }
+      showEventModal(false);
+      toast('イベントを表示しました');
     }catch(err){
-      console.error('applyLongVacationDisplay error', err);
-      toast('長期休暇の表示に失敗しました', false);
+      console.error('applyEventDisplay error', err);
+      toast('イベントの表示に失敗しました', false);
     }
   });
 }
 
-if(btnLongVacationSave){
-  btnLongVacationSave.addEventListener('click', async ()=>{
-    await saveLongVacationFromModal();
+if(btnEventSave){
+  btnEventSave.addEventListener('click', async ()=>{
+    await saveEventFromModal();
   });
 }
 
-if(btnClearVacationDisplay){
-  btnClearVacationDisplay.addEventListener('click', async ()=>{
-    const clearFn=typeof clearLongVacationDisplay==='function'?clearLongVacationDisplay:null;
+if(btnClearEventDisplay){
+  btnClearEventDisplay.addEventListener('click', async ()=>{
+    const clearFn=typeof clearEventDisplay==='function'?clearEventDisplay:null;
     try{
       const result=clearFn?await clearFn():true;
-      if(result===false){ toast('長期休暇の表示をクリアできませんでした', false); return; }
-      showLongVacationModal(false);
-      toast('長期休暇の表示をクリアしました');
+      if(result===false){ toast('イベントの表示をクリアできませんでした', false); return; }
+      showEventModal(false);
+      toast('イベントの表示をクリアしました');
     }catch(err){
-      console.error('clearLongVacationDisplay error', err);
-      toast('長期休暇の表示をクリアできませんでした', false);
+      console.error('clearEventDisplay error', err);
+      toast('イベントの表示をクリアできませんでした', false);
     }
   });
 }
@@ -208,7 +208,7 @@ document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     showAdminModal(false);
     showManualModal(false);
-    showLongVacationModal(false);
+    showEventModal(false);
     closeMenu();
   }
 });
@@ -222,7 +222,7 @@ function setupModalOverlayClose(modalEl, closeFn){
 
 setupModalOverlayClose(adminModal, ()=> showAdminModal(false));
 setupModalOverlayClose(manualModal, ()=> showManualModal(false));
-setupModalOverlayClose(longVacationModal, ()=> showLongVacationModal(false));
+setupModalOverlayClose(eventModal, ()=> showEventModal(false));
 
 /* マニュアルタブ切り替え */
 document.querySelectorAll('.manual-tab-btn').forEach(btn => {
