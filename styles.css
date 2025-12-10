@@ -430,14 +430,20 @@
 .vacation-radio-item{display:flex;flex-direction:column;gap:6px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;position:relative;}
 .vacation-radio-item:hover{background:#f9fafb;border-color:#d1d5db;}
 .vacation-radio-item:focus-visible{outline:2px solid #3b82f6;outline-offset:2px;}
-.vacation-radio-item.selected{background:#eff6ff;border-color:#3b82f6;}
-.vacation-radio-item.applied{background:#ecfdf3;border-color:#16a34a;}
+.vacation-radio-item.selected{background:#eff6ff;border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.55);}
+.vacation-radio-item.applied{background:#ecfdf3;border-color:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.5);}
+.vacation-radio-item.selected::before,.vacation-radio-item.applied::after{position:absolute;top:8px;right:12px;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.01em;box-shadow:0 2px 6px rgba(0,0,0,.08);opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease;pointer-events:none;}
+.vacation-radio-item.selected::before{content:"✓ 選択中";background:#dbeafe;border:1px solid #bfdbfe;color:#1d4ed8;opacity:1;transform:translateY(0);}
+.vacation-radio-item.applied::after{content:"👁 表示中";background:#dcfce7;border:1px solid #86efac;color:#166534;opacity:1;transform:translateY(0);}
+.vacation-radio-item.selected.applied::before{right:108px;}
 .vacation-radio-content{flex:1;display:flex;flex-direction:column;gap:4px;}
 .vacation-radio-header{display:flex;align-items:center;gap:8px;justify-content:space-between;}
 .vacation-radio-title{font-weight:600;color:#0f172a;font-size:14px;text-decoration:none;flex:1;}
 .vacation-radio-title:hover{text-decoration:underline;}
 .vacation-radio-period{color:#6b7280;font-size:12px;}
-.vacation-radio-state{color:#475569;font-size:11px;white-space:nowrap;}
+.vacation-radio-state{color:#475569;font-size:11px;white-space:nowrap;font-weight:600;}
+.vacation-radio-item.selected .vacation-radio-state{color:#1d4ed8;}
+.vacation-radio-item.applied .vacation-radio-state{color:#15803d;font-weight:700;}
 .vacation-radio-actions{display:flex;justify-content:flex-end;align-items:center;margin-top:4px;min-height:32px;}
 .vacation-radio-actions .btn-open-notice{padding:6px 12px;font-size:12px;line-height:1.4;}
 .vacation-radio-actions .btn-open-notice:disabled{opacity:0.6;cursor:not-allowed;}
