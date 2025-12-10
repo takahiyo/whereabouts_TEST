@@ -352,8 +352,15 @@
 .vacation-table th{background:#f9fafb;color:#374151;position:sticky;top:0;z-index:1;}
 .vacation-table tr:last-child td{border-bottom:none;}
 .vacation-gantt-sticky-header{position:sticky;top:0;background:#fff;z-index:30;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-bottom:4px;}
-.vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow:auto;max-height:60vh;}
-.vacation-gantt table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;}
+ .vacation-gantt{border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#f8fafc;overflow:auto;max-height:60vh;}
+ .vacation-gantt table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;}
+ .vacation-gantt .vac-save-status{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:#334155;}
+ .vacation-gantt .vac-save-status[data-state="error"]{color:#b91c1c;}
+ .vacation-gantt .vac-save-status[data-state="saved"]{color:#16a34a;}
+ .vacation-gantt .vac-save-status button{font-size:12px;padding:2px 8px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;}
+ .vacation-gantt .vac-save-status button:hover{background:#f8fafc;}
+ .vac-save-spinner{width:14px;height:14px;border:2px solid #93c5fd;border-top-color:#0ea5e9;border-radius:50%;animation:vac-save-spin 0.8s linear infinite;display:inline-block;}
+@keyframes vac-save-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
  .vacation-gantt thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:5;box-shadow:0 1px 3px rgba(0,0,0,0.1);vertical-align:middle;}
  .vacation-gantt thead tr.vac-month-row th{--vac-month-row-height:34px;--vac-head-offset:0px;top:0;padding:6px 4px;}
  .vacation-gantt thead tr.vac-day-row th{--vac-head-offset:var(--vac-month-row-height, 30px);top:var(--vac-head-offset);padding:4px 3px;}
