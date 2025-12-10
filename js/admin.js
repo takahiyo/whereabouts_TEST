@@ -495,15 +495,24 @@ function normalizeVacationList(list, officeId){
   if(!Array.isArray(list)) return [];
   const prevList=Array.isArray(cachedVacationList)?cachedVacationList:[];
   const targetOffice=officeId==null?'':String(officeId);
-  return list.map(item=>{
+  const normalized=list.map((item, idx)=>{
     const idStr=String(item?.id||item?.vacationId||'');
     const itemOffice=String(item?.office||targetOffice||'');
     const prev=prevList.find(v=> String(v?.id||v?.vacationId||'') === idStr && String(v?.office||targetOffice||'') === itemOffice);
     const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
     const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
     const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : false);
-    return { ...item, office:itemOffice || (item?.office||''), isVacation };
+    const orderVal=Number(item?.order ?? item?.sortOrder ?? prev?.order ?? (idx+1));
+    return { ...item, office:itemOffice || (item?.office||''), isVacation, order: Number.isFinite(orderVal)&&orderVal>0?orderVal:(idx+1), _originalIndex: idx };
   });
+  normalized.sort((a,b)=>{
+    const ao=Number(a.order||0);
+    const bo=Number(b.order||0);
+    if(ao!==bo) return ao-bo;
+    return (a._originalIndex||0)-(b._originalIndex||0);
+  });
+  normalized.forEach((item, idx)=>{ if(!item.order) item.order=idx+1; delete item._originalIndex; });
+  return normalized;
 }
 
 function renderVacationRows(list, officeId){
@@ -514,12 +523,24 @@ function renderVacationRows(list, officeId){
   if(!Array.isArray(normalizedList) || normalizedList.length===0){
     const tr=document.createElement('tr');
     const td=document.createElement('td');
-    td.colSpan=8; td.style.textAlign='center'; td.textContent='イベントはありません';
+    td.colSpan=9; td.style.textAlign='center'; td.textContent='イベントはありません';
     tr.appendChild(td); vacationListBody.appendChild(tr); return;
   }
 
-  normalizedList.forEach(item=>{
+  normalizedList.forEach((item, idx)=>{
     const tr=document.createElement('tr');
+    const idStr=String(item.id||item.vacationId||'');
+    tr.dataset.vacationId=idStr;
+    tr.dataset.order=String(item.order||idx+1);
+    tr.draggable=true;
+    const dragTd=document.createElement('td');
+    dragTd.className='vacation-drag-cell';
+    const dragBtn=document.createElement('button');
+    dragBtn.type='button';
+    dragBtn.className='vacation-drag-handle';
+    dragBtn.title='ドラッグして並び替え';
+    dragBtn.innerHTML='<span aria-hidden="true">☰</span>';
+    dragTd.appendChild(dragBtn);
     const titleTd=document.createElement('td'); titleTd.textContent=item.title||'';
     const start=item.startDate||item.start||item.from||'';
     const end=item.endDate||item.end||item.to||'';
@@ -587,15 +608,41 @@ function renderVacationRows(list, officeId){
     const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
     editBtn.addEventListener('click', ()=> fillVacationForm(item));
     actionTd.appendChild(editBtn);
-    tr.append(titleTd, periodTd, officeTd, typeTd, colorTd, noteTd, visibleTd, actionTd);
+    tr.append(dragTd, titleTd, periodTd, officeTd, typeTd, colorTd, noteTd, visibleTd, actionTd);
     vacationListBody.appendChild(tr);
+  });
+  initVacationSort();
+}
+
+function getVacationOrderMapFromDom(){
+  const map=new Map();
+  if(!vacationListBody) return map;
+  let idx=1;
+  vacationListBody.querySelectorAll('tr[data-vacation-id]').forEach(tr=>{
+    const idStr=tr.dataset.vacationId||'';
+    if(!idStr) return;
+    map.set(idStr, idx++);
+  });
+  return map;
+}
+
+function hasVacationOrderChanged(orderMap){
+  if(!orderMap || orderMap.size===0) return false;
+  const list=Array.isArray(cachedVacationList)?cachedVacationList:[];
+  return list.some((item, idx)=>{
+    const idStr=String(item.id||item.vacationId||'');
+    if(!idStr) return false;
+    const current=orderMap.get(idStr);
+    const fallbackOrder=Number(item.order||0) || (idx+1);
+    return current != null && current !== fallbackOrder;
   });
 }
 
-async function updateVacationFlags(item, overrides={}){
-  const office=item.office||getVacationTargetOffice(); if(!office) return false;
-  const visible=(overrides.visible!==undefined)?overrides.visible:(item.visible === true);
-  const isVacation=(overrides.isVacation!==undefined)?overrides.isVacation:(item.isVacation === true);
+function composeVacationPayloadFromItem(item, overrides={}){
+  const office=item.office||getVacationTargetOffice();
+  if(!office) return null;
+  const orderMap=getVacationOrderMapFromDom();
+  const idStr=String(item.id||item.vacationId||'');
   const payload={
     office,
     title:item.title||'',
@@ -605,12 +652,86 @@ async function updateVacationFlags(item, overrides={}){
     noticeId:item.noticeId||item.noticeKey||'',
     noticeTitle:item.noticeTitle||'',
     membersBits:item.membersBits||item.bits||'',
-    visible,
-    isVacation,
-    color: item.color || 'amber'
+    visible: overrides.visible!==undefined ? overrides.visible : (item.visible === true),
+    isVacation: overrides.isVacation!==undefined ? overrides.isVacation : (item.isVacation !== false),
+    color: overrides.color || item.color || 'amber'
   };
-  const id=item.id||item.vacationId||'';
-  if(id) payload.id=id;
+  if(idStr) payload.id=idStr;
+  const newOrder=(overrides.order!==undefined)?overrides.order:orderMap.get(idStr);
+  if(newOrder!=null){
+    payload.order=newOrder;
+  }else{
+    const maxOrder=Math.max(0,...Array.from(orderMap.values()));
+    payload.order=maxOrder+1;
+  }
+  return payload;
+}
+
+async function persistVacationOrders(orderMap){
+  const office=getVacationTargetOffice();
+  if(!office || !orderMap || orderMap.size===0) return;
+  if(!hasVacationOrderChanged(orderMap)) return;
+  const list=Array.isArray(cachedVacationList)?cachedVacationList:[];
+  const payloads=list.map(item=>{
+    const idStr=String(item.id||item.vacationId||'');
+    if(!idStr) return null;
+    const orderVal=orderMap.get(idStr);
+    if(orderVal==null) return null;
+    return composeVacationPayloadFromItem(item,{ order: orderVal });
+  }).filter(Boolean);
+  if(!payloads.length) return;
+  try{
+    await Promise.all(payloads.map(p=>adminSetVacation(office,p)));
+    toast('並び順を保存しました');
+    await loadVacationsList(false, office);
+    await loadEvents(office, false);
+  }catch(err){
+    console.error('persistVacationOrders error',err);
+    toast('並び順の保存に失敗しました',false);
+  }
+}
+
+let vacationSortInitialized=false;
+let vacationDragRow=null;
+function initVacationSort(){
+  if(!vacationListBody) return;
+  if(vacationSortInitialized) return;
+  vacationSortInitialized=true;
+  vacationListBody.addEventListener('dragstart', e=>{
+    const handle=e.target.closest('.vacation-drag-handle');
+    if(!handle){ e.preventDefault(); return; }
+    const row=handle.closest('tr');
+    if(!row) return;
+    vacationDragRow=row;
+    row.classList.add('vacation-dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain', row.dataset.vacationId||'');
+  });
+  vacationListBody.addEventListener('dragover', e=>{
+    if(!vacationDragRow) return;
+    e.preventDefault();
+    const targetRow=e.target.closest('tr[data-vacation-id]');
+    if(!targetRow || targetRow===vacationDragRow) return;
+    const rect=targetRow.getBoundingClientRect();
+    const offset=e.clientY - rect.top;
+    const shouldInsertBefore=offset < rect.height / 2;
+    vacationListBody.insertBefore(vacationDragRow, shouldInsertBefore ? targetRow : targetRow.nextSibling);
+  });
+  vacationListBody.addEventListener('dragend', ()=>{
+    if(!vacationDragRow) return;
+    vacationDragRow.classList.remove('vacation-dragging');
+    vacationDragRow=null;
+    const orderMap=getVacationOrderMapFromDom();
+    persistVacationOrders(orderMap);
+  });
+}
+
+async function updateVacationFlags(item, overrides={}){
+  const office=item.office||getVacationTargetOffice(); if(!office) return false;
+  const visible=(overrides.visible!==undefined)?overrides.visible:(item.visible === true);
+  const isVacation=(overrides.isVacation!==undefined)?overrides.isVacation:(item.isVacation === true);
+  const payload=composeVacationPayloadFromItem(item,{ visible, isVacation });
+  if(!payload) return false;
   try{
     const res=await adminSetVacation(office,payload);
     if(res && res.ok!==false){
@@ -643,7 +764,7 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
   const office=officeOverride||getVacationTargetOffice(); if(!office) return;
   if(vacationListBody){
     vacationListBody.textContent='';
-    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=9; td.style.textAlign='center'; td.textContent='読み込み中...'; tr.appendChild(td); vacationListBody.appendChild(tr);
   }
   try{
     const res=await adminGetVacation(office);
@@ -654,7 +775,7 @@ async function loadVacationsList(showToastOnSuccess=false, officeOverride){
     console.error('loadVacationsList error',err);
     if(vacationListBody){
       vacationListBody.textContent='';
-      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=8; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
+      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=9; td.style.textAlign='center'; td.textContent='読み込みに失敗しました'; tr.appendChild(td); vacationListBody.appendChild(tr);
     }
     toast('イベントの取得に失敗しました',false);
   }finally{
@@ -675,6 +796,16 @@ function buildVacationPayload(){
   const color=(vacationColorSelect?.value||'amber');
 
   const payload={ office, title, start, end, membersBits, color };
+
+  const orderMap=getVacationOrderMapFromDom();
+  if(id && orderMap.has(id)){
+    payload.order=orderMap.get(id);
+  }else if(orderMap.size>0){
+    const maxOrder=Math.max(0,...Array.from(orderMap.values()));
+    payload.order=maxOrder+1;
+  }else{
+    payload.order=1;
+  }
 
   const noticeSel=getSelectedNoticeInfo();
   if(noticeSel){
