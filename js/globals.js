@@ -31,7 +31,7 @@ const manualBtn=document.getElementById('manualBtn'), manualModal=document.getEl
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 const noticesEditor=document.getElementById('noticesEditor'), btnAddNotice=document.getElementById('btnAddNotice'), btnLoadNotices=document.getElementById('btnLoadNotices'), btnSaveNotices=document.getElementById('btnSaveNotices');
 const vacationTitleInput=document.getElementById('vacationTitle'), vacationStartInput=document.getElementById('vacationStart'), vacationEndInput=document.getElementById('vacationEnd');
-const vacationNoteInput=document.getElementById('vacationNote'), vacationOfficeSelect=document.getElementById('vacationOffice'), vacationMembersBitsInput=document.getElementById('vacationMembersBits');
+const vacationNoticeSelect=document.getElementById('vacationNotice'), vacationOfficeSelect=document.getElementById('vacationOffice'), vacationMembersBitsInput=document.getElementById('vacationMembersBits');
 const vacationIdInput=document.getElementById('vacationId'), vacationListBody=document.getElementById('vacationListBody');
 const vacationTypeText=document.getElementById('vacationTypeText');
 const vacationColorSelect=document.getElementById('vacationColor');
@@ -212,7 +212,7 @@ function renderVacationRadioList(list, options){
     const content=document.createElement('div');
     content.className='vacation-radio-content';
 
-    const note=(item.note||item.memo||'').trim();
+    const note=(item.noticeTitle||item.note||item.memo||'').trim();
     const isNoteLong=note.length>100;
     const titleEl=isNoteLong?document.createElement('a'):document.createElement('div');
     titleEl.className='vacation-radio-title';
@@ -658,7 +658,9 @@ async function saveEventFromModal(){
     title: item.title||'',
     start: item.startDate||item.start||item.from||'',
     end: item.endDate||item.end||item.to||'',
-    note: item.note||item.memo||'',
+    note: item.noticeTitle||item.note||item.memo||'',
+    noticeId: item.noticeId||item.noticeKey||'',
+    noticeTitle: item.noticeTitle||'',
     membersBits,
     visible: true,
     isVacation: item.isVacation!==false,

@@ -212,12 +212,14 @@ function normalizeVacationItem_(raw, office){
   const title = String(raw.title || raw.subject || '').substring(0, 200);
   const startDate = String(raw.startDate || raw.start || raw.from || '').trim();
   const endDate = String(raw.endDate || raw.end || raw.to || '').trim();
-  const note = String(raw.note || raw.memo || '').substring(0, 2000);
+  const noticeId = String(raw.noticeId || raw.noticeKey || '').trim();
+  const noticeTitle = String(raw.noticeTitle || '').substring(0, 200);
+  const note = String(raw.note || raw.memo || noticeTitle || '').substring(0, 2000);
   const membersBits = String(raw.membersBits || raw.bits || '').trim();
   const visible = coerceVacationVisibleFlag_(raw.visible);
   const isVacation = coerceVacationTypeFlag_(raw.isVacation);
   const updated = Number(raw.updated || raw.serverUpdated || 0) || now_();
-  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, membersBits, updated, visible, isVacation };
+  return { id, office: String(raw.office || office || ''), title, startDate, endDate, note, noticeId, noticeTitle, membersBits, updated, visible, isVacation };
 }
 
 function normalizeNoticeItem_(raw){
@@ -698,11 +700,13 @@ function doPost(e){
       const title = String(payload.title || '').substring(0, 200);
       const startDate = String(payload.start || '');
       const endDate = String(payload.end || '');
-      const note = String(payload.note || '').substring(0, 2000);
+      const noticeId = String(payload.noticeId || payload.noticeKey || '').substring(0, 200);
+      const noticeTitle = String(payload.noticeTitle || '').substring(0, 200);
+      const note = String(payload.note || noticeTitle || '').substring(0, 2000);
       const membersBits = String(payload.membersBits || '');
       const visible = coerceVacationVisibleFlag_(payload.visible);
       const isVacation = coerceVacationTypeFlag_(payload.isVacation);
-      const base = { id, office, title, startDate, endDate, note, membersBits, visible, isVacation, updated: now_() };
+      const base = { id, office, title, startDate, endDate, note, noticeId, noticeTitle, membersBits, visible, isVacation, updated: now_() };
       const newItem = normalizeVacationItem_(base, office);
 
       // IDが存在する場合は更新、なければ追加
