@@ -380,7 +380,8 @@
 .vacation-gantt th.member-name{background:#fff;position:sticky;left:32px;z-index:10;text-align:left;font-weight:600;width:var(--w-name);min-width:85px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:2px solid #9ca3af;}
 .vacation-gantt thead th.group-name{z-index:20;background:#f3f4f6;}
 .vacation-gantt thead th.member-name{z-index:20;background:#fff;}
- .vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;}
+.vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;}
+.vacation-gantt table.dragging .vac-cell{touch-action:none;}
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.weekend-sat{background:#e0f2fe;}
 .vacation-gantt .vac-cell.weekend-sun{background:#fee2e2;}

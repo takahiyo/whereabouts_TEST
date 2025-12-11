@@ -497,6 +497,9 @@
       const currentOn = cell.classList.contains('on');
       const toValue = !currentOn;
       draggingState = { toValue };
+      if(tableEl){
+        tableEl.classList.add('dragging');
+      }
       toggleBit(date, idx, toValue);
       cell.classList.toggle('on', toValue);
     }
@@ -512,8 +515,18 @@
       cell.classList.toggle('on', draggingState.toValue);
     }
 
+    function handlePointerMove(e){
+      if(!draggingState) return;
+      if(e.cancelable){
+        e.preventDefault();
+      }
+    }
+
     function handlePointerUp(){
       draggingState = null;
+      if(tableEl){
+        tableEl.classList.remove('dragging');
+      }
     }
 
     function clearHoverHighlights(){
@@ -634,6 +647,8 @@
       if(!tableEl) return;
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
+      tableEl.addEventListener('pointermove', handlePointerMove, { passive:false });
+      tableEl.addEventListener('touchmove', handlePointerMove, { passive:false });
       ['pointerup','pointercancel','pointerleave'].forEach(ev => tableEl.addEventListener(ev, handlePointerUp));
       const tbody = tableEl.querySelector('tbody');
       if(tbody){
