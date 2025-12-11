@@ -470,13 +470,111 @@
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 間違えて入力してしまいました</summary>
           <p style="margin:8px 0 8px 20px;">A. すぐに正しい内容に入力し直してください。約2秒後に自動保存されます。</p>
         </details>
+
+        <h5>🌴 7. 長期休暇（イベント）機能の使い方</h5>
+        <p><strong>長期休暇機能とは</strong></p>
+        <ul style="line-height:1.8;">
+          <li>管理者が登録した<strong>長期休暇期間（夏季休暇、年末年始、GWなど）</strong>を確認・選択できます</li>
+          <li>自分がどの日に休暇を取るか、<strong>カレンダー上で選択</strong>できます</li>
+          <li>選択した日は自動的にステータスが「休み」（または「休暇」「有給」など）になり、<strong>備考欄に休暇タイトル</strong>が表示されます</li>
+          <li>✅ ログイン時や画面更新時に、<strong>保存した休暇が自動的に適用</strong>されます（毎回設定する必要はありません）</li>
+        </ul>
+
+        <p style="margin-top:12px;"><strong>長期休暇カレンダーの開き方</strong></p>
+        <ol style="line-height:1.8;">
+          <li>画面上部の<strong>「長期休暇」ボタン</strong>をクリック（管理者が設定した長期休暇がある場合のみ表示）</li>
+          <li>長期休暇カレンダーが全画面で開きます</li>
+          <li>複数のイベントがある場合は、リストから選択できます</li>
+        </ol>
+
+        <p style="margin-top:12px;"><strong>休暇日の選択方法</strong></p>
+        <ol style="line-height:1.8;">
+          <li>長期休暇カレンダーを開き、必要に応じて<strong>イベントを選択</strong>します（複数ある場合）</li>
+          <li>カレンダー上で<strong>自分の行</strong>を探します（グループ名と氏名で確認）</li>
+          <li>休暇を取る日の<strong>セルをクリック</strong>（PCの場合はドラッグでも選択可能）</li>
+          <li>選択した日が<strong>青色</strong>になります（もう一度クリックすると解除）</li>
+          <li><strong>「保存」ボタン</strong>をクリック</li>
+          <li>✅ 選択した日のステータスが自動的に「休み」（または「休暇」「有給」など）になり、備考欄に休暇タイトルが表示されます</li>
+        </ol>
+        
+        <div style="background:#fff3cd;padding:10px;margin:10px 0;border-left:3px solid #ffc107;border-radius:3px;">
+          <strong>💡 操作のコツ</strong>
+          <ul style="margin:6px 0;line-height:1.6;">
+            <li><strong>連続した日付を選択</strong>：PCではドラッグ操作が便利です（例：5月3日〜5月7日まで一度に選択）</li>
+            <li><strong>カーソルオン</strong>：セルにマウスを置くと、該当の氏名と日付がハイライト表示されます</li>
+            <li><strong>横スクロール</strong>：カレンダー部分を横スクロールすると、全ての日付を確認できます</li>
+            <li><strong>縦スクロール</strong>：縦スクロールしても、ボタンと日付行は画面上部に固定表示されます</li>
+          </ul>
+        </div>
+
+        <div style="background:#e7f8e7;padding:12px;margin:12px 0;border-left:4px solid #4ade80;border-radius:4px;">
+          <strong>💡 長期休暇カレンダーの便利な機能</strong>
+          <ul style="margin:8px 0;line-height:1.8;">
+            <li>✅ <strong>自動保存</strong>：選択した日は保存ボタンを押すと即座に反映され、データベースに保存されます</li>
+            <li>✅ <strong>自動適用</strong>：ログイン時や画面更新（F5）時、保存された休暇が自動的に在席確認表に適用されます</li>
+            <li>✅ <strong>カーソルオン強調</strong>：セルにマウスを置くと、該当の氏名と日付列がハイライト表示されます</li>
+            <li>✅ <strong>横スクロール固定</strong>：横スクロールしてもグループ名・氏名は左側に固定表示されます</li>
+            <li>✅ <strong>縦スクロール固定</strong>：縦スクロールしてもボタンエリアと日付行は上部に固定表示されます</li>
+            <li>✅ <strong>レスポンシブ対応</strong>：スマートフォンやタブレットでも使いやすい表示に自動調整されます</li>
+          </ul>
+        </div>
+
+        <p style="margin-top:12px;"><strong>スマートフォン・タブレットでの操作</strong></p>
+        <ul style="line-height:1.8;">
+          <li>セルを<strong>タップ</strong>してON/OFF切り替え（ドラッグ操作は非対応）</li>
+          <li><strong>横スクロール</strong>で全ての日付を確認可能（グループ名・氏名は固定）</li>
+          <li><strong>縦スクロール</strong>で全てのメンバーを確認可能（ボタン・日付は上部固定）</li>
+          <li><strong>日付表示</strong>：画面幅に応じて自動調整されます
+            <ul style="margin:4px 0 0 20px;">
+              <li>PC/タブレット：「12月 9日 月」（横並び表示）</li>
+              <li>スマホ横：「12月 / 9日 / 月」（縦3行表示）</li>
+              <li>スマホ縦：「12月 / 9日 / 月」（より小さいフォントでコンパクト表示）</li>
+            </ul>
+          </li>
+          <li><strong>タップ領域</strong>：狭い画面でもタップしやすいようセルサイズが最適化されています</li>
+        </ul>
+
+        <p style="margin-top:12px;"><strong>注意事項</strong></p>
+        <ul style="line-height:1.8;">
+          <li>⚠️ 長期休暇ボタンが表示されない場合は、管理者が長期休暇を「表示する」設定にしていません</li>
+          <li>⚠️ 備考欄に既に内容がある場合、長期休暇タイトルで上書きされます（既存の内容は消えます）</li>
+          <li>⚠️ 長期休暇カレンダーでの選択を変更した場合は、<strong>必ず「保存」ボタンをクリック</strong>してください</li>
+          <li>⚠️ 保存した休暇日は、イベント選択を解除するまでステータスが固定されます（手動変更できません）</li>
+          <li>⚠️ 複数のイベントがある場合、<strong>1つのイベントしか選択できません</strong>（他のイベントを選択すると上書きされます）</li>
+        </ul>
+
+        <h5>❓ よくある質問（長期休暇機能）</h5>
         <details style="margin:8px 0;">
-          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントボタンが表示されません</summary>
-          <p style="margin:8px 0 8px 20px;">A. イベントが登録されていない場合、イベントボタンは表示されません。管理者にイベントの登録を依頼してください。</p>
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇（イベント）ボタンが表示されません</summary>
+          <p style="margin:8px 0 8px 20px;">A. 管理者が「表示する」にチェックを入れた長期休暇がある場合のみ表示されます。ボタンが表示されない場合は、管理者に確認してください。</p>
         </details>
         <details style="margin:8px 0;">
-          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントを設定したい</summary>
-          <p style="margin:8px 0 8px 20px;">A. イベントの登録・編集・削除は管理者のみが行えます。GWや年末年始などのイベントを設定したい場合は、管理者に問い合わせてください。</p>
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇（イベント）を新規作成したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. 長期休暇の登録・編集・削除は<strong>管理者のみ</strong>が行えます。夏季休暇、年末年始、GWなどのイベントを設定したい場合は、管理者に問い合わせてください。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇で選択した日を変更したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. 長期休暇ボタンをクリックしてカレンダーを開き、選択を変更して「保存」ボタンをクリックしてください。変更はすぐに在席確認表に反映されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇カレンダーで自分の名前が見つからない</summary>
+          <p style="margin:8px 0 8px 20px;">A. 横スクロールまたは縦スクロールで探してください。グループ名と氏名は固定表示されているため、スクロールしても常に見えます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇の選択を解除したい（通常のステータスに戻したい）</summary>
+          <p style="margin:8px 0 8px 20px;">A. 長期休暇カレンダーを開き、青色になっているセルをクリックして解除し、「保存」ボタンをクリックしてください。または、長期休暇カレンダー上部の「表示クリア」ボタンをクリックすると、全ての選択が解除されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 長期休暇を保存したのに反映されない</summary>
+          <p style="margin:8px 0 8px 20px;">A. ブラウザの画面を更新（F5キー）してください。保存された休暇は自動的に適用されるはずですが、反映されない場合は再度長期休暇カレンダーを開いて「表示」ボタンをクリックしてください。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 複数のイベントを同時に選択できますか？</summary>
+          <p style="margin:8px 0 8px 20px;">A. いいえ、<strong>1つのイベントしか選択できません</strong>。別のイベントを選択すると、前のイベントで選択した内容は上書きされます。複数のイベント期間にまたがる休暇を取る場合は、それぞれのイベントで個別に選択してください。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 日付が縦に表示されて読みにくい</summary>
+          <p style="margin:8px 0 8px 20px;">A. スマートフォンなど狭い画面では、日付が縦3行表示（「12月 / 9日 / 月」）になります。これは限られたスペースに多くの情報を表示するための仕様です。PCやタブレットでは横並び表示になります。</p>
         </details>
 
         <p style="margin-top:16px;font-size:0.95em;">
@@ -656,6 +754,67 @@
           <li><strong>色分け</strong>：土日・祝日は自動的に色付けされます</li>
         </ul>
 
+        <p style="margin:12px 0 8px 0;"><strong>イベントの並び替え</strong></p>
+        <p>「登録済みのイベント」一覧では、複数のイベントの表示順序を変更できます。</p>
+        <ol style="line-height:1.8;">
+          <li>一覧の「並び」列にある<strong>「↑」「↓」ボタン</strong>をクリックすると、イベントの順序が入れ替わります</li>
+          <li>上にあるイベントほど優先度が高く、ユーザーが選択する際のリストの上位に表示されます</li>
+          <li>並び替え後、<strong>自動的に保存</strong>されます（保存ボタンを押す必要はありません）</li>
+        </ol>
+        <div style="background:#fff3cd;padding:10px;margin:8px 0;border-left:3px solid #ffc107;border-radius:3px;">
+          <strong>💡 ヒント</strong>：現在進行中のイベント（例：GW、年末年始）を上位に配置すると、ユーザーが選択しやすくなります。
+        </div>
+
+        <p style="margin:12px 0 8px 0;"><strong>休暇種別（休暇固定）の設定</strong></p>
+        <p>各イベントに対して、ステータスとして表示される「休暇種別」を設定できます。</p>
+        <ul style="line-height:1.8;">
+          <li><strong>設定場所</strong>：「登録済みのイベント」一覧の<strong>「休暇固定（種別）」</strong>列</li>
+          <li><strong>操作方法</strong>：該当の列をクリックすると、ドロップダウンから種別を選択できます</li>
+          <li><strong>選択肢</strong>：「休み」「休暇」「特休」「有給」「代休」などから選択可能</li>
+          <li><strong>自動保存</strong>：選択すると即座に保存され、ユーザーの画面に反映されます</li>
+        </ul>
+        <div style="background:#e7f8e7;padding:10px;margin:8px 0;border-left:3px solid #4ade80;border-radius:3px;">
+          <strong>使用例</strong>
+          <ul style="margin:4px 0;line-height:1.6;">
+            <li>「GW期間休暇」→ 種別：<strong>「休暇」</strong>（通常の長期休暇）</li>
+            <li>「年末年始休暇」→ 種別：<strong>「休み」</strong>（会社休業日）</li>
+            <li>「夏季休暇」→ 種別：<strong>「有給」</strong>（有給休暇推奨期間）</li>
+            <li>「創立記念日」→ 種別：<strong>「特休」</strong>（特別休暇）</li>
+          </ul>
+        </div>
+
+        <p style="margin:12px 0 8px 0;"><strong>色/カテゴリーの設定</strong></p>
+        <p>イベントに色を設定することで、視覚的に区別しやすくなります。</p>
+        <ul style="line-height:1.8;">
+          <li><strong>設定場所</strong>：イベント作成/更新フォームの「色/カテゴリー」ドロップダウン</li>
+          <li><strong>選択肢</strong>：
+            <ul style="margin:4px 0 4px 20px;">
+              <li>🟡 <strong>サニー（amber）</strong>：明るい黄色系（夏季休暇など）</li>
+              <li>🔵 <strong>ブルー（blue）</strong>：青系（通常の休暇）</li>
+              <li>🟢 <strong>グリーン（green）</strong>：緑系（有給推奨期間など）</li>
+              <li>🩷 <strong>ピンク（pink）</strong>：ピンク系（特別イベント）</li>
+              <li>🟣 <strong>パープル（purple）</strong>：紫系（記念日など）</li>
+              <li>🟦 <strong>ティール（teal）</strong>：青緑系（研修期間など）</li>
+              <li>⚫ <strong>グレー（gray）</strong>：灰色系（非アクティブなイベント）</li>
+            </ul>
+          </li>
+          <li><strong>効果</strong>：一覧表示やカレンダー表示時に、設定した色でイベントが識別されます</li>
+        </ul>
+
+        <p style="margin:12px 0 8px 0;"><strong>管理者によるユーザー休暇日の編集</strong></p>
+        <p>管理者は、イベント作成時のガントチャートで全ユーザーの休暇日を一括設定できます。</p>
+        <ol style="line-height:1.8;">
+          <li>イベント作成/更新フォームで<strong>開始日と終了日</strong>を入力すると、ガントチャートが表示されます</li>
+          <li>ガントチャート上で、<strong>各メンバーの休暇日をクリック/ドラッグ</strong>してON（青色）に設定します</li>
+          <li>複数のメンバーを一度に設定する場合は、<strong>ドラッグ操作</strong>が便利です</li>
+          <li>設定後、<strong>「💾 作成/更新」</strong>ボタンをクリックすると保存されます</li>
+          <li>✅ ユーザーがそのイベントを選択すると、設定した日が自動的に「休み」ステータスになります</li>
+        </ol>
+        <div style="background:#f8d7da;padding:10px;margin:8px 0;border-left:3px solid #dc3545;border-radius:3px;">
+          <strong>⚠️ 重要</strong>：イベントカレンダーでユーザー自身が変更した休暇日は、<strong>ユーザー個人のデータ</strong>として保存されます。<br>
+          管理者が後からガントチャートを編集しても、既にユーザーが保存した個人設定は上書きされません。
+        </div>
+
         <p style="margin:12px 0 8px 0;"><strong>表示/非表示の切り替え</strong></p>
         <ul style="line-height:1.8;">
           <li>「登録済みのイベント」一覧の<strong>「表示」チェックボックス</strong>で切り替えられます</li>
@@ -716,6 +875,34 @@
         <details style="margin:8px 0;">
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントの表示をやめたい</summary>
           <p style="margin:8px 0 8px 20px;">A. イベント管理で該当する休暇の「表示」チェックボックスをOFFにしてください。または、休暇を削除することもできます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントの並び順を変更したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. 「登録済みのイベント」一覧の「並び」列にある↑↓ボタンをクリックすると順序を変更できます。変更は自動保存されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 休暇種別（休暇固定）を変更したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. 「登録済みのイベント」一覧の「休暇固定（種別）」列をクリックすると、ドロップダウンから種別（休み、休暇、特休、有給、代休など）を選択できます。選択すると即座に保存されます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントの色を変更したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. イベント編集画面の「色/カテゴリー」ドロップダウンから、サニー、ブルー、グリーン、ピンク、パープル、ティール、グレーの中から選択できます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 複数のイベントを同時に表示できますか？</summary>
+          <p style="margin:8px 0 8px 20px;">A. 管理者は複数のイベントを「表示する」に設定できますが、ユーザーが実際に選択できるのは1つだけです。ユーザーはイベントボタンから選択して切り替えることができます。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. ユーザーが個別に変更した休暇日を管理者が確認できますか？</summary>
+          <p style="margin:8px 0 8px 20px;">A. ユーザーが長期休暇カレンダーで変更した内容は、そのユーザーの「メンバーの休暇指定ビット（membersBits）」として保存されています。管理者はCSVエクスポートで確認できますが、直接編集する機能は現在ありません。各ユーザーが自分で長期休暇カレンダーから変更してください。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. ガントチャートで設定した休暇日が反映されない</summary>
+          <p style="margin:8px 0 8px 20px;">A. ガントチャートでセルをクリック/ドラッグした後、必ず「💾 作成/更新」ボタンをクリックして保存してください。また、ユーザー側で該当イベントを選択していない場合は、休暇日として反映されません。</p>
+        </details>
+        <details style="margin:8px 0;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. イベントの対象拠点を変更したい</summary>
+          <p style="margin:8px 0 8px 20px;">A. イベント編集画面の「対象拠点」ドロップダウンから変更できます（スーパー管理者のみ）。変更後「💾 作成/更新」ボタンで保存してください。</p>
         </details>
 
         <p style="margin-top:16px;font-size:0.95em;">
