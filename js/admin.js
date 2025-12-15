@@ -345,6 +345,7 @@ if(btnVacationSave){ btnVacationSave.addEventListener('click', handleVacationSav
 if(btnVacationDelete){ btnVacationDelete.addEventListener('click', handleVacationDelete); }
 if(btnVacationReload){ btnVacationReload.addEventListener('click', ()=> loadVacationsList(true)); }
 if(btnVacationClear){ btnVacationClear.addEventListener('click', resetVacationForm); }
+if(btnCreateNoticeFromEvent){ btnCreateNoticeFromEvent.addEventListener('click', handleCreateNoticeFromEvent); }
 
 function refreshVacationOfficeOptions(){
   if(!vacationOfficeSelect) return;
@@ -851,6 +852,32 @@ async function persistVacationPayload(payload,{ resetFormOnSuccess=true, showToa
     console.error('handleVacationSave error',err);
     if(showToast) toast('イベントの保存に失敗しました',false);
     return false;
+  }
+}
+
+async function handleCreateNoticeFromEvent(){
+  const office=getVacationTargetOffice(); if(!office) return;
+  const titleInput=prompt('イベントと紐付けるお知らせのタイトルを入力してください（必須）','');
+  if(titleInput===null) return;
+  const title=(titleInput||'').trim();
+  if(!title){ toast('タイトルを入力してください', false); return; }
+  const contentInput=prompt('お知らせの本文（任意）','');
+  const newNotice={
+    id:`notice_${Date.now()}`,
+    title,
+    content:(contentInput||'').trim(),
+    visible:true,
+    display:true
+  };
+  const currentList=Array.isArray(window.CURRENT_NOTICES)? window.CURRENT_NOTICES.slice():[];
+  const nextNotices=[newNotice, ...currentList];
+  const success=await saveNotices(nextNotices, office);
+  if(success){
+    refreshVacationNoticeOptions(newNotice.id);
+    if(vacationNoticeSelect){ vacationNoticeSelect.value=newNotice.id; }
+    toast('お知らせを追加しました');
+  }else{
+    toast('お知らせの追加に失敗しました', false);
   }
 }
 

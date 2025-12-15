@@ -90,18 +90,21 @@
 
       <!-- タブパネル2: お知らせ管理 -->
       <div id="tabNotices" class="tab-panel" data-tab="notices">
-        <div class="notices-manager-body">
-          <div class="notices-manager-info">
-            <p>お知らせの順番はドラッグ&ドロップまたは↑↓ボタンで入れ替えられます。上にあるものから順に表示されます。</p>
-            <p>「表示する」チェックで公開/非公開を切り替えられます。削除ボタンを押すと確認ダイアログが表示されます。</p>
+        <div class="notices-manager">
+          <div class="notices-manager-toolbar">
+            <div class="notices-manager-info">
+              <p>お知らせの順番はドラッグ&ドロップまたは↑↓ボタンで入れ替えられます。上にあるものから順に表示されます。</p>
+              <p>「表示する」チェックで公開/非公開を切り替えられます。削除ボタンを押すと確認ダイアログが表示されます。</p>
+            </div>
+            <div class="notices-manager-actions">
+              <button id="btnAddNotice" class="btn-primary">➕ お知らせを追加</button>
+              <button id="btnLoadNotices" class="btn-secondary">🔄 読み込み</button>
+              <button id="btnSaveNotices" class="btn-success">💾 保存</button>
+            </div>
           </div>
-          
-          <div id="noticesEditor" class="notices-editor"></div>
-          
-          <div class="notices-manager-actions">
-            <button id="btnAddNotice" class="btn-primary">➕ お知らせを追加</button>
-            <button id="btnLoadNotices" class="btn-secondary">🔄 読み込み</button>
-            <button id="btnSaveNotices" class="btn-success">💾 保存</button>
+
+          <div class="notices-manager-scroll">
+            <div id="noticesEditor" class="notices-editor"></div>
           </div>
         </div>
       </div>
@@ -144,10 +147,13 @@
                   <input id="vacationEnd" type="date" />
                 </label>
               </div>
-              <div class="vacation-row">
+              <div class="vacation-row vacation-row-inline">
                 <label>お知らせを選択
                   <select id="vacationNotice" aria-label="イベントに紐づけるお知らせ"></select>
                 </label>
+                <div class="vacation-inline-actions">
+                  <button id="btnCreateNoticeFromEvent" class="btn-secondary">➕ お知らせ新規作成</button>
+                </div>
               </div>
               <div class="vacation-row vacation-row-two-cols">
                 <label>
@@ -931,7 +937,10 @@
   <div id="noticesArea" class="notices-area" style="display:none">
     <div class="notices-container">
       <div class="notices-header">
-        <h3 class="notices-title">📢 お知らせ</h3>
+        <div class="notices-title-wrap">
+          <h3 class="notices-title">📢 お知らせ</h3>
+          <span class="notices-hint">タイトル行や📢ボタンをクリックすると折りたためます</span>
+        </div>
         <span id="noticesSummary" class="notices-summary" style="display:none"></span>
       </div>
       <div id="noticesList" class="notices-list"></div>
