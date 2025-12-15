@@ -826,7 +826,8 @@
   /* 不要な要素を非表示 */
   header, .admin-modal-header, .event-toolbar, .vacation-actions,
   .admin-tabs, .event-select-toolbar, .notices-btn, .admin-btn,
-  .event-btn, .logout-btn, .manual-btn, button, .admin-card-header {
+  .event-btn, .logout-btn, .manual-btn, button, .admin-card-header,
+  .vacation-gantt-sticky-header, .event-legend, .vacation-group-jumps {
     display: none !important;
   }
   
@@ -930,12 +931,21 @@
   }
   
   /* 印刷用タイトル */
-  .vacation-gantt::before {
-    content: "イベントカレンダー";
-    display: block;
-    font-size: 18px;
+  .event-modal-title {
+    display: block !important;
+    font-size: 20px;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     text-align: center;
+    color: #000;
+  }
+  
+  /* 印刷用イベント情報 */
+  #eventPrintInfo {
+    display: block !important;
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 15px;
+    color: #333;
   }
 }

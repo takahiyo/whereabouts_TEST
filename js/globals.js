@@ -21,6 +21,7 @@ const eventStartInput=document.getElementById('eventStart');
 const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
+const btnEventPrint=document.getElementById('btnEventPrint');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -1014,6 +1015,34 @@ async function autoApplySavedEvent(){
   }catch(err){
     console.error('Auto-apply failed:', err);
   }
+}
+
+/* イベントカレンダー印刷 */
+if(btnEventPrint){
+  btnEventPrint.addEventListener('click', ()=>{
+    const dropdown = document.getElementById('eventSelectDropdown');
+    if(!dropdown || !dropdown.value){
+      toast('印刷するイベントを選択してください', false);
+      return;
+    }
+    
+    const gantt = document.getElementById('eventGantt');
+    if(!gantt || !gantt.querySelector('table')){
+      toast('カレンダーが表示されていません', false);
+      return;
+    }
+    
+    // 印刷用イベント情報を更新
+    const selectedOption = dropdown.options[dropdown.selectedIndex];
+    const eventTitle = selectedOption ? selectedOption.textContent : '';
+    const printInfo = document.getElementById('eventPrintInfo');
+    if(printInfo && eventTitle){
+      printInfo.textContent = eventTitle;
+    }
+    
+    // 印刷実行
+    window.print();
+  });
 }
 
 /* レイアウト（JS + CSS両方で冗長に制御） */

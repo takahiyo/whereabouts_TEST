@@ -240,6 +240,7 @@
                   <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
                 </div>
                 <div class="vacation-actions" style="margin-bottom:0;display:flex;gap:8px;justify-content:flex-end;">
+                  <button id="btnEventPrint" class="btn-secondary">🖨️ 印刷</button>
                   <button id="btnEventSave" class="btn-secondary">保存</button>
                 </div>
               </div>
@@ -253,6 +254,7 @@
               </div>
               <div id="eventLegendModal" class="event-legend event-legend-compact" aria-live="polite"></div>
             </div>
+            <div id="eventPrintInfo" style="display:none;"></div>
             <div id="eventGantt" class="vacation-gantt" aria-live="polite"></div>
             <input id="eventStart" type="hidden" />
             <input id="eventEnd" type="hidden" />
