@@ -295,6 +295,15 @@
 
     function applyBitsToCells(){
       if(!tableEl) return;
+      // メンバーごとにビットが1つでもあるかをチェック
+      const memberHasBit = new Map();
+      bitsByDate.forEach((arr) => {
+        if(!Array.isArray(arr)) return;
+        arr.forEach((on, idx) => {
+          if(on) memberHasBit.set(idx, true);
+        });
+      });
+      
       tableEl.querySelectorAll('.vac-cell').forEach(cell => {
         const date = cell.dataset.date;
         const idx = Number(cell.dataset.memberIndex || '-1');
@@ -302,6 +311,13 @@
         const on = Array.isArray(arr) ? !!arr[idx] : false;
         cell.classList.toggle('on', on);
         cell.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      
+      // メンバー名のハイライト表示
+      tableEl.querySelectorAll('th.member-name').forEach(th => {
+        const idx = Number(th.dataset.memberIndex || '-1');
+        const hasBit = memberHasBit.has(idx);
+        th.classList.toggle('member-has-bit', hasBit);
       });
     }
 
@@ -410,6 +426,7 @@
           const nameTh = document.createElement('th');
           nameTh.textContent = member.name || '';
           nameTh.className = 'member-name';
+          nameTh.dataset.memberIndex = String(cursor);
           tr.appendChild(nameTh);
           dateSlots.forEach(date => {
             const td = document.createElement('td');
@@ -490,6 +507,8 @@
     function handlePointerDown(e){
       const cell = e.target.closest('.vac-cell');
       if(!cell) return;
+      // 左クリック（button === 0）のみ受け付ける
+      if(e.button !== 0) return;
       e.preventDefault();
       const idx = Number(cell.dataset.memberIndex || '-1');
       if(idx < 0) return;
