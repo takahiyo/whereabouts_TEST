@@ -46,7 +46,14 @@ function ensureAuthUI(){
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
-function showEventModal(yes){ eventModal.classList.toggle('show', !!yes); }
+function showEventModal(yes){
+  eventModal.classList.toggle('show', !!yes);
+  if(!yes){
+    eventModal.classList.remove('print-mode');
+    eventModal.style.removeProperty('display');
+    eventModal.style.removeProperty('visibility');
+  }
+}
 async function applyRoleToAdminPanel(){
   if(!(adminOfficeRow&&adminOfficeSel)) return;
   if(CURRENT_ROLE!=='superAdmin'){
