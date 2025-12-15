@@ -33,10 +33,10 @@
         <ul id="groupMenuList"></ul>
       </div>
     </div>
+    <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
     <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
     <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
-    <button id="adminBtn" class="admin-btn" title="管理">管理</button>
     <button id="eventBtn" class="event-btn" title="イベント">📅 イベント</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
@@ -45,18 +45,22 @@
   <!-- 管理モーダル -->
   <div id="adminModal" class="admin-modal" aria-modal="true" role="dialog">
     <div class="admin-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3>管理パネル</h3><button id="adminClose">閉じる</button>
-      </div>
+      <div class="admin-card-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3>管理パネル</h3><button id="adminClose">閉じる</button>
+        </div>
 
-      <!-- タブナビゲーション -->
-      <div class="admin-tabs">
-        <div class="tab-buttons">
-          <button class="tab-btn active" data-tab="basic">⚙️ 基本設定</button>
-          <button class="tab-btn" data-tab="notices">📢 お知らせ管理</button>
-          <button class="tab-btn" data-tab="events">📅 イベント管理</button>
+        <!-- タブナビゲーション -->
+        <div class="admin-tabs">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="basic">⚙️ 基本設定</button>
+            <button class="tab-btn" data-tab="notices">📢 お知らせ管理</button>
+            <button class="tab-btn" data-tab="events">📅 イベント管理</button>
+          </div>
         </div>
       </div>
+
+      <div class="admin-card-body">
 
       <!-- タブパネル1: 基本設定 -->
       <div id="tabBasic" class="tab-panel active" data-tab="basic">
@@ -202,6 +206,7 @@
         </div>
       </div>
 
+      </div>
     </div>
   </div>
 
@@ -216,7 +221,14 @@
       <!-- タブパネル: イベント選択 -->
       <div id="tabEvent" class="tab-panel active">
         <div class="vacation-view">
-          <div id="vacationRadioList" class="vacation-radio-list"></div>
+          <div class="event-select-toolbar">
+            <label class="event-select-label">
+              <span>イベントを選択:</span>
+              <select id="eventSelectDropdown" class="event-select-dropdown"></select>
+            </label>
+            <button id="btnShowEventNotice" class="btn-secondary btn-show-event-notice" style="display:none;">📄 イベントの内容を表示</button>
+          </div>
+          <div id="vacationRadioList" class="vacation-radio-list" style="display:none;"></div>
           <div id="eventGanttWrap" class="vacation-gantt-head">
             <div class="vacation-gantt-sticky-header">
               <div class="event-toolbar">
@@ -937,10 +949,7 @@
   <div id="noticesArea" class="notices-area" style="display:none">
     <div class="notices-container">
       <div class="notices-header">
-        <div class="notices-title-wrap">
-          <h3 class="notices-title">📢 お知らせ</h3>
-          <span class="notices-hint">タイトル行や📢ボタンをクリックすると折りたためます</span>
-        </div>
+        <h3 class="notices-title">📢 お知らせ<span class="notices-hint">（タイトル行や📢ボタンをクリックすると折りたためます）</span></h3>
         <span id="noticesSummary" class="notices-summary" style="display:none"></span>
       </div>
       <div id="noticesList" class="notices-list"></div>

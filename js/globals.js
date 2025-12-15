@@ -176,8 +176,11 @@ function hasRelatedNotice(item){
 }
 
 function renderVacationRadioList(list, options){
-  if(!vacationRadioList) return;
-  vacationRadioList.textContent='';
+  const dropdown = document.getElementById('eventSelectDropdown');
+  const noticeBtn = document.getElementById('btnShowEventNotice');
+  if(!dropdown) return;
+  
+  dropdown.innerHTML = '';
   const opts=options||{};
   const onSelectChange = typeof opts.onSelectChange==='function' ? opts.onSelectChange : null;
   const onFocus = typeof opts.onFocus==='function' ? opts.onFocus : null;
@@ -186,129 +189,105 @@ function renderVacationRadioList(list, options){
     selectedIds.clear();
     (selectedEventIds||[]).forEach(v=> selectedIds.add(String(v)) );
   };
+  
   if(!Array.isArray(list) || list.length===0){
-    renderVacationRadioMessage(opts.emptyMessage||'登録されたイベントはありません');
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '登録されたイベントはありません';
+    placeholder.disabled = true;
+    dropdown.appendChild(placeholder);
+    dropdown.disabled = true;
+    if(noticeBtn) noticeBtn.style.display = 'none';
     return;
   }
 
   const officeId=list[0]?.office||CURRENT_OFFICE_ID||'';
-  vacationRadioList.style.display='flex';
+  dropdown.disabled = false;
+  
+  // プレースホルダー
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'イベントを選択してください';
+  dropdown.appendChild(placeholder);
 
   const itemMap=new Map();
 
-  const setSelected=(id, enabled)=>{
-    syncSelectedIds();
-    if(enabled){
-      selectedIds.clear();
-      selectedIds.add(id);
-    } else {
-      selectedIds.delete(id);
+  list.forEach((item, idx)=>{
+    const id=String(item.id||item.vacationId||idx);
+    const option = document.createElement('option');
+    option.value = id;
+    const start=item.startDate||item.start||item.from||'';
+    const end=item.endDate||item.end||item.to||'';
+    const period=start||end?` (${start||''}〜${end||''})`:' ';
+    option.textContent = `${item.title||''}${period}`;
+    dropdown.appendChild(option);
+    itemMap.set(id, item);
+  });
+  
+  // 選択イベントを復元
+  syncSelectedIds();
+  const firstSelected = Array.from(selectedIds)[0];
+  if(firstSelected){
+    dropdown.value = firstSelected;
+  }
+  
+  // お知らせボタンの状態を更新
+  function updateNoticeButton(){
+    const currentId = dropdown.value;
+    const currentItem = itemMap.get(currentId);
+    if(currentItem && noticeBtn){
+      const hasNotice = hasRelatedNotice(currentItem);
+      noticeBtn.style.display = hasNotice ? 'inline-block' : 'none';
+      noticeBtn.disabled = !hasNotice;
+    } else if(noticeBtn){
+      noticeBtn.style.display = 'none';
     }
+  }
+  updateNoticeButton();
+  
+  // プルダウン変更イベント
+  dropdown.addEventListener('change', ()=>{
+    const id = dropdown.value;
+    if(!id) return;
+    syncSelectedIds();
+    selectedIds.clear();
+    selectedIds.add(id);
     const arr=Array.from(selectedIds);
     selectedEventIds=arr;
     saveEventIds(officeId, arr);
     const item=itemMap.get(id)||null;
-    updateEventCardStates();
-    if(onSelectChange) onSelectChange(arr, item, id, enabled);
-  };
-
-  list.forEach((item, idx)=>{
-    const id=String(item.id||item.vacationId||idx);
-    const wrapper=document.createElement('div');
-    wrapper.className='vacation-radio-item';
-    wrapper.setAttribute('role','button');
-    wrapper.setAttribute('tabindex','0');
-    wrapper.dataset.eventId=id;
-
-    const content=document.createElement('div');
-    content.className='vacation-radio-content';
-
-    const titleRow=document.createElement('div');
-    titleRow.className='vacation-radio-header';
-
-    const titleEl=document.createElement('a');
-    titleEl.className='vacation-radio-title';
-    titleEl.href='#noticesArea';
-    titleEl.textContent=item.title||'';
-    titleEl.addEventListener('click',(e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      setSelected(id, true);
-      if(onFocus) onFocus(item, id);
-    });
-
-    const stateEl=document.createElement('span');
-    stateEl.className='vacation-radio-state';
-    stateEl.textContent='';
-
-    titleRow.append(titleEl, stateEl);
-
-    const start=item.startDate||item.start||item.from||'';
-    const end=item.endDate||item.end||item.to||'';
-    const period=start||end?`${start||''}〜${end||''}`:'-';
-    const periodDiv=document.createElement('div');
-    periodDiv.className='vacation-radio-period';
-    periodDiv.textContent=period;
-
-    const hasNotice=hasRelatedNotice(item);
-    const actions=document.createElement('div');
-    actions.className='vacation-radio-actions';
-
-    const noticeBtn=document.createElement('button');
-    noticeBtn.type='button';
-    noticeBtn.className='btn-secondary btn-open-notice';
-    noticeBtn.textContent='関連お知らせ';
-    noticeBtn.disabled=!hasNotice;
-    if(!hasNotice){
-      noticeBtn.title='関連するお知らせがありません';
-    }
-    noticeBtn.addEventListener('click',(e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      openRelatedNotice(item, { fromEventCalendar:true, openMode:'modal' });
-    });
-
-    actions.appendChild(noticeBtn);
-
-    content.append(titleRow, periodDiv, actions);
-
-    wrapper.append(content);
-    wrapper.addEventListener('click', ()=>{
-      syncSelectedIds();
-      const willSelect=!selectedIds.has(id);
-      setSelected(id, willSelect);
-      if(onFocus) onFocus(item, id);
-    });
-    wrapper.addEventListener('keydown',(e)=>{
-      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); wrapper.click(); }
-    });
-    wrapper.addEventListener('focus', ()=>{ if(onFocus) onFocus(item, id); });
-    vacationRadioList.appendChild(wrapper);
-    itemMap.set(id, item);
+    updateNoticeButton();
+    if(onSelectChange) onSelectChange(arr, item, id, true);
+    if(onFocus) onFocus(item, id);
   });
-
-  const firstSelected=list.find(item=> selectedIds.has(String(item.id||item.vacationId||'')));
-  if(firstSelected && onFocus){
-    onFocus(firstSelected, String(firstSelected.id||firstSelected.vacationId||''));
+  
+  // お知らせボタンのクリックイベント
+  if(noticeBtn){
+    const existingListeners = noticeBtn.cloneNode(true);
+    noticeBtn.parentNode.replaceChild(existingListeners, noticeBtn);
+    existingListeners.addEventListener('click', ()=>{
+      const id = dropdown.value;
+      const item = itemMap.get(id);
+      if(item){
+        openRelatedNotice(item, { fromEventCalendar:true, openMode:'modal' });
+      }
+    });
   }
 
   selectedEventIds=Array.from(selectedIds);
-  updateEventCardStates();
+  
+  // 初期フォーカス
+  if(firstSelected){
+    const firstItem = itemMap.get(firstSelected);
+    if(firstItem && onFocus){
+      onFocus(firstItem, firstSelected);
+    }
+  }
 }
 
 function updateEventCardStates(){
-  if(!vacationRadioList) return;
-  const selectedSet=new Set((selectedEventIds||[]).map(v=>String(v)));
-  const appliedSet=new Set((appliedEventIds||[]).map(v=>String(v)));
-  vacationRadioList.querySelectorAll('.vacation-radio-item').forEach(card=>{
-    const id=card.dataset.eventId||'';
-    const isSelected=selectedSet.has(id);
-    const isApplied=appliedSet.has(id);
-    card.classList.toggle('selected', isSelected);
-    card.classList.toggle('applied', isApplied);
-    const stateEl=card.querySelector('.vacation-radio-state');
-    if(stateEl){ stateEl.textContent=isApplied?'表示中':(isSelected?'選択中':'未選択'); }
-  });
+  // プルダウン形式では不要だが、互換性のため残す
+  return;
 }
 
 function findNoticeFromCache(item){
