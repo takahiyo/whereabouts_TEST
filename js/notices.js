@@ -120,6 +120,8 @@ function applyNotices(raw) {
   const normalized = normalizeNoticeEntries(raw);
   CURRENT_NOTICES = normalized;
   window.CURRENT_NOTICES = normalized; // グローバルに公開してadmin.jsから参照可能にする
+  // 現在の開閉状態をリロード
+  noticeCollapsePreference = loadNoticeCollapsePreference();
   renderNotices(normalized);
 }
 
@@ -367,7 +369,8 @@ function stopNoticesPolling() {
 
 function loadNoticeCollapsePreference() {
   try {
-    const raw = localStorage.getItem(NOTICE_COLLAPSE_STORAGE_KEY);
+    const officeKey = `${NOTICE_COLLAPSE_STORAGE_KEY}_${CURRENT_OFFICE_ID || 'default'}`;
+    const raw = localStorage.getItem(officeKey);
     if (raw === 'true') return true;
     if (raw === 'false') return false;
   } catch (e) {
@@ -379,7 +382,9 @@ function loadNoticeCollapsePreference() {
 function saveNoticeCollapsePreference(collapsed) {
   noticeCollapsePreference = collapsed === true;
   try {
-    localStorage.setItem(NOTICE_COLLAPSE_STORAGE_KEY, noticeCollapsePreference ? 'true' : 'false');
+    const officeKey = `${NOTICE_COLLAPSE_STORAGE_KEY}_${CURRENT_OFFICE_ID || 'default'}`;
+    localStorage.setItem(officeKey, noticeCollapsePreference ? 'true' : 'false');
+    console.log('Notice collapse state saved:', officeKey, noticeCollapsePreference);
   } catch (e) {
     console.warn('Failed to save notice collapse preference', e);
   }
