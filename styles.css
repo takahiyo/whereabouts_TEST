@@ -823,10 +823,38 @@
 
 /* 印刷用CSS */
 @media print {
-  /* 不要な要素を非表示 */
-  header, .admin-modal-header, .event-toolbar, .vacation-actions,
-  .admin-tabs, .event-select-toolbar, .notices-btn, .admin-btn,
-  .event-btn, .logout-btn, .manual-btn, button, .admin-card-header,
+  /* イベントカレンダー以外のすべてを非表示 */
+  body > *:not(#eventModal) {
+    display: none !important;
+  }
+  
+  #eventModal > *:not(.admin-card) {
+    display: none !important;
+  }
+  
+  .admin-card > *:not(.admin-card-body) {
+    display: none !important;
+  }
+  
+  .admin-card-body > *:not(#tabEvent) {
+    display: none !important;
+  }
+  
+  #tabEvent > *:not(.vacation-view) {
+    display: none !important;
+  }
+  
+  .vacation-view > *:not(#eventGanttWrap) {
+    display: none !important;
+  }
+  
+  #eventGanttWrap > *:not(#eventPrintInfo):not(#eventGantt) {
+    display: none !important;
+  }
+  
+  /* イベントモーダル内の不要な要素を非表示 */
+  .event-modal-header, .event-toolbar, .vacation-actions,
+  .event-select-toolbar, button,
   .vacation-gantt-sticky-header, .event-legend, .vacation-group-jumps {
     display: none !important;
   }
@@ -834,7 +862,14 @@
   /* ページ設定 */
   @page {
     size: A4 landscape;
-    margin: 15mm;
+    margin: 20mm 15mm 15mm 15mm;
+  }
+  
+  /* ページヘッダー（全ページ共通） */
+  @page {
+    @top-center {
+      content: element(pageHeader);
+    }
   }
   
   body {
@@ -844,13 +879,22 @@
   }
   
   /* イベントモーダルを全画面表示 */
-  .event-modal.show, .admin-modal.show {
-    position: static;
+  .event-modal {
+    display: block !important;
+    position: static !important;
     background: white;
     padding: 0;
+    margin: 0;
+    width: 100%;
+    height: auto;
   }
   
-  .admin-card, .event-modal .admin-card {
+  .admin-card {
+    display: none !important;
+  }
+  
+  .event-modal .admin-card {
+    display: block !important;
     max-height: none;
     max-width: none;
     width: 100%;
@@ -862,6 +906,18 @@
   .admin-card-body {
     overflow: visible;
     padding: 0;
+  }
+  
+  /* 印刷用イベント情報ヘッダー */
+  #eventPrintInfo {
+    display: block !important;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 15px 0;
+    padding: 10px 0;
+    border-bottom: 2px solid #333;
+    color: #000;
   }
   
   /* ガントチャートを印刷用に最適化 */
@@ -930,22 +986,28 @@
     print-color-adjust: exact;
   }
   
-  /* 印刷用タイトル */
-  .event-modal-title {
-    display: block !important;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 15px;
-    text-align: center;
-    color: #000;
+  /* ガントチャートのページ分割 */
+  .vacation-gantt {
+    page-break-before: avoid;
   }
   
-  /* 印刷用イベント情報 */
-  #eventPrintInfo {
+  /* テーブル行のページ分割を防止 */
+  .vacation-gantt tr {
+    page-break-inside: avoid;
+  }
+  
+  /* 印刷時のみ表示される要素 */
+  .event-modal.print-mode #eventPrintInfo,
+  .event-modal #eventPrintInfo {
     display: block !important;
-    text-align: center;
-    font-size: 14px;
-    margin-bottom: 15px;
-    color: #333;
+  }
+  
+  /* ガントチャートテーブルのヘッダーを各ページで繰り返す */
+  .vacation-gantt thead {
+    display: table-header-group;
+  }
+  
+  .vacation-gantt tbody {
+    display: table-row-group;
   }
 }

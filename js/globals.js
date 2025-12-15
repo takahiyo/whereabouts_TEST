@@ -1037,11 +1037,23 @@ if(btnEventPrint){
     const eventTitle = selectedOption ? selectedOption.textContent : '';
     const printInfo = document.getElementById('eventPrintInfo');
     if(printInfo && eventTitle){
-      printInfo.textContent = eventTitle;
+      printInfo.textContent = `イベントカレンダー: ${eventTitle}`;
+    }
+    
+    // イベントモーダルを一時的に印刷モードに設定
+    const eventModal = document.getElementById('eventModal');
+    if(eventModal){
+      eventModal.classList.add('print-mode');
     }
     
     // 印刷実行
-    window.print();
+    setTimeout(() => {
+      window.print();
+      // 印刷後にクラスを削除
+      if(eventModal){
+        eventModal.classList.remove('print-mode');
+      }
+    }, 100);
   });
 }
 
