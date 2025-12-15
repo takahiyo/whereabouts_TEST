@@ -857,17 +857,22 @@
   }
   
   /* ページ設定 */
+  /* 1ページ目: ヘッダーなし（ガントチャート内に表示） */
+  @page:first {
+    size: A4 landscape;
+    margin: 20mm 15mm 15mm 15mm;
+  }
+  
+  /* 2ページ目以降: ページマージンにヘッダー配置 */
   @page {
     size: A4 landscape;
     margin: 25mm 15mm 15mm 15mm;
-  }
-  
-  /* ページマージン領域にヘッダーを配置 */
-  @page {
     @top-center {
       content: string(pageTitle);
       font-size: 14px;
       font-weight: 700;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
     }
   }
   
@@ -910,32 +915,27 @@
     display: block !important;
   }
   
-  /* 印刷用イベント情報ヘッダーを非表示（::beforeで代替） */
+  /* 1ページ目用のイベント情報ヘッダー */
   #eventPrintInfo {
-    display: none !important;
+    display: block !important;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #333;
+    background: white;
+    color: #000;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    /* 2ページ目以降では自動的に消える（ページ分割により） */
   }
   
-  /* ヘッダーをページマージン領域に配置 */
+  /* 印刷用ヘッダー（ページマージンのみ、2ページ目以降） */
   #eventGanttWrap::before {
     content: attr(data-event-title);
     position: running(pageTitle);
-  }
-  
-  /* 1ページ目用のヘッダー */
-  #eventGanttWrap::after {
-    content: attr(data-event-title);
-    display: block;
-    text-align: center;
-    font-size: 16px;
-    font-weight: 700;
-    padding: 12px 10px;
-    margin-bottom: 15px;
-    border: 2px solid #333;
-    background: #f5f5f5;
-    color: #000;
-    page-break-after: avoid;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    /* position: running() を使うと通常表示領域から削除されるため、重複しない */
   }
   
   #eventGanttWrap {
@@ -1051,11 +1051,7 @@
     page-break-inside: avoid;
   }
   
-  /* 印刷時のみ表示される要素 */
-  .event-modal.print-mode #eventPrintInfo,
-  .event-modal #eventPrintInfo {
-    display: block !important;
-  }
+
   
   /* ガントチャートテーブルのヘッダーを各ページで繰り返す */
   .vacation-gantt thead {
