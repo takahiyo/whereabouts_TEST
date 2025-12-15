@@ -66,13 +66,14 @@
       <div id="tabBasic" class="tab-panel active" data-tab="basic">
         <div class="admin-grid">
           <div class="admin-box">
-            <h4>CSVエクスポート</h4>
+            <h4>📥 在席確認表リスト エクスポート</h4>
             <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-            <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考（従来ヘッダも可）</div>
+            <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</div>
+            <div class="admin-note" style="font-size:11px;color:#6b7280;">※従来フォーマット（携帯番号・Email列なし）も引き続き対応</div>
           </div>
 
           <div class="admin-box">
-            <h4>CSVインポート</h4>
+            <h4>📤 在席確認表リスト インポート</h4>
             <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
           </div>
 
@@ -628,7 +629,8 @@
         
         <p style="margin:12px 0 8px 0;"><strong>対応しているCSV形式</strong></p>
         <ul style="line-height:1.8;">
-          <li><strong>標準形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考</code></li>
+          <li><strong>最新形式（推奨）</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</code></li>
+          <li><strong>標準形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考</code>（携帯番号・Email列なし）</li>
           <li><strong>旧形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考</code>（業務時間列なし。既存データから引き継ぎます）</li>
         </ul>
 

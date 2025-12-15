@@ -1019,7 +1019,7 @@ if(btnExportEvent){
     try{
       // 設定とイベント一覧を取得
       const cfg = await adminGetConfigFor(office);
-      const eventsRes = await apiPost({ action:'getVacations', token:SESSION_TOKEN, office, nocache:'1' });
+      const eventsRes = await apiPost({ action:'getVacation', token:SESSION_TOKEN, office, nocache:'1' });
       
       if(!cfg || !cfg.groups){ toast('設定の取得に失敗しました', false); return; }
       if(!eventsRes || !eventsRes.vacations){ toast('イベントの取得に失敗しました', false); return; }
