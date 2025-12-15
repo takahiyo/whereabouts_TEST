@@ -901,34 +901,34 @@
     display: block !important;
   }
   
-  /* 印刷用イベント情報ヘッダー（各ページ上部に固定） */
+  /* 印刷用イベント情報ヘッダーを非表示（::beforeで代替） */
   #eventPrintInfo {
-    display: block !important;
-    position: running(pageHeader);
+    display: none !important;
+  }
+  
+  /* ヘッダーを各ページ上部に固定表示 */
+  #eventGanttWrap::before {
+    content: attr(data-event-title);
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
-    padding: 10px;
+    padding: 12px 10px;
     border-bottom: 2px solid #333;
-    background: #f0f0f0;
+    background: #f9f9f9;
     color: #000;
+    z-index: 9999;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   
-  /* 代替方法: ヘッダーを最初に表示 */
-  #eventGanttWrap::before {
-    content: attr(data-event-title);
-    display: block;
-    text-align: center;
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0 0 20px 0;
-    padding: 15px 10px;
-    border: 2px solid #333;
-    background: #f0f0f0;
-    color: #000;
-    page-break-after: avoid;
+  /* ヘッダー分の余白を確保 */
+  #eventGantt {
+    margin-top: 50px !important;
   }
   
   #eventGanttWrap {
@@ -968,11 +968,19 @@
     padding: 3px 2px;
   }
   
+  .vacation-gantt thead {
+    display: table-header-group;
+  }
+  
   .vacation-gantt thead th {
     position: static;
     background: #f0f0f0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  
+  .vacation-gantt tbody {
+    display: table-row-group;
   }
   
   .vacation-gantt th.member-name {
