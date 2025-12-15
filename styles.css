@@ -857,23 +857,9 @@
   }
   
   /* ページ設定 */
-  /* 1ページ目: ヘッダーなし（ガントチャート内に表示） */
-  @page:first {
-    size: A4 landscape;
-    margin: 20mm 15mm 15mm 15mm;
-  }
-  
-  /* 2ページ目以降: ページマージンにヘッダー配置 */
   @page {
     size: A4 landscape;
-    margin: 25mm 15mm 15mm 15mm;
-    @top-center {
-      content: string(pageTitle);
-      font-size: 14px;
-      font-weight: 700;
-      border-bottom: 1px solid #333;
-      padding-bottom: 5px;
-    }
+    margin: 15mm;
   }
   
   body {
@@ -915,37 +901,31 @@
     display: block !important;
   }
   
-  /* 1ページ目用のイベント情報ヘッダー */
+  /* 印刷用固定ヘッダー（全ページ上部に表示） */
   #eventPrintInfo {
     display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     text-align: center;
     font-size: 14px;
     font-weight: 700;
-    padding: 10px;
-    margin-bottom: 15px;
+    padding: 10px 15px;
     border-bottom: 2px solid #333;
-    background: white;
+    background: white !important;
     color: #000;
-    page-break-after: avoid;
-    page-break-inside: avoid;
-    /* 2ページ目以降では自動的に消える（ページ分割により） */
-  }
-  
-  /* 印刷用ヘッダー（ページマージンのみ、2ページ目以降） */
-  #eventGanttWrap::before {
-    content: attr(data-event-title);
-    position: running(pageTitle);
-    /* position: running() を使うと通常表示領域から削除されるため、重複しない */
-  }
-  
-  #eventGanttWrap {
-    padding: 0 !important;
+    z-index: 9999;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   #eventGanttWrap {
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
+    /* 固定ヘッダー分の上マージンを確保 */
+    margin-top: 50px !important;
   }
   
   #eventGantt {
