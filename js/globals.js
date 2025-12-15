@@ -117,6 +117,21 @@ function coerceVacationVisibleFlag(raw){
 }
 
 function renderVacationRadioMessage(message){
+  // プルダウン形式の場合
+  const dropdown = document.getElementById('eventSelectDropdown');
+  if(dropdown){
+    dropdown.innerHTML = '';
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = message;
+    option.disabled = true;
+    option.selected = true;
+    dropdown.appendChild(option);
+    dropdown.disabled = true;
+    return;
+  }
+  
+  // 旧形式（カードリスト）のフォールバック
   if(!vacationRadioList) return;
   vacationRadioList.style.display='block';
   vacationRadioList.textContent='';

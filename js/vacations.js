@@ -459,34 +459,8 @@
     }
 
     async function resolveHolidays(){
+      // 手動定義の祝日リストのみを使用（CSP違反回避のため外部API呼び出しを削除）
       const set = new Set(MANUAL_HOLIDAYS.map(normalizeDateStr).filter(Boolean));
-      const years = new Set(dateSlots.map(d => (new Date(d)).getFullYear()));
-      if(!HOLIDAY_API_URL){
-        return set;
-      }
-      for(const y of years){
-        if(holidayCache.has(y)){
-          const cached = holidayCache.get(y);
-          if(cached) cached.forEach(d => set.add(d));
-          continue;
-        }
-        try{
-          const res = await fetch(HOLIDAY_API_URL, { cache: 'force-cache' });
-          if(!res.ok) throw new Error('holiday_fetch_failed');
-          const json = await res.json();
-          const yearSet = new Set();
-          Object.entries(json || {}).forEach(([k]) => {
-            if(k.startsWith(`${y}-`)){
-              yearSet.add(k);
-              set.add(k);
-            }
-          });
-          holidayCache.set(y, yearSet);
-        }catch(err){
-          console.warn('休日取得に失敗しました。週末のみ色分けにフォールバックします', err);
-          holidayCache.set(y, null);
-        }
-      }
       return set;
     }
 
