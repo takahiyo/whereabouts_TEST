@@ -862,17 +862,17 @@
     margin: 20mm 15mm 15mm 15mm;
   }
   
-  /* ページヘッダー（全ページ共通） */
-  @page {
-    @top-center {
-      content: element(pageHeader);
-    }
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
   }
   
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
+  /* すべての親要素を表示 */
+  html, body {
+    display: block !important;
+    visibility: visible !important;
   }
   
   /* admin-cardを全画面表示 */
@@ -901,15 +901,32 @@
     display: block !important;
   }
   
-  /* 印刷用イベント情報ヘッダー */
+  /* 印刷用イベント情報ヘッダー（各ページ上部に固定） */
   #eventPrintInfo {
     display: block !important;
+    position: running(pageHeader);
     text-align: center;
     font-size: 16px;
     font-weight: 700;
-    margin: 0 0 15px 0;
-    padding: 10px 0;
+    padding: 10px;
     border-bottom: 2px solid #333;
+    background: #f0f0f0;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* 代替方法: ヘッダーを最初に表示 */
+  #eventGanttWrap::before {
+    content: attr(data-event-title);
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    padding: 15px 10px;
+    border: 2px solid #333;
+    background: #f0f0f0;
     color: #000;
     page-break-after: avoid;
   }
@@ -927,10 +944,18 @@
   
   /* ガントチャートを印刷用に最適化 */
   .vacation-gantt {
-    max-height: none;
-    overflow: visible;
+    max-height: none !important;
+    overflow: visible !important;
     border: 1px solid #000;
-    page-break-inside: avoid;
+    page-break-inside: auto;
+    margin-top: 0 !important;
+  }
+  
+  /* テーブル全体を確実に表示 */
+  .vacation-gantt table {
+    display: table !important;
+    width: 100%;
+    border-collapse: collapse;
   }
   
   .vacation-gantt table {

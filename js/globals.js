@@ -1038,22 +1038,37 @@ if(btnEventPrint){
     const printInfo = document.getElementById('eventPrintInfo');
     if(printInfo && eventTitle){
       printInfo.textContent = `イベントカレンダー: ${eventTitle}`;
+      printInfo.style.display = 'block';
     }
     
-    // イベントモーダルを一時的に印刷モードに設定
+    // イベントモーダルとその親要素を強制表示
     const eventModal = document.getElementById('eventModal');
     if(eventModal){
+      eventModal.style.display = 'block';
+      eventModal.style.visibility = 'visible';
       eventModal.classList.add('print-mode');
+    }
+    
+    // ガントチャートを強制表示し、タイトルを設定
+    const ganttWrap = document.getElementById('eventGanttWrap');
+    if(ganttWrap){
+      ganttWrap.style.display = 'block';
+      ganttWrap.style.visibility = 'visible';
+      ganttWrap.setAttribute('data-event-title', `イベントカレンダー: ${eventTitle}`);
+    }
+    if(gantt){
+      gantt.style.display = 'block';
+      gantt.style.visibility = 'visible';
     }
     
     // 印刷実行
     setTimeout(() => {
       window.print();
-      // 印刷後にクラスを削除
+      // 印刷後にスタイルをリセット
       if(eventModal){
         eventModal.classList.remove('print-mode');
       }
-    }, 100);
+    }, 200);
   });
 }
 
