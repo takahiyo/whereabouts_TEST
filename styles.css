@@ -325,11 +325,11 @@
     content: attr(data-label) !important;
     white-space:nowrap;
   }
-  .admin-modal{position:fixed;inset:0;z-index:1850;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);}
+  .admin-modal{position:fixed;inset:0;z-index:1850;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:20px;}
   .admin-modal.show{display:flex;}
-  .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;max-height:80vh;width:min(1200px,95vw);max-width:95vw;display:flex;flex-direction:column;overflow:hidden;}
-  .admin-card-header{flex:0 0 auto;padding:16px;border-bottom:1px solid #e5e7eb;background:#fff;}
-  .admin-card-body{flex:1 1 auto;overflow-y:auto;padding:16px;}
+  .admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;max-height:90vh;width:min(1280px,100%);max-width:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.1);}
+  .admin-card-header{flex:0 0 auto;padding:20px;border-bottom:1px solid #e5e7eb;background:#fff;}
+  .admin-card-body{flex:1 1 auto;overflow-y:auto;padding:20px;}
   .notice-modal-card{width:min(720px,95vw);max-width:95vw;}
   .notice-modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;}
   .notice-modal-body{max-height:60vh;overflow:auto;line-height:1.6;color:#0f172a;font-size:14px;}
@@ -418,12 +418,14 @@
 .vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;display:none;}
 .vacation-gantt-head{display:flex;flex-direction:column;gap:2px;margin-bottom:2px;}
 .vacation-gantt-touch-hint{font-size:11px;color:#6b7280;}
-.event-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.event-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .event-modal-title{margin:0;}
+.event-modal .admin-card{max-height:92vh;width:min(1400px,100%);}
+.event-modal .admin-card-body{padding:24px;}
 .event-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
 .event-toolbar__hint{color:#6b7280;font-size:12px;flex:1;min-width:200px;}
 .vacation-helper{color:#6b7280;font-size:12px;line-height:1.5;}
-.vacation-view{display:flex;flex-direction:column;gap:6px;}
+.vacation-view{display:flex;flex-direction:column;gap:12px;}
 .vacation-group-jumps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 4px;}
 .vacation-group-jumps .jump-label{font-weight:700;color:#0f172a;font-size:12px;}
 .vacation-group-jumps .jump-btn{padding:4px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;color:#0f172a;transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;}
@@ -434,9 +436,9 @@
 .vacation-group-jumps .jump-buttons{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
 .event-modal .vacation-table-wrap{max-height:unset;}
 .vacation-select-wrap{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa;}
-.event-select-toolbar{display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;}
-.event-select-label{display:flex;align-items:center;gap:8px;font-weight:600;color:#0f172a;flex:1;}
-.event-select-dropdown{padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;min-width:280px;background:#fff;}
+.event-select-toolbar{display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;flex-wrap:wrap;}
+.event-select-label{display:flex;align-items:center;gap:8px;font-weight:600;color:#0f172a;white-space:nowrap;}
+.event-select-dropdown{padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;min-width:200px;max-width:400px;flex:1;background:#fff;}
 .btn-show-event-notice{padding:6px 12px;font-size:13px;white-space:nowrap;}
 .vacation-radio-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
 .vacation-radio-item{display:flex;flex-direction:column;gap:6px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s;position:relative;}
@@ -817,4 +819,123 @@
 }
 .btn-move-up:disabled, .btn-move-down:disabled{
   background:#d1d5db; cursor:not-allowed; opacity:0.5;
+}
+
+/* 印刷用CSS */
+@media print {
+  /* 不要な要素を非表示 */
+  header, .admin-modal-header, .event-toolbar, .vacation-actions,
+  .admin-tabs, .event-select-toolbar, .notices-btn, .admin-btn,
+  .event-btn, .logout-btn, .manual-btn, button, .admin-card-header {
+    display: none !important;
+  }
+  
+  /* ページ設定 */
+  @page {
+    size: A4 landscape;
+    margin: 15mm;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  
+  /* イベントモーダルを全画面表示 */
+  .event-modal.show, .admin-modal.show {
+    position: static;
+    background: white;
+    padding: 0;
+  }
+  
+  .admin-card, .event-modal .admin-card {
+    max-height: none;
+    max-width: none;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+  
+  .admin-card-body {
+    overflow: visible;
+    padding: 0;
+  }
+  
+  /* ガントチャートを印刷用に最適化 */
+  .vacation-gantt {
+    max-height: none;
+    overflow: visible;
+    border: 1px solid #000;
+    page-break-inside: avoid;
+  }
+  
+  .vacation-gantt table {
+    font-size: 10px;
+    border-collapse: collapse;
+  }
+  
+  .vacation-gantt th, .vacation-gantt td {
+    border: 1px solid #333;
+    padding: 3px 2px;
+  }
+  
+  .vacation-gantt thead th {
+    position: static;
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .vacation-gantt th.member-name {
+    position: static;
+    left: auto;
+    background: #fff !important;
+  }
+  
+  .vacation-gantt th.group-name {
+    position: static;
+    left: auto;
+    background: #f5f5f5 !important;
+  }
+  
+  /* ビット設定済みセルの表示 */
+  .vacation-gantt .vac-cell.on {
+    background: #333 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* 週末・祝日の表示 */
+  .vacation-gantt .weekend-sat {
+    background: #e8f4f8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .vacation-gantt .weekend-sun, .vacation-gantt .holiday {
+    background: #ffe8e8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* ハイライトメンバー */
+  .vacation-gantt th.member-name.member-has-bit {
+    background: #ddd !important;
+    font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* 印刷用タイトル */
+  .vacation-gantt::before {
+    content: "イベントカレンダー";
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+  }
 }
