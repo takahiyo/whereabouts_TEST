@@ -3,6 +3,8 @@
 let CURRENT_NOTICES = [];
 window.CURRENT_NOTICES = CURRENT_NOTICES; // グローバルに公開してadmin.jsから参照可能にする
 const MAX_NOTICE_ITEMS = 100;
+const NOTICE_COLLAPSE_STORAGE_KEY = 'noticeAreaCollapsed';
+let noticeCollapsePreference = loadNoticeCollapsePreference();
 
 // URLを自動リンク化する関数
 function linkifyText(text) {
@@ -203,9 +205,8 @@ function renderNotices(notices) {
 
   noticesArea.style.display = 'block';
   if (noticesBtn) noticesBtn.style.display = 'inline-block';
-  
-  // デフォルトで展開状態にする
-  noticesArea.classList.remove('collapsed');
+
+  applyNoticeCollapsedState(noticesArea);
   
   // お知らせヘッダーをクリックで開閉できるようにする
   const noticesHeader = noticesArea.querySelector('.notices-header');
@@ -224,8 +225,9 @@ function renderNotices(notices) {
 function toggleNoticesArea() {
   const noticesArea = document.getElementById('noticesArea');
   if (!noticesArea) return;
-  
-  noticesArea.classList.toggle('collapsed');
+
+  const isCollapsed = noticesArea.classList.toggle('collapsed');
+  saveNoticeCollapsePreference(isCollapsed);
 }
 
 // お知らせを取得
@@ -360,5 +362,34 @@ function stopNoticesPolling() {
   if (noticesPollingTimer) {
     clearInterval(noticesPollingTimer);
     noticesPollingTimer = null;
+  }
+}
+
+function loadNoticeCollapsePreference() {
+  try {
+    const raw = localStorage.getItem(NOTICE_COLLAPSE_STORAGE_KEY);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch (e) {
+    console.warn('Failed to read notice collapse preference', e);
+  }
+  return false;
+}
+
+function saveNoticeCollapsePreference(collapsed) {
+  noticeCollapsePreference = collapsed === true;
+  try {
+    localStorage.setItem(NOTICE_COLLAPSE_STORAGE_KEY, noticeCollapsePreference ? 'true' : 'false');
+  } catch (e) {
+    console.warn('Failed to save notice collapse preference', e);
+  }
+}
+
+function applyNoticeCollapsedState(noticesArea) {
+  if (!noticesArea) return;
+  if (noticeCollapsePreference) {
+    noticesArea.classList.add('collapsed');
+  } else {
+    noticesArea.classList.remove('collapsed');
   }
 }
