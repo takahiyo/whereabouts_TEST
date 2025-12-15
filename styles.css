@@ -859,7 +859,16 @@
   /* ページ設定 */
   @page {
     size: A4 landscape;
-    margin: 20mm 15mm 15mm 15mm;
+    margin: 25mm 15mm 15mm 15mm;
+  }
+  
+  /* ページマージン領域にヘッダーを配置 */
+  @page {
+    @top-center {
+      content: string(pageTitle);
+      font-size: 14px;
+      font-weight: 700;
+    }
   }
   
   body {
@@ -906,29 +915,31 @@
     display: none !important;
   }
   
-  /* ヘッダーを各ページ上部に固定表示 */
+  /* ヘッダーをページマージン領域に配置 */
   #eventGanttWrap::before {
     content: attr(data-event-title);
+    position: running(pageTitle);
+  }
+  
+  /* 1ページ目用のヘッダー */
+  #eventGanttWrap::after {
+    content: attr(data-event-title);
     display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
     padding: 12px 10px;
-    border-bottom: 2px solid #333;
-    background: #f9f9f9;
+    margin-bottom: 15px;
+    border: 2px solid #333;
+    background: #f5f5f5;
     color: #000;
-    z-index: 9999;
+    page-break-after: avoid;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   
-  /* ヘッダー分の余白を確保 */
-  #eventGantt {
-    margin-top: 50px !important;
+  #eventGanttWrap {
+    padding: 0 !important;
   }
   
   #eventGanttWrap {
@@ -948,7 +959,8 @@
     overflow: visible !important;
     border: 1px solid #000;
     page-break-inside: auto;
-    margin-top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
   /* テーブル全体を確実に表示 */
@@ -973,7 +985,7 @@
   }
   
   .vacation-gantt thead th {
-    position: static;
+    position: static !important;
     background: #f0f0f0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -981,6 +993,11 @@
   
   .vacation-gantt tbody {
     display: table-row-group;
+  }
+  
+  /* テーブルヘッダーとイベントヘッダーが重ならないように */
+  .vacation-gantt table {
+    margin-top: 0 !important;
   }
   
   .vacation-gantt th.member-name {
