@@ -118,11 +118,11 @@ if(noticesBtn){
     const wasCollapsed = noticesArea.classList.contains('collapsed');
     toggleNoticesArea();
     
-    // 折りたたまれていた場合は展開後にスクロール
+    // 折りたたまれていた場合は展開後にページトップにスクロール
     if(wasCollapsed){
       // 少し遅延させて、DOM更新後にスクロール
       setTimeout(()=>{
-        noticesArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     }
   });

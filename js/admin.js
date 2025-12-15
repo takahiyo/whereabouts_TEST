@@ -1008,3 +1008,72 @@ async function autoLoadNoticesOnAdminOpen(){
     console.error('Auto-load notices error:', e);
   }
 }
+
+/* イベントエクスポート機能 */
+const btnExportEvent = document.getElementById('btnExportEvent');
+if(btnExportEvent){
+  btnExportEvent.addEventListener('click', async ()=>{
+    const office = adminSelectedOfficeId || CURRENT_OFFICE_ID;
+    if(!office){ toast('拠点が選択されていません', false); return; }
+    
+    try{
+      // 設定とイベント一覧を取得
+      const cfg = await adminGetConfigFor(office);
+      const eventsRes = await apiPost({ action:'getVacations', token:SESSION_TOKEN, office, nocache:'1' });
+      
+      if(!cfg || !cfg.groups){ toast('設定の取得に失敗しました', false); return; }
+      if(!eventsRes || !eventsRes.vacations){ toast('イベントの取得に失敗しました', false); return; }
+      
+      const events = eventsRes.vacations;
+      if(!events.length){ toast('エクスポートするイベントがありません'); return; }
+      
+      // CSVヘッダー
+      const rows = [];
+      rows.push(toCsvRow(['イベントID', 'タイトル', '開始日', '終了日', 'グループ', '氏名', 'ビット状態']));
+      
+      // 各イベントについて処理
+      events.forEach(event => {
+        const eventId = event.id || event.vacationId || '';
+        const title = event.title || '';
+        const startDate = event.startDate || event.start || event.from || '';
+        const endDate = event.endDate || event.end || event.to || '';
+        const membersBits = event.membersBits || event.bits || '';
+        
+        // メンバーリストを構築
+        const members = [];
+        (cfg.groups || []).forEach(g => {
+          (g.members || []).forEach(m => {
+            members.push({ group: g.title || '', name: m.name || '' });
+          });
+        });
+        
+        // ビット文字列を解析
+        const bitChars = membersBits.split('');
+        members.forEach((member, idx) => {
+          const bitValue = bitChars[idx] === '1' ? '○' : '';
+          rows.push(toCsvRow([eventId, title, startDate, endDate, member.group, member.name, bitValue]));
+        });
+      });
+      
+      const csv = rows.join('\\n');
+      const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const bytes = new TextEncoder().encode(csv);
+      const blob = new Blob([BOM, bytes], { type:'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      a.href = url;
+      a.download = `events_${office}_${timestamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 0);
+      toast('イベントをエクスポートしました');
+    }catch(e){
+      console.error('Event export error:', e);
+      toast('エクスポートに失敗しました', false);
+    }
+  });
+}
