@@ -823,39 +823,24 @@
 
 /* 印刷用CSS */
 @media print {
-  /* イベントカレンダー以外のすべてを非表示 */
-  body > *:not(#eventModal) {
-    display: none !important;
-  }
-  
-  #eventModal > *:not(.admin-card) {
-    display: none !important;
-  }
-  
-  .admin-card > *:not(.admin-card-body) {
-    display: none !important;
-  }
-  
-  .admin-card-body > *:not(#tabEvent) {
-    display: none !important;
-  }
-  
-  #tabEvent > *:not(.vacation-view) {
-    display: none !important;
-  }
-  
-  .vacation-view > *:not(#eventGanttWrap) {
-    display: none !important;
-  }
-  
-  #eventGanttWrap > *:not(#eventPrintInfo):not(#eventGantt) {
+  /* 在席確認表などイベントカレンダー以外を非表示 */
+  body > header,
+  body > #board,
+  body > #noticesArea,
+  body > #adminModal,
+  body > #manualModal,
+  body > #noticeModal {
     display: none !important;
   }
   
   /* イベントモーダル内の不要な要素を非表示 */
-  .event-modal-header, .event-toolbar, .vacation-actions,
-  .event-select-toolbar, button,
-  .vacation-gantt-sticky-header, .event-legend, .vacation-group-jumps {
+  .event-modal-header,
+  .event-select-toolbar,
+  .vacation-gantt-sticky-header .event-toolbar,
+  .vacation-gantt-sticky-header .vacation-actions,
+  .vacation-gantt-sticky-header .vacation-group-jumps,
+  .event-legend,
+  button {
     display: none !important;
   }
   
@@ -879,7 +864,7 @@
   }
   
   /* イベントモーダルを全画面表示 */
-  .event-modal {
+  #eventModal {
     display: block !important;
     position: static !important;
     background: white;
@@ -887,25 +872,22 @@
     margin: 0;
     width: 100%;
     height: auto;
+    overflow: visible;
   }
   
-  .admin-card {
-    display: none !important;
-  }
-  
-  .event-modal .admin-card {
-    display: block !important;
-    max-height: none;
-    max-width: none;
+  #eventModal .admin-card {
+    max-height: none !important;
+    max-width: none !important;
     width: 100%;
     border: none;
     box-shadow: none;
     overflow: visible;
   }
   
-  .admin-card-body {
+  #eventModal .admin-card-body {
     overflow: visible;
     padding: 0;
+    max-height: none !important;
   }
   
   /* 印刷用イベント情報ヘッダー */
@@ -918,6 +900,14 @@
     padding: 10px 0;
     border-bottom: 2px solid #333;
     color: #000;
+  }
+  
+  #eventGanttWrap {
+    display: block !important;
+  }
+  
+  #eventGantt {
+    display: block !important;
   }
   
   /* ガントチャートを印刷用に最適化 */
