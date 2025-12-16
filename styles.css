@@ -515,7 +515,7 @@
 .vacation-gantt th.member-name.member-has-bit{background:#dbeafe;font-weight:700;color:#1e40af;}
 .vacation-gantt thead th.group-name{z-index:20;background:#f3f4f6;}
 .vacation-gantt thead th.member-name{z-index:20;background:#fff;}
-.vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;}
+.vacation-gantt .vac-cell{cursor:pointer;min-width:34px;transition:background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;user-select:none;}
 .vacation-gantt table.dragging .vac-cell{touch-action:none;}
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.weekend-sat{background:#e0f2fe;}

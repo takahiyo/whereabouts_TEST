@@ -488,7 +488,13 @@
       const date = cell.dataset.date;
       const currentOn = cell.classList.contains('on');
       const toValue = !currentOn;
-      draggingState = { toValue };
+      draggingState = {
+        toValue,
+        startX: e.clientX,
+        startY: e.clientY,
+        hasDragged: false,
+        startCell: cell
+      };
       if(tableEl){
         tableEl.classList.add('dragging');
       }
@@ -503,13 +509,21 @@
       const idx = Number(cell.dataset.memberIndex || '-1');
       if(idx < 0) return;
       const date = cell.dataset.date;
+      if(draggingState.startCell && draggingState.startCell !== cell){
+        draggingState.hasDragged = true;
+      }
       toggleBit(date, idx, draggingState.toValue);
       cell.classList.toggle('on', draggingState.toValue);
     }
 
     function handlePointerMove(e){
       if(!draggingState) return;
-      if(e.cancelable){
+      const movedX = typeof draggingState.startX === 'number' ? Math.abs((e.clientX || 0) - draggingState.startX) : 0;
+      const movedY = typeof draggingState.startY === 'number' ? Math.abs((e.clientY || 0) - draggingState.startY) : 0;
+      if(movedX > 2 || movedY > 2){
+        draggingState.hasDragged = true;
+      }
+      if(draggingState.hasDragged && e.cancelable){
         e.preventDefault();
       }
     }
