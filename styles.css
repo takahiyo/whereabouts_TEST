@@ -536,7 +536,7 @@
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.on.weekend-sat{background:#0284c7;color:#fff;}
 .vacation-gantt .vac-cell.on.weekend-sun,.vacation-gantt .vac-cell.on.holiday{background:#e11d48;color:#fff;}
-.vac-color-palette{position:absolute;z-index:80;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 10px 25px rgba(15,23,42,0.15);padding:10px;min-width:240px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#0f172a;}
+.vac-color-palette{position:absolute;z-index:1860;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 10px 25px rgba(15,23,42,0.15);padding:10px;min-width:240px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#0f172a;}
 .vac-color-palette__title{font-weight:700;font-size:12px;line-height:1.2;color:#111827;}
 .vac-color-palette__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
 .vac-color-option{border:1px solid #cbd5e1;border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;min-width:0;}
