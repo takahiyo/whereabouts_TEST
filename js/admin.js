@@ -240,7 +240,6 @@ if(adminModal){
 let adminMemberList=[], adminMemberData={}, adminGroupOrder=[], adminMembersLoaded=false;
 
 if(btnMemberReload){ btnMemberReload.addEventListener('click', ()=> loadAdminMembers(true)); }
-if(btnMemberAdd){ btnMemberAdd.addEventListener('click', ()=> openMemberEditor(null)); }
 if(btnMemberSave){ btnMemberSave.addEventListener('click', ()=> handleMemberSave()); }
 if(memberEditForm){
   memberEditForm.addEventListener('submit', (e)=>{
@@ -356,9 +355,18 @@ function renderMemberTable(){
     orderTd.innerHTML=`<div class="member-row-actions"><span class="member-drag-handle" draggable="true" title="ドラッグで並び替え">⇅</span><span>#${idx+1}</span></div>`;
     const groupTd=document.createElement('td'); groupTd.textContent=m.group||'';
     const nameTd=document.createElement('td'); nameTd.textContent=m.name||'';
-    const extTd=document.createElement('td'); extTd.textContent=m.ext||'';
-    const mobileTd=document.createElement('td'); mobileTd.textContent=m.mobile||'';
-    const emailTd=document.createElement('td'); emailTd.textContent=m.email||'';
+    const extTd=document.createElement('td'); extTd.className='numeric-cell'; extTd.textContent=m.ext||'';
+    const mobileTd=document.createElement('td'); mobileTd.className='numeric-cell'; mobileTd.textContent=m.mobile||'';
+    const emailTd=document.createElement('td');
+    if(m.email){
+      const [localPart, domainPart] = m.email.split('@');
+      const emailWrap=document.createElement('div'); emailWrap.className='member-email';
+      const localSpan=document.createElement('span'); localSpan.textContent=localPart || m.email; emailWrap.appendChild(localSpan);
+      if(domainPart!==undefined){
+        const domainSpan=document.createElement('span'); domainSpan.className='email-domain'; domainSpan.textContent='@'+domainPart; emailWrap.appendChild(domainSpan);
+      }
+      emailTd.appendChild(emailWrap);
+    }
     const actionTd=document.createElement('td'); actionTd.className='member-row-actions';
     const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
     editBtn.addEventListener('click', ()=> openMemberEditor(m));
@@ -418,7 +426,7 @@ function openMemberEditor(member){
   if(memberEditExt) memberEditExt.value=member?.ext||'';
   if(memberEditMobile) memberEditMobile.value=member?.mobile||'';
   if(memberEditEmail) memberEditEmail.value=member?.email||'';
-  if(memberEditGroup) memberEditGroup.value=member?.group||adminGroupOrder[0]||'';
+  if(memberEditGroup) memberEditGroup.value=member?.group||'';
   if(memberEditModeLabel){
     memberEditModeLabel.textContent = member ? `編集中：${member.name||''}` : '新規追加／編集フォーム';
   }

@@ -102,18 +102,10 @@
                 <h4>👥 メンバー一覧・編集</h4>
                 <div class="admin-box-actions">
                   <button id="btnMemberReload" class="btn-secondary">🔄 読み込み</button>
-                  <button id="btnMemberAdd" class="btn-secondary">➕ メンバー追加</button>
                   <button id="btnMemberSave" class="btn-primary">💾 保存</button>
                 </div>
               </div>
               <div class="admin-note">ドラッグまたは↑↓ボタンで並び替え、編集ボタンで詳細を更新できます。</div>
-              <div class="member-filter-row">
-                <label for="memberFilterInput">氏名フィルター</label>
-                <div class="member-filter-controls">
-                  <input id="memberFilterInput" type="search" placeholder="在席確認表の氏名で絞り込み" aria-label="氏名フィルター" />
-                  <button id="btnMemberFilterClear" class="btn-secondary" type="button">クリア</button>
-                </div>
-              </div>
               <form id="memberEditForm" class="member-edit-form member-inline-form">
                 <input type="hidden" id="memberEditId" />
                 <div class="member-edit-grid">
@@ -144,6 +136,13 @@
                   </div>
                 </div>
               </form>
+              <div class="member-filter-row">
+                <label for="memberFilterInput" class="member-filter-label">氏名フィルター</label>
+                <div class="member-filter-controls">
+                  <input id="memberFilterInput" type="search" placeholder="在席確認表の氏名で絞り込み" aria-label="氏名フィルター" />
+                  <button id="btnMemberFilterClear" class="btn-secondary" type="button">クリア</button>
+                </div>
+              </div>
               <div class="member-table-wrap">
                 <table class="member-table">
                   <thead>
