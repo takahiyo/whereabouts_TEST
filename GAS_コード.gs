@@ -147,6 +147,8 @@ function normalizeConfig_(cfg){
           id:        String(m.id || '').trim(),
           name:      String(m.name || ''),
           ext:       String(m.ext || ''),
+          mobile:    String(m.mobile || ''),
+          email:     String(m.email || ''),
           workHours: m.workHours == null ? '' : String(m.workHours)
         })).filter(m=>m.id || m.name)
       };
