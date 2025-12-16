@@ -318,7 +318,7 @@
       font-weight:600; color:#6B7280;
       min-width:5.5em; flex:0 0 auto;
     }
-    tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; }
+    tbody td.name{ order:0; flex:1 1 100%; font-weight:800; font-size:15px; line-height:1.2; padding-bottom:2px; user-select:none; -webkit-touch-callout:none; }
     tbody td.name::before{ content:""; display:none; }
     tbody td.work{ order:1; flex:1 1 100%; }
     tbody td.ext{ order:2; }
@@ -359,7 +359,7 @@
   #board[data-cols="1"] tbody td.name{
     order:0; flex:1 1 100%;
     font-weight:800; font-size:15px; line-height:1.2;
-    padding-bottom:2px;
+    padding-bottom:2px; user-select:none; -webkit-touch-callout:none;
   }
 
   #board.force-cards tbody td.work,

@@ -142,6 +142,7 @@ function attachContactLongPress(tdName, tr, fallbackMember){
     clearContactHoldTimer();
   };
   const handleTouchStart = (e)=>{
+    e.preventDefault();
     const touch = e.touches?.[0];
     startHold(touch);
   };
@@ -157,10 +158,10 @@ function attachContactLongPress(tdName, tr, fallbackMember){
   };
   const handleMouseDown = (e)=>{ if(e.button === 0) startHold(); };
 
-  tdName.addEventListener('touchstart', handleTouchStart, { passive: true });
-  tdName.addEventListener('touchend', cancelHold);
+  tdName.addEventListener('touchstart', handleTouchStart, { passive: false });
+  tdName.addEventListener('touchend', cancelHold, { passive: false });
   tdName.addEventListener('touchcancel', cancelHold);
-  tdName.addEventListener('touchmove', handleTouchMove);
+  tdName.addEventListener('touchmove', handleTouchMove, { passive: false });
   tdName.addEventListener('mousedown', handleMouseDown);
   tdName.addEventListener('mouseup', cancelHold);
   tdName.addEventListener('mouseleave', cancelHold);
