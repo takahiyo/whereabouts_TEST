@@ -326,7 +326,16 @@ function applyManualEventColorsToGantt(){
   if(!gantt) return;
   const colorClasses=getEventColorClasses();
   const map=(eventDateColorState.officeId && eventDateColorState.officeId!==targetOffice) ? new Map() : (eventDateColorState.map||new Map());
-  const applyColorToCell=(cell)=>{
+  gantt.querySelectorAll('td.vac-cell').forEach(cell=>{
+    cell.classList.remove(...colorClasses);
+    if(cell.title && cell.title.includes('手動')){
+      cell.removeAttribute('title');
+    }
+    delete cell.dataset.manualColor;
+    delete cell.dataset.manualColorBound;
+  });
+
+  const applyColorToDayHeader=(cell)=>{
     cell.classList.remove(...colorClasses);
     const date=normalizeEventDateKey(cell.dataset.date||'');
     const colorKey=map.get(date)||'';
@@ -343,8 +352,7 @@ function applyManualEventColorsToGantt(){
       }
     }
   };
-  gantt.querySelectorAll('td.vac-cell').forEach(applyColorToCell);
-  gantt.querySelectorAll('.vac-day-header').forEach(applyColorToCell);
+  gantt.querySelectorAll('.vac-day-header').forEach(applyColorToDayHeader);
   updateEventColorManualHint(map.size>0);
 }
 
@@ -1200,36 +1208,6 @@ function applyEventHighlightForItems(eventItems, targetDate){
     }else{
       restoreStatusField(tr, statusTd, statusSelect);
     }
-  });
-
-  bindEventGanttColorPicker();
-}
-
-function bindEventGanttColorPicker(){
-  if(CURRENT_ROLE!=='officeAdmin' && CURRENT_ROLE!=='superAdmin') return;
-  const gantt=eventGantt || document.getElementById('eventGantt');
-  if(!gantt) return;
-  const handleCellClick=(cell)=>{
-    const currentKey=normalizeEventColorKeyClient(cell.dataset.manualColor||'');
-    const idx=EVENT_COLOR_KEYS.indexOf(currentKey);
-    const nextIdx=(idx+1)%(EVENT_COLOR_KEYS.length+1);
-    const nextKey= nextIdx===EVENT_COLOR_KEYS.length ? '' : EVENT_COLOR_KEYS[nextIdx];
-    setManualEventColorForDate(cell.dataset.date||'', nextKey);
-  };
-
-  gantt.querySelectorAll('td.vac-cell').forEach(cell=>{
-    if(cell.dataset.manualColorBound==='1') return;
-    cell.dataset.manualColorBound='1';
-    cell.addEventListener('click', (e)=>{
-      // 既存のセル操作（ドラッグ等）と競合しないよう、単純なクリック時のみ色を循環させる
-      if(e.type==='click' && e.button===0){
-        handleCellClick(cell);
-      }
-    });
-    cell.addEventListener('contextmenu', (e)=>{
-      e.preventDefault();
-      setManualEventColorForDate(cell.dataset.date||'', '');
-    });
   });
 }
 
