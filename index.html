@@ -303,14 +303,16 @@
           <div id="vacationRadioList" class="vacation-radio-list" style="display:none;"></div>
           <div id="eventGanttWrap" class="vacation-gantt-head">
             <div class="vacation-gantt-sticky-header">
-              <div class="event-toolbar">
-                <div class="event-toolbar__hint">
-                  <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
-                </div>
-                <div class="vacation-actions" style="margin-bottom:0;display:flex;gap:8px;justify-content:flex-end;">
-                  <button id="btnEventPrint" class="btn-secondary">🖨️ 印刷</button>
-                  <button id="btnEventSave" class="btn-secondary">保存</button>
-                </div>
+                <div class="event-toolbar">
+                  <div class="event-toolbar__hint">
+                    <span class="vacation-gantt-touch-hint">セルをクリック/ドラッグ（スマホはタップ）するとON/OFFを切り替えられます。</span>
+                    <span id="eventColorManualHint" class="event-color-manual-hint" role="status" aria-live="polite" style="display:none;"></span>
+                  </div>
+                  <div class="vacation-actions" style="margin-bottom:0;display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="btnEventColorReset" class="btn-secondary" title="手動で指定した日付色をまとめてクリアします">🧹 色リセット</button>
+                    <button id="btnEventPrint" class="btn-secondary">🖨️ 印刷</button>
+                    <button id="btnEventSave" class="btn-secondary">保存</button>
+                  </div>
               </div>
               <div id="eventGroupJumps" class="vacation-group-jumps" aria-label="グループジャンプ" style="display:none;">
                 <span class="jump-label">グループ移動</span>

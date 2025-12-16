@@ -547,6 +547,7 @@
 .vacation-gantt .vacation-gantt-title{font-weight:700;color:#0f172a;display:none;}
 .vacation-gantt-head{display:flex;flex-direction:column;gap:2px;margin-bottom:2px;}
 .vacation-gantt-touch-hint{font-size:11px;color:#6b7280;}
+.event-color-manual-hint{display:inline-flex;align-items:center;gap:6px;color:#1d4ed8;font-size:11px;font-weight:600;}
 .event-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .event-modal-title{margin:0;}
 .event-modal .admin-card{max-height:92vh;width:min(1400px,100%);}
