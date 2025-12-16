@@ -66,29 +66,33 @@
       <!-- タブパネル1: 基本設定 -->
       <div id="tabBasic" class="tab-panel active" data-tab="basic">
         <div class="admin-grid">
-          <div class="admin-box">
-            <h4>📥 在席確認表リスト エクスポート</h4>
-            <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
-            <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</div>
-            <div class="admin-note" style="font-size:11px;color:#6b7280;">※従来フォーマット（携帯番号・Email列なし）も引き続き対応</div>
+          <div class="admin-box admin-box-stacked">
+            <h4>📁 CSV管理</h4>
+            <div class="admin-subsection">
+              <h5>📥 在席確認表リスト エクスポート</h5>
+              <div class="admin-row"><button id="btnExport">ダウンロード</button></div>
+              <div class="admin-note">形式：グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</div>
+              <div class="admin-note" style="font-size:11px;color:#6b7280;">※従来フォーマット（携帯番号・Email列なし）も引き続き対応</div>
+            </div>
+            <div class="admin-subsection">
+              <h5>📤 在席確認表リスト インポート</h5>
+              <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
+            </div>
           </div>
 
-          <div class="admin-box">
-            <h4>📤 在席確認表リスト インポート</h4>
-            <div class="admin-row"><input type="file" id="csvFile" accept=".csv,text/csv" /><button id="btnImport">取り込み</button></div>
-          </div>
-
-          <div class="admin-box">
-            <h4>拠点名の変更</h4>
-            <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
-          </div>
-
-          <div class="admin-box">
-            <h4>拠点パスワードの変更</h4>
-            <div class="admin-row">
-              <input id="setPw" placeholder="新パスワード（任意）" />
-              <input id="setAdminPw" placeholder="新管理者PW（任意）" />
-              <button id="btnSetPw">更新</button>
+          <div class="admin-box admin-box-stacked">
+            <h4>🏢 拠点設定</h4>
+            <div class="admin-subsection">
+              <h5>拠点名の変更</h5>
+              <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
+            </div>
+            <div class="admin-subsection">
+              <h5>拠点パスワードの変更</h5>
+              <div class="admin-row">
+                <input id="setPw" placeholder="新パスワード（任意）" />
+                <input id="setAdminPw" placeholder="新管理者PW（任意）" />
+                <button id="btnSetPw">更新</button>
+              </div>
             </div>
           </div>
         </div>
