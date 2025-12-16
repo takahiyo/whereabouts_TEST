@@ -1208,7 +1208,11 @@
   
   /* ビット設定済みセルの表示 */
   .vacation-gantt .vac-cell.on {
+    background: #0ea5e9 !important;
+    color: #fff !important;
     font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .vacation-gantt .vac-cell.on.vac-color-none {
