@@ -113,6 +113,8 @@ function getRosterOrdering(){
       id: (m && m.id != null && String(m.id)) ? String(m.id) : `__auto_${gi}_${mi}`,
       name: String(m?.name || ""),
       ext: String(m?.ext || ""),
+      mobile: String(m?.mobile || ""),
+      email: String(m?.email || ""),
       order: mi
     }))
   }));
@@ -127,6 +129,8 @@ function normalizeConfigClient(cfg){
         id:    String(m.id ?? "").trim(),
         name:  String(m.name ?? ""),
         ext:   String(m.ext  ?? ""),
+        mobile: String(m.mobile ?? ""),
+        email: String(m.email ?? ""),
         workHours: m.workHours == null ? '' : String(m.workHours)
       })).filter(m => m.id || m.name)
     };

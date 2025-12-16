@@ -341,8 +341,29 @@
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
   .admin-box{margin-bottom:16px;}
+  .admin-box-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
+  .admin-box-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .admin-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
   .admin-note{font-size:12px;color:#6B7280;margin-top:4px;}
+  .member-table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:8px;}
+  .member-table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px;}
+  .member-table th,.member-table td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:middle;}
+  .member-table th{background:#f9fafb;color:#374151;position:sticky;top:0;z-index:1;}
+  .member-table tr:last-child td{border-bottom:none;}
+  .member-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .member-drag-handle{cursor:grab;display:inline-flex;align-items:center;justify-content:center;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:13px;}
+  .member-drag-handle:active{cursor:grabbing;box-shadow:inset 0 1px 2px rgba(0,0,0,0.12);}
+  .member-edit-modal{align-items:center;justify-content:center;}
+  .member-edit-card{width:min(680px,95vw);}
+  .member-edit-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .member-edit-form{display:flex;flex-direction:column;gap:12px;}
+  .member-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;}
+  .member-edit-grid label{display:flex;flex-direction:column;gap:4px;font-weight:600;color:#374151;}
+  .member-edit-grid input{padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;}
+  .member-edit-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;}
+  .member-edit-modal[aria-hidden="true"]{display:none;}
+  .member-edit-modal.show{display:flex;}
+  .required{color:#b91c1c;font-weight:700;}
   .vacation-grid{display:grid;grid-template-columns:minmax(420px,1.1fr) minmax(340px,0.9fr);gap:16px;align-items:start;}
   @media (max-width: 1023px){
     .vacation-grid{grid-template-columns:1fr;}
