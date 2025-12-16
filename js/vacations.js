@@ -2,6 +2,16 @@
   const HOLIDAY_API_URL = window.HOLIDAY_API_URL || 'https://holidays-jp.github.io/api/v1/date.json';
   const MANUAL_HOLIDAYS = Array.isArray(window.MANUAL_HOLIDAYS) ? window.MANUAL_HOLIDAYS : [];
   const holidayCache = new Map(); // year -> Set<string>
+  const COLOR_PALETTE = [
+    { key: 'none', className: 'vac-color-none' },
+    { key: 'saturday', className: 'vac-color-sat' },
+    { key: 'sunday', className: 'vac-color-sun' },
+    { key: 'holiday', className: 'vac-color-holiday' },
+    { key: 'amber', className: 'vac-color-amber' },
+    { key: 'mint', className: 'vac-color-mint' },
+    { key: 'lavender', className: 'vac-color-lavender' },
+    { key: 'slate', className: 'vac-color-slate' }
+  ];
 
   const FALLBACK_DAYS = 7;
 
@@ -34,6 +44,69 @@
     let queuedSave = false;
     let latestRequestedState = null;
     let lastSavedState = null;
+    const dateColorMap = new Map(); // date -> palette index
+    let latestHolidaySet = new Set();
+    const paletteClassNames = COLOR_PALETTE.map(c => c.className);
+    const holidayPaletteIndex = COLOR_PALETTE.findIndex(c => c.key === 'holiday');
+
+    function getDefaultColorIndex(date){
+      const d = new Date(date);
+      const dow = d.getDay();
+      if(dow === 0){
+        const sundayIdx = COLOR_PALETTE.findIndex(c => c.key === 'sunday');
+        return sundayIdx >= 0 ? sundayIdx : 0;
+      }
+      if(dow === 6){
+        const saturdayIdx = COLOR_PALETTE.findIndex(c => c.key === 'saturday');
+        return saturdayIdx >= 0 ? saturdayIdx : 0;
+      }
+      return 0;
+    }
+
+    function ensureDateColor(date){
+      const normalized = normalizeDateStr(date);
+      if(!normalized) return 0;
+      if(!dateColorMap.has(normalized)){
+        dateColorMap.set(normalized, getDefaultColorIndex(normalized));
+      }
+      return dateColorMap.get(normalized) ?? 0;
+    }
+
+    function syncDateColorMapWithSlots(){
+      const available = new Set(dateSlots);
+      Array.from(dateColorMap.keys()).forEach(date => {
+        if(!available.has(date)){
+          dateColorMap.delete(date);
+        }
+      });
+      dateSlots.forEach(date => ensureDateColor(date));
+    }
+
+    function applyColumnColor(date){
+      if(!tableEl) return;
+      const idx = ensureDateColor(date) % COLOR_PALETTE.length;
+      const className = COLOR_PALETTE[idx]?.className || '';
+      const shouldShowHoliday = latestHolidaySet.has(date) && idx === holidayPaletteIndex;
+      tableEl.querySelectorAll(`[data-date="${date}"]`).forEach(el => {
+        paletteClassNames.forEach(cls => el.classList.remove(cls));
+        if(className){
+          el.classList.add(className);
+        }
+        el.dataset.colorIndex = String(idx);
+        el.classList.toggle('holiday', shouldShowHoliday);
+      });
+    }
+
+    function applyAllColumnColors(){
+      dateSlots.forEach(date => applyColumnColor(date));
+    }
+
+    function cycleDateColor(date){
+      const current = ensureDateColor(date);
+      const next = (current + 1) % COLOR_PALETTE.length;
+      dateColorMap.set(date, next);
+      applyColumnColor(date);
+    }
     let statusEl = null;
     let saveMode = opts.saveMode || 'vacation';
     let initialized = false;
@@ -450,12 +523,18 @@
     }
 
     function applyHolidayColor(holidays){
-      if(!holidays || !holidays.size || !tableEl) return;
-      tableEl.querySelectorAll('.vac-cell, .vac-day-header').forEach(cell => {
-        if(holidays.has(cell.dataset.date)){
-          cell.classList.add('holiday');
-        }
-      });
+      latestHolidaySet = holidays instanceof Set ? holidays : new Set();
+      if(!tableEl) return;
+      if(holidayPaletteIndex >= 0){
+        latestHolidaySet.forEach(date => {
+          const currentIdx = ensureDateColor(date);
+          const defaultIdx = getDefaultColorIndex(date);
+          if(currentIdx === defaultIdx){
+            dateColorMap.set(date, holidayPaletteIndex);
+          }
+        });
+      }
+      applyAllColumnColors();
     }
 
     async function resolveHolidays(){
@@ -474,8 +553,17 @@
       if(statusEl){
         ganttRoot.appendChild(statusEl);
       }
+      applyAllColumnColors();
       applyBitsToCells();
       resolveHolidays().then(set => applyHolidayColor(set));
+    }
+
+    function handleColorCycle(e){
+      const target = e.target.closest('.vac-day-header');
+      if(!target) return;
+      const date = target.dataset.date;
+      if(!date) return;
+      cycleDateColor(date);
     }
 
     function handlePointerDown(e){
@@ -651,6 +739,7 @@
 
     function bindTableEvents(){
       if(!tableEl) return;
+      tableEl.addEventListener('click', handleColorCycle);
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
       tableEl.addEventListener('pointermove', handlePointerMove, { passive:false });
@@ -680,6 +769,7 @@
       if(!ganttRoot) return;
       orderedMembers = getMembersOrdered();
       dateSlots = buildDateSlots();
+      syncDateColorMapWithSlots();
       parseBitsString(bitsInput?.value || '');
       renderTable();
       renderGroupJumps();
