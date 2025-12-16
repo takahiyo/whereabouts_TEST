@@ -16,6 +16,9 @@ const TOKEN_TTL_MS   = 60 * 60 * 1000;  // 1時間
 const CACHE_TTL_SEC  = 20;              // 20秒
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
 const MAX_NOTICES_PER_OFFICE = 100;     // お知らせ最大件数
+const MAX_EVENT_COLOR_ENTRIES = 400;    // 日付カラーの上限件数
+
+const EVENT_COLOR_KEYS = ['amber','blue','green','pink','purple','teal','gray'];
 
 /* ===== ScriptProperties キー ===== */
 const KEY_PREFIX          = 'presence:';
@@ -36,6 +39,7 @@ function dataKeyForOffice_(office){ return `presence-board-${office}`; }
 function configKeyForOffice_(office){ return `presence-config-${office}`; }
 function noticesKeyForOffice_(office){ return `presence-notices-${office}`; }
 function vacationsKeyForOffice_(office){ return `presence-vacations-${office}`; }
+function eventColorsKeyForOffice_(office){ return `presence-event-colors-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
@@ -206,6 +210,39 @@ function coerceVacationTypeFlag_(raw){
   }
   if(typeof raw === 'number') return raw !== 0;
   return true;
+}
+
+function normalizeDateStr_(str){
+  if(!str) return '';
+  const d = new Date(str);
+  if(Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = `${d.getMonth()+1}`.padStart(2,'0');
+  const day = `${d.getDate()}`.padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function normalizeEventColorKey_(raw){
+  const s = String(raw || '').trim().toLowerCase();
+  return EVENT_COLOR_KEYS.includes(s) ? s : '';
+}
+
+function normalizeEventColorMap_(raw){
+  const source = (raw && typeof raw === 'object' && raw.colors && typeof raw.colors === 'object')
+    ? raw.colors
+    : (raw && typeof raw === 'object' ? raw : {});
+  const out = { colors:{}, updated: Number(raw && raw.updated || 0) || 0 };
+  Object.keys(source || {}).sort().slice(0, MAX_EVENT_COLOR_ENTRIES).forEach(date => {
+    const normalizedDate = normalizeDateStr_(date);
+    const colorKey = normalizeEventColorKey_(source[date]);
+    if(normalizedDate && colorKey){
+      out.colors[normalizedDate] = colorKey;
+    }
+  });
+  if(!out.updated){
+    out.updated = now_();
+  }
+  return out;
 }
 
 function normalizeVacationItem_(raw, office){
@@ -639,6 +676,69 @@ function doPost(e){
     } finally{
       try{ lock.releaseLock(); }catch(_){}
     }
+  }
+
+  /* ===== イベント日付カラーAPI ===== */
+  if(action === 'getEventColorMap'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden' });
+      }
+    }
+
+    const COLORS_KEY = eventColorsKeyForOffice_(office);
+    const noCache = p_(e,'nocache','') === '1';
+    const cacheKey = KEY_PREFIX + 'eventcolors:' + office;
+    if(!noCache){
+      const hit = cache.get(cacheKey);
+      if(hit){
+        try{ return json_(JSON.parse(hit)); }catch(_){ /* fallthrough */ }
+      }
+    }
+
+    let outObj = { colors:{}, updated:0 };
+    try{
+      const stored = prop.getProperty(COLORS_KEY);
+      if(stored){
+        const parsed = JSON.parse(stored);
+        outObj = normalizeEventColorMap_(parsed);
+      }
+    }catch(_){
+      outObj = { colors:{}, updated:0 };
+    }
+
+    const out = JSON.stringify(outObj);
+    if(!noCache) cache.put(cacheKey, out, CACHE_TTL_SEC);
+    return json_(outObj);
+  }
+
+  if(action === 'setEventColorMap'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden' });
+      }
+    }
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden' });
+
+    let incoming;
+    try{ incoming = JSON.parse(p_(e,'data','{}')) || {}; }
+    catch(_){ return json_({ error:'bad_json' }); }
+
+    const normalized = normalizeEventColorMap_(incoming);
+    const payload = { colors: normalized.colors, updated: now_() };
+    const COLORS_KEY = eventColorsKeyForOffice_(office);
+
+    prop.setProperty(COLORS_KEY, JSON.stringify(payload));
+    cache.put(KEY_PREFIX+'eventcolors:'+office, JSON.stringify(payload), CACHE_TTL_SEC);
+    return json_({ ok:true, colors: payload.colors, updated: payload.updated });
   }
 
   /* ===== 長期休暇API ===== */
