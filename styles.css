@@ -1215,13 +1215,6 @@
     print-color-adjust: exact;
   }
 
-  .vacation-gantt .vac-cell.on.vac-color-none {
-    background: #fff !important;
-    color: #0f172a !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
   .vacation-gantt .vac-cell.on.vac-color-sat {
     background: #e0f2fe !important;
     color: #0f172a !important;
