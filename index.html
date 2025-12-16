@@ -54,6 +54,7 @@
         <div class="admin-tabs">
           <div class="tab-buttons">
             <button class="tab-btn active" data-tab="basic">⚙️ 基本設定</button>
+            <button class="tab-btn" data-tab="members">👥 メンバー管理</button>
             <button class="tab-btn" data-tab="notices">📢 お知らせ管理</button>
             <button class="tab-btn" data-tab="events">📅 イベント管理</button>
           </div>
@@ -79,6 +80,35 @@
 
           <div class="admin-box">
             <div class="admin-box-header">
+              <h4>👥 メンバー編集ショートカット</h4>
+            </div>
+            <div class="admin-row">
+              <button id="btnOpenMemberModal" class="btn-secondary">メンバー編集モーダルを開く</button>
+            </div>
+            <div class="admin-note">メンバーの追加や修正は「メンバー管理」タブ、またはこのボタンからモーダルを開いて行えます。</div>
+          </div>
+
+          <div class="admin-box">
+            <h4>拠点名の変更</h4>
+            <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
+          </div>
+
+          <div class="admin-box">
+            <h4>拠点パスワードの変更</h4>
+            <div class="admin-row">
+              <input id="setPw" placeholder="新パスワード（任意）" />
+              <input id="setAdminPw" placeholder="新管理者PW（任意）" />
+              <button id="btnSetPw">更新</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブパネル: メンバー管理 -->
+      <div id="tabMembers" class="tab-panel" data-tab="members">
+        <div class="members-panel">
+          <div class="admin-box">
+            <div class="admin-box-header">
               <h4>👥 メンバー一覧・編集</h4>
               <div class="admin-box-actions">
                 <button id="btnMemberReload" class="btn-secondary">🔄 読み込み</button>
@@ -96,20 +126,6 @@
                   <tr><td colspan="7" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <div class="admin-box">
-            <h4>拠点名の変更</h4>
-            <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
-          </div>
-
-          <div class="admin-box">
-            <h4>拠点パスワードの変更</h4>
-            <div class="admin-row">
-              <input id="setPw" placeholder="新パスワード（任意）" />
-              <input id="setAdminPw" placeholder="新管理者PW（任意）" />
-              <button id="btnSetPw">更新</button>
             </div>
           </div>
         </div>
@@ -237,7 +253,7 @@
   </div>
 
   <!-- メンバー編集モーダル -->
-  <div id="memberEditModal" class="admin-modal member-edit-modal" aria-modal="true" role="dialog" aria-labelledby="memberEditTitle" aria-hidden="true">
+  <div id="memberEditModal" class="admin-modal member-edit-modal" aria-modal="true" role="dialog" aria-labelledby="memberEditTitle" aria-hidden="true" tabindex="-1">
     <div class="admin-card member-edit-card" role="document">
       <div class="member-edit-header">
         <h3 id="memberEditTitle">メンバーを編集</h3>

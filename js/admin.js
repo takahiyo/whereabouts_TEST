@@ -4,7 +4,7 @@ if(adminOfficeSel){
     adminSelectedOfficeId=adminOfficeSel.value||'';
     adminMembersLoaded=false; adminMemberList=[]; setMemberTableMessage('読み込み待ち');
     refreshVacationOfficeOptions();
-    if(document.getElementById('tabBasic')?.classList.contains('active')){
+    if(document.getElementById('tabMembers')?.classList.contains('active')){
       loadAdminMembers(true);
     }
     if(document.getElementById('tabEvents')?.classList.contains('active')){
@@ -208,6 +208,7 @@ if(adminModal){
       adminTabPanels.forEach(panel => panel.classList.remove('active'));
       const panelMap={
         basic: adminModal.querySelector('#tabBasic'),
+        members: adminModal.querySelector('#tabMembers'),
         notices: adminModal.querySelector('#tabNotices'),
         events: adminModal.querySelector('#tabEvents')
       };
@@ -219,6 +220,8 @@ if(adminModal){
           await autoLoadNoticesOnAdminOpen();
         }
       } else if(targetTab === 'basic'){
+        // no-op for now
+      } else if(targetTab === 'members'){
         if(!adminMembersLoaded){ await loadAdminMembers(); }
       } else if(targetTab === 'events'){
         refreshVacationOfficeOptions();
@@ -239,11 +242,22 @@ let adminMemberList=[], adminMemberData={}, adminGroupOrder=[], adminMembersLoad
 if(btnMemberReload){ btnMemberReload.addEventListener('click', ()=> loadAdminMembers(true)); }
 if(btnMemberAdd){ btnMemberAdd.addEventListener('click', ()=> openMemberEditModal(null)); }
 if(btnMemberSave){ btnMemberSave.addEventListener('click', ()=> handleMemberSave()); }
+if(btnOpenMemberModal){
+  btnOpenMemberModal.addEventListener('click', async ()=>{
+    if(!adminMembersLoaded){ await loadAdminMembers(); }
+    openMemberEditModal(null);
+  });
+}
 if(memberEditClose){ memberEditClose.addEventListener('click', closeMemberEditModal); }
 if(memberEditCancel){ memberEditCancel.addEventListener('click', closeMemberEditModal); }
 if(memberEditModal){
   memberEditModal.addEventListener('click', (e)=>{
     if(e.target===memberEditModal){ closeMemberEditModal(); }
+  });
+  memberEditModal.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape' && memberEditModal.classList.contains('show')){
+      closeMemberEditModal();
+    }
   });
 }
 if(memberEditForm){
@@ -393,7 +407,11 @@ function enableMemberDrag(){
 }
 
 function openMemberEditModal(member){
-  if(memberEditModal){ memberEditModal.classList.add('show'); memberEditModal.setAttribute('aria-hidden','false'); }
+  if(memberEditModal){
+    memberEditModal.classList.add('show');
+    memberEditModal.setAttribute('aria-hidden','false');
+    memberEditModal.focus({ preventScroll:true });
+  }
   if(memberEditId) memberEditId.value=member?.id||'';
   if(memberEditName) memberEditName.value=member?.name||'';
   if(memberEditExt) memberEditExt.value=member?.ext||'';
@@ -404,7 +422,10 @@ function openMemberEditModal(member){
 }
 
 function closeMemberEditModal(){
-  if(memberEditModal){ memberEditModal.classList.remove('show'); memberEditModal.setAttribute('aria-hidden','true'); }
+  if(memberEditModal){
+    memberEditModal.classList.remove('show');
+    memberEditModal.setAttribute('aria-hidden','true');
+  }
 }
 
 function refreshMemberGroupOptions(){
