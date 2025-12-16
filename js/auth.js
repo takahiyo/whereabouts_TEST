@@ -156,6 +156,7 @@ function applyRoleToManual(){
 adminBtn.addEventListener('click', async ()=>{
   applyRoleToAdminPanel();
   showAdminModal(true);
+  if(typeof loadAdminMembers==='function'){ try{ await loadAdminMembers(); }catch{} }
 });
 adminClose.addEventListener('click', ()=> showAdminModal(false));
 logoutBtn.addEventListener('click', logout);

@@ -2,7 +2,11 @@
 if(adminOfficeSel){
   adminOfficeSel.addEventListener('change', ()=>{
     adminSelectedOfficeId=adminOfficeSel.value||'';
+    adminMembersLoaded=false; adminMemberList=[]; setMemberTableMessage('読み込み待ち');
     refreshVacationOfficeOptions();
+    if(document.getElementById('tabBasic')?.classList.contains('active')){
+      loadAdminMembers(true);
+    }
     if(document.getElementById('tabEvents')?.classList.contains('active')){
       loadVacationsList();
     }
@@ -41,16 +45,21 @@ btnImport.addEventListener('click', async ()=>{
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
   const hdr=rows[0].map(s=>s.trim());
+  const modernEn=['group_index','group_title','member_order','id','name','ext','mobile','email','workHours','status','time','note'];
+  const modernJa=['グループ番号','グループ名','表示順','id','氏名','内線','携帯番号','Email','業務時間','ステータス','戻り時間','備考'];
   const mustEn=['group_index','group_title','member_order','id','name','ext','workHours','status','time','note'];
   const mustJa=['グループ番号','グループ名','表示順','id','氏名','内線','業務時間','ステータス','戻り時間','備考'];
   const legacyEn=['group_index','group_title','member_order','id','name','ext','status','time','note'];
   const legacyJa=['グループ番号','グループ名','表示順','id','氏名','内線','ステータス','戻り時間','備考'];
+  const okModernEn = modernEn.every((h,i)=>hdr[i]===h);
+  const okModernJa = modernJa.every((h,i)=>hdr[i]===h);
   const okEn = mustEn.every((h,i)=>hdr[i]===h);
   const okJa = mustJa.every((h,i)=>hdr[i]===h);
   const okLegacyEn = legacyEn.every((h,i)=>hdr[i]===h);
   const okLegacyJa = legacyJa.every((h,i)=>hdr[i]===h);
-  if(!(okEn || okJa || okLegacyEn || okLegacyJa)){ toast('CSVヘッダが不正です',false); return; }
-  const hasWorkHoursColumn = okEn || okJa;
+  if(!(okModernEn || okModernJa || okEn || okJa || okLegacyEn || okLegacyJa)){ toast('CSVヘッダが不正です',false); return; }
+  const hasWorkHoursColumn = okModernEn || okModernJa || okEn || okJa;
+  const hasContactColumn = okModernEn || okModernJa;
   const keyOf=(gi,gt,mi,name,ext)=>[String(gi),String(gt||''),String(mi),String(name||''),String(ext||'')].join('|');
 
   const fallbackById=new Map();
@@ -72,7 +81,24 @@ btnImport.addEventListener('click', async ()=>{
   }
 
   const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
-    if(hasWorkHoursColumn){
+    if(hasContactColumn){
+      const [gi,gt,mi,id,name,ext,mobile,email,workHours,status,time,note]=r;
+      const workHoursValue = workHours == null ? '' : String(workHours);
+      return {
+        gi:Number(gi)||0,
+        gt:(gt||''),
+        mi:Number(mi)||0,
+        id:(id||''),
+        name:(name||''),
+        ext:(ext||''),
+        mobile:(mobile||''),
+        email:(email||''),
+        workHours:workHoursValue,
+        status:(status||(STATUSES[0]?.value||'在席')),
+        time:(time||''),
+        note:(note||'')
+      };
+    } else if(hasWorkHoursColumn){
       const [gi,gt,mi,id,name,ext,workHours,status,time,note]=r;
       const workHoursValue = workHours == null ? '' : String(workHours);
       return {
@@ -82,6 +108,8 @@ btnImport.addEventListener('click', async ()=>{
         id:(id||''),
         name:(name||''),
         ext:(ext||''),
+        mobile:'',
+        email:'',
         workHours:workHoursValue,
         status:(status||(STATUSES[0]?.value||'在席')),
         time:(time||''),
@@ -99,6 +127,8 @@ btnImport.addEventListener('click', async ()=>{
         id:(id||''),
         name:(name||''),
         ext:(ext||''),
+        mobile:'',
+        email:'',
         workHours:workHoursValue,
         status:(status||(STATUSES[0]?.value||'在席')),
         time:(time||''),
@@ -113,7 +143,7 @@ btnImport.addEventListener('click', async ()=>{
     if(!groupsMap.has(r.gi)) groupsMap.set(r.gi,{title:r.gt||'',members:[]});
     const g=groupsMap.get(r.gi);
     g.title=r.gt||'';
-    g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',workHours:r.workHours||'',id:r.id||undefined});
+    g.members.push({_mi:r.mi,name:r.name,ext:r.ext||'',mobile:r.mobile||'',email:r.email||'',workHours:r.workHours||'',id:r.id||undefined});
   }
   const groups=Array.from(groupsMap.entries()).sort((a,b)=>a[0]-b[0]).map(([gi,g])=>{ g.members.sort((a,b)=>(a._mi||0)-(b._mi||0)); g.members.forEach(m=>delete m._mi); return g; });
   const cfgToSet={version:2,updated:Date.now(),groups,menus:MENUS||undefined};
@@ -131,7 +161,7 @@ btnImport.addEventListener('click', async ()=>{
     const id=r.id || idIndex.get(keyOf(r.gi,r.gt,r.mi,r.name,r.ext||'')) || null;
     if(!id) continue;
     const workHours=r.workHours||'';
-    dataObj[id]={ ext:r.ext||'', workHours, status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
+    dataObj[id]={ ext:r.ext||'', mobile:r.mobile||'', email:r.email||'', workHours, status: STATUSES.some(s=>s.value===r.status)? r.status : (STATUSES[0]?.value||'在席'), time:r.time||'', note:r.note||'' };
   }
   const r2=await adminSetForChunked(office,dataObj);
   if(!(r2&&r2.ok)){ toast('在席データ更新に失敗',false); return; }
@@ -181,6 +211,8 @@ if(adminModal){
         if(typeof autoLoadNoticesOnAdminOpen === 'function'){
           await autoLoadNoticesOnAdminOpen();
         }
+      } else if(targetTab === 'basic'){
+        if(!adminMembersLoaded){ await loadAdminMembers(); }
       } else if(targetTab === 'events'){
         refreshVacationOfficeOptions();
         const officeId=(vacationOfficeSelect?.value)||adminSelectedOfficeId||CURRENT_OFFICE_ID||'';
@@ -192,6 +224,325 @@ if(adminModal){
       }
     });
   });
+}
+
+/* メンバー管理 */
+let adminMemberList=[], adminMemberData={}, adminGroupOrder=[], adminMembersLoaded=false;
+
+if(btnMemberReload){ btnMemberReload.addEventListener('click', ()=> loadAdminMembers(true)); }
+if(btnMemberAdd){ btnMemberAdd.addEventListener('click', ()=> openMemberEditModal(null)); }
+if(btnMemberSave){ btnMemberSave.addEventListener('click', ()=> handleMemberSave()); }
+if(memberEditClose){ memberEditClose.addEventListener('click', closeMemberEditModal); }
+if(memberEditCancel){ memberEditCancel.addEventListener('click', closeMemberEditModal); }
+if(memberEditModal){
+  memberEditModal.addEventListener('click', (e)=>{
+    if(e.target===memberEditModal){ closeMemberEditModal(); }
+  });
+}
+if(memberEditForm){
+  memberEditForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    submitMemberEdit();
+  });
+}
+
+function setMemberTableMessage(msg){
+  if(!memberTableBody) return;
+  memberTableBody.textContent='';
+  const tr=document.createElement('tr');
+  const td=document.createElement('td');
+  td.colSpan=7; td.style.textAlign='center'; td.style.color='#6b7280';
+  td.textContent=msg;
+  tr.appendChild(td);
+  memberTableBody.appendChild(tr);
+}
+
+async function loadAdminMembers(force){
+  const office=selectedOfficeId(); if(!office) return;
+  if(force!==true && adminMembersLoaded && adminMemberList.length){ return; }
+  try{
+    setMemberTableMessage('読み込み中...');
+    const [cfg,dataRes]=await Promise.all([
+      adminGetConfigFor(office),
+      adminGetFor(office)
+    ]);
+    if(!(cfg&&Array.isArray(cfg.groups))){ setMemberTableMessage('設定の取得に失敗しました'); return; }
+    adminMemberData=(dataRes&&dataRes.data&&typeof dataRes.data==='object')?dataRes.data:{};
+    adminGroupOrder=(cfg.groups||[]).map(g=>String(g.title||''));
+    adminMemberList=[];
+    const seenIds=new Set();
+    cfg.groups.forEach((g)=>{
+      (g.members||[]).forEach((m,mi)=>{
+        const idRaw=String(m.id||'').trim();
+        const id=idRaw||generateMemberId();
+        if(seenIds.has(id)){ return; }
+        seenIds.add(id);
+        adminMemberList.push({
+          id,
+          name:String(m.name||''),
+          ext:String(m.ext||''),
+          mobile:String(m.mobile||''),
+          email:String(m.email||''),
+          workHours:(m.workHours==null?'':String(m.workHours)),
+          group:String(g.title||''),
+          order:mi
+        });
+      });
+    });
+    normalizeMemberOrdering();
+    renderMemberTable();
+    adminMembersLoaded=true;
+  }catch(err){
+    console.error('loadAdminMembers error',err);
+    setMemberTableMessage('メンバーの取得に失敗しました');
+  }
+}
+
+function normalizeMemberOrdering(){
+  const orderBase=[...adminGroupOrder];
+  adminMemberList.forEach(m=>{ if(m.group && !orderBase.includes(m.group)){ orderBase.push(m.group); } });
+  adminGroupOrder=orderBase;
+  adminMemberList.sort((a,b)=>{
+    const ga=orderBase.indexOf(a.group); const gb=orderBase.indexOf(b.group);
+    if(ga!==gb) return ga-gb;
+    return (a.order||0)-(b.order||0);
+  });
+  const counters=new Map();
+  adminMemberList.forEach(m=>{
+    const cur=counters.get(m.group)||0;
+    m.order=cur;
+    counters.set(m.group,cur+1);
+  });
+}
+
+function renderMemberTable(){
+  if(!memberTableBody){ return; }
+  memberTableBody.textContent='';
+  if(!adminMemberList.length){
+    setMemberTableMessage('メンバーが登録されていません');
+    return;
+  }
+  adminMemberList.forEach((m,idx)=>{
+    const tr=document.createElement('tr');
+    tr.dataset.memberId=m.id;
+    const orderTd=document.createElement('td');
+    orderTd.innerHTML=`<div class="member-row-actions"><span class="member-drag-handle" draggable="true" title="ドラッグで並び替え">⇅</span><span>#${idx+1}</span></div>`;
+    const groupTd=document.createElement('td'); groupTd.textContent=m.group||'';
+    const nameTd=document.createElement('td'); nameTd.textContent=m.name||'';
+    const extTd=document.createElement('td'); extTd.textContent=m.ext||'';
+    const mobileTd=document.createElement('td'); mobileTd.textContent=m.mobile||'';
+    const emailTd=document.createElement('td'); emailTd.textContent=m.email||'';
+    const actionTd=document.createElement('td'); actionTd.className='member-row-actions';
+    const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
+    editBtn.addEventListener('click', ()=> openMemberEditModal(m));
+    const delBtn=document.createElement('button'); delBtn.textContent='削除'; delBtn.className='btn-danger';
+    delBtn.addEventListener('click', ()=> deleteMember(m.id));
+    const upBtn=document.createElement('button'); upBtn.textContent='▲'; upBtn.title='上に移動';
+    upBtn.addEventListener('click', ()=> moveMember(m.id,-1));
+    const downBtn=document.createElement('button'); downBtn.textContent='▼'; downBtn.title='下に移動';
+    downBtn.addEventListener('click', ()=> moveMember(m.id,1));
+    actionTd.append(editBtn, delBtn, upBtn, downBtn);
+    tr.append(orderTd, groupTd, nameTd, extTd, mobileTd, emailTd, actionTd);
+    memberTableBody.appendChild(tr);
+  });
+  enableMemberDrag();
+}
+
+function enableMemberDrag(){
+  if(!memberTableBody) return;
+  let draggingId='';
+  memberTableBody.querySelectorAll('.member-drag-handle').forEach(handle=>{
+    handle.addEventListener('dragstart', (e)=>{
+      const row=e.target.closest('tr');
+      draggingId=row?.dataset.memberId||'';
+      handle.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    handle.addEventListener('dragend', ()=>{
+      draggingId=''; handle.classList.remove('dragging');
+      memberTableBody.querySelectorAll('tr').forEach(r=>r.classList.remove('drag-over'));
+    });
+  });
+  memberTableBody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('dragover', (e)=>{
+      if(!draggingId) return; e.preventDefault(); e.dataTransfer.dropEffect='move';
+      const targetId=tr.dataset.memberId||'';
+      if(!targetId || targetId===draggingId) return;
+      const draggingIdx=adminMemberList.findIndex(x=>x.id===draggingId);
+      const targetIdx=adminMemberList.findIndex(x=>x.id===targetId);
+      if(draggingIdx<0||targetIdx<0) return;
+      const dragging=adminMemberList[draggingIdx];
+      const target=adminMemberList[targetIdx];
+      if(dragging.group!==target.group) return;
+      const rect=tr.getBoundingClientRect();
+      const before=e.clientY < rect.top + rect.height/2;
+      adminMemberList.splice(draggingIdx,1);
+      const insertIdx = before ? targetIdx : targetIdx+1;
+      adminMemberList.splice(insertIdx>draggingIdx?insertIdx-1:insertIdx,0,dragging);
+      normalizeMemberOrdering();
+      renderMemberTable();
+    });
+  });
+}
+
+function openMemberEditModal(member){
+  if(memberEditModal){ memberEditModal.classList.add('show'); memberEditModal.setAttribute('aria-hidden','false'); }
+  if(memberEditId) memberEditId.value=member?.id||'';
+  if(memberEditName) memberEditName.value=member?.name||'';
+  if(memberEditExt) memberEditExt.value=member?.ext||'';
+  if(memberEditMobile) memberEditMobile.value=member?.mobile||'';
+  if(memberEditEmail) memberEditEmail.value=member?.email||'';
+  if(memberEditGroup) memberEditGroup.value=member?.group||adminGroupOrder[0]||'';
+  refreshMemberGroupOptions();
+}
+
+function closeMemberEditModal(){
+  if(memberEditModal){ memberEditModal.classList.remove('show'); memberEditModal.setAttribute('aria-hidden','true'); }
+}
+
+function refreshMemberGroupOptions(){
+  if(!memberGroupOptions) return;
+  const groups=[...new Set(adminGroupOrder.filter(Boolean))];
+  memberGroupOptions.textContent='';
+  groups.forEach(g=>{
+    const opt=document.createElement('option'); opt.value=g; memberGroupOptions.appendChild(opt);
+  });
+}
+
+function submitMemberEdit(){
+  const name=(memberEditName?.value||'').trim();
+  const ext=(memberEditExt?.value||'').trim();
+  const mobile=(memberEditMobile?.value||'').trim();
+  const email=(memberEditEmail?.value||'').trim();
+  const group=(memberEditGroup?.value||'').trim();
+  const idRaw=(memberEditId?.value||'').trim();
+  if(!name){ toast('氏名は必須です',false); return; }
+  if(!group){ toast('所属グループを入力してください',false); return; }
+  if(ext && !/^\d{1,6}$/.test(ext.replace(/[^0-9]/g,''))){ toast('内線は数字のみで入力してください（最大6桁）',false); return; }
+  const mobileDigits=mobile.replace(/[^0-9]/g,'');
+  if(mobile && (mobileDigits.length<10 || mobileDigits.length>11)){ toast('携帯番号は10〜11桁の数字で入力してください（ハイフン可）',false); return; }
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('Emailの形式が不正です',false); return; }
+  const id=idRaw||generateUniqueMemberId();
+  const existingIdx=adminMemberList.findIndex(m=>m.id===id);
+  if(existingIdx>=0){
+    adminMemberList[existingIdx]={ ...adminMemberList[existingIdx], id, name, ext, mobile, email, group };
+  }else{
+    const order=adminMemberList.filter(m=>m.group===group).length;
+    adminMemberList.push({ id, name, ext, mobile, email, group, order, workHours:'' });
+  }
+  normalizeMemberOrdering();
+  renderMemberTable();
+  closeMemberEditModal();
+}
+
+function generateMemberId(){ return `member_${Date.now()}_${Math.random().toString(36).slice(2,6)}`; }
+function generateUniqueMemberId(){ let id=''; do{ id=generateMemberId(); }while(adminMemberList.some(m=>m.id===id)); return id; }
+
+function deleteMember(id){
+  if(!id) return; if(!confirm('このメンバーを削除しますか？')) return;
+  adminMemberList=adminMemberList.filter(m=>m.id!==id);
+  normalizeMemberOrdering();
+  renderMemberTable();
+}
+
+function moveMember(id,dir){
+  const idx=adminMemberList.findIndex(m=>m.id===id); if(idx<0) return;
+  const group=adminMemberList[idx].group;
+  let targetIdx=idx+dir;
+  while(targetIdx>=0 && targetIdx<adminMemberList.length && adminMemberList[targetIdx].group!==group){
+    targetIdx+=dir;
+  }
+  if(targetIdx<0||targetIdx>=adminMemberList.length) return;
+  const tmp=adminMemberList[targetIdx];
+  adminMemberList[targetIdx]=adminMemberList[idx];
+  adminMemberList[idx]=tmp;
+  normalizeMemberOrdering();
+  renderMemberTable();
+}
+
+function buildMemberSavePayload(){
+  const errors=[]; const idSet=new Set();
+  const defaultStatus = STATUSES[0]?.value || '在席';
+  const cleaned=adminMemberList.map(m=>({
+    ...m,
+    name:(m.name||'').trim(),
+    group:(m.group||'').trim(),
+    ext:(m.ext||'').trim(),
+    mobile:(m.mobile||'').trim(),
+    email:(m.email||'').trim()
+  }));
+  for(const m of cleaned){
+    if(!m.name){ errors.push('missing_name'); break; }
+    if(!m.group){ errors.push('missing_group'); break; }
+    if(m.ext && !/^\d{1,6}$/.test(m.ext.replace(/[^0-9]/g,''))){ errors.push('invalid_ext'); break; }
+    const mobileDigits=m.mobile.replace(/[^0-9]/g,'');
+    if(m.mobile && (mobileDigits.length<10 || mobileDigits.length>11)){ errors.push('invalid_mobile'); break; }
+    if(m.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)){ errors.push('invalid_email'); break; }
+    if(idSet.has(m.id)){ errors.push('duplicate_id'); break; }
+    idSet.add(m.id);
+  }
+  if(errors.length){ return { errors }; }
+
+  const groupOrder=[...adminGroupOrder];
+  cleaned.forEach(m=>{ if(m.group && !groupOrder.includes(m.group)) groupOrder.push(m.group); });
+  const grouped=new Map();
+  cleaned.forEach(m=>{
+    const list=grouped.get(m.group)||[]; list.push(m); grouped.set(m.group,list);
+  });
+  const groups=[];
+  groupOrder.forEach(gName=>{
+    const mems=grouped.get(gName)||[];
+    if(!mems.length) return;
+    mems.sort((a,b)=> (a.order||0)-(b.order||0));
+    groups.push({
+      title:gName,
+      members:mems.map((m,idx)=>({ id:m.id, name:m.name, ext:m.ext, mobile:m.mobile, email:m.email, workHours:m.workHours||'', _order:idx }))
+    });
+  });
+
+  const dataObj={};
+  groups.forEach(g=>{
+    g.members.forEach(m=>{
+      const existing=adminMemberData[m.id]||{};
+      dataObj[m.id]={
+        ext:m.ext||'',
+        mobile:m.mobile||'',
+        email:m.email||'',
+        workHours: existing.workHours==null?'':String(existing.workHours||m.workHours||''),
+        status: STATUSES.some(s=>s.value===existing.status)? existing.status : defaultStatus,
+        time: existing.time||'',
+        note: existing.note||''
+      };
+    });
+  });
+
+  groups.forEach(g=> g.members.forEach(m=> delete m._order));
+  return { groups, dataObj };
+}
+
+async function handleMemberSave(){
+  const office=selectedOfficeId(); if(!office) return;
+  const { groups, dataObj, errors } = buildMemberSavePayload();
+  if(errors){
+    if(errors.includes('missing_name')){ toast('氏名は必須です',false); return; }
+    if(errors.includes('missing_group')){ toast('所属グループを入力してください',false); return; }
+    if(errors.includes('invalid_ext')){ toast('内線は数字のみで最大6桁です',false); return; }
+    if(errors.includes('invalid_mobile')){ toast('携帯番号は10〜11桁の数字で入力してください',false); return; }
+    if(errors.includes('invalid_email')){ toast('Emailの形式が不正です',false); return; }
+    if(errors.includes('duplicate_id')){ toast('IDが重複しています。編集画面で修正してください',false); return; }
+    toast('入力内容を確認してください',false); return;
+  }
+  try{
+    const cfgToSet={ version:2, updated:Date.now(), groups, menus:MENUS||undefined };
+    const r1=await adminSetConfigFor(office,cfgToSet);
+    if(!(r1&&r1.ok!==false)){ toast('名簿の保存に失敗しました',false); return; }
+    const r2=await adminSetForChunked(office,dataObj);
+    if(!(r2&&r2.ok!==false)) toast('在席データの保存に失敗しました',false);
+    else toast('保存しました');
+  }catch(err){
+    console.error('handleMemberSave error',err);
+    toast('保存に失敗しました',false);
+  }
 }
 
 /* お知らせ管理UI */
@@ -974,12 +1325,12 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
-  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','業務時間','ステータス','戻り時間','備考']));
+  rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','携帯番号','Email','業務時間','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{
       const id=m.id||''; const rec=(data&&data[id])||{};
       const workHours = rec.workHours || m.workHours || '';
-      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',workHours,rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
+      rows.push(toCsvRow([gi+1,g.title||'',mi+1,id,m.name||'',m.ext||'',m.mobile||rec.mobile||'',m.email||rec.email||'',workHours,rec.status||(STATUSES[0]?.value||'在席'),rec.time||'',rec.note||'']));
     });
   });
   return rows.join('\n');
