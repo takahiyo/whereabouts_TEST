@@ -111,13 +111,25 @@ function showContactPopup(member){
   closeBtn.focus({ preventScroll: true });
 }
 
-function attachContactLongPress(tdName, member){
+function resolveContactInfo(tr, fallback){
+  const nameText = tr?.querySelector('td.name')?.textContent || fallback?.name || '';
+  const mobileVal = tr ? (tr.dataset.mobile ?? '') : '';
+  const emailVal = tr ? (tr.dataset.email ?? '') : '';
+  return {
+    name: nameText,
+    mobile: (mobileVal || fallback?.mobile || '').trim(),
+    email: (emailVal || fallback?.email || '').trim()
+  };
+}
+
+function attachContactLongPress(tdName, tr, fallbackMember){
   if(!tdName) return;
   const startHold = ()=>{
     clearContactHoldTimer();
     contactHoldTimer = setTimeout(()=>{
       contactHoldTimer = null;
-      showContactPopup(member);
+      const payload = resolveContactInfo(tr, fallbackMember);
+      showContactPopup(payload);
     }, 3000);
   };
   const cancelHold = ()=> clearContactHoldTimer();
@@ -190,12 +202,14 @@ function bindCandidatePanelGlobals(){
 /* 行UI */
 function buildRow(member){
   const name=sanitizeText(member.name||"");
-  const ext=(member.ext&&/^[0-9]{1,4}$/.test(String(member.ext)))?String(member.ext):"";
+  const ext=(member.ext&&/^[0-9]{1,6}$/.test(String(member.ext)))?String(member.ext):"";
   const key=member.id;
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key; tr.dataset.rev='0';
+  tr.dataset.mobile = member.mobile ? String(member.mobile) : '';
+  tr.dataset.email = member.email ? String(member.email) : '';
 
   const tdName=el('td',{class:'name','data-label':'氏名'}); tdName.textContent=name;
-  attachContactLongPress(tdName, member);
+  attachContactLongPress(tdName, tr, member);
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
@@ -358,6 +372,15 @@ function applyState(data){
     const tr=document.getElementById(`row-${k}`);
     const s=tr?.querySelector('select[name="status"]'), t=tr?.querySelector('select[name="time"]'), w=tr?.querySelector('input[name="workHours"]'), n=tr?.querySelector('input[name="note"]');
     if(!tr || !s || !t || !w){ ensureRowControls(tr); }
+    const extTd = tr?.querySelector('td.ext');
+    if(extTd && v && v.ext !== undefined){
+      const extVal = String(v.ext || '').replace(/[^0-9]/g,'');
+      extTd.textContent = extVal;
+    }
+    if(tr){
+      if(v && v.mobile !== undefined){ tr.dataset.mobile = String(v.mobile ?? '').trim(); }
+      if(v && v.email !== undefined){ tr.dataset.email = String(v.email ?? '').trim(); }
+    }
     if(v.status && STATUSES.some(x=>x.value===v.status)) setIfNeeded(s,v.status);
     setIfNeeded(w, (v && typeof v.workHours === 'string') ? v.workHours : (v && v.workHours==null ? '' : String(v?.workHours ?? '')));
     setIfNeeded(t,v.time||""); setIfNeeded(n,v.note||"");

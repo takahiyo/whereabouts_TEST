@@ -25,7 +25,7 @@ const btnEventPrint=document.getElementById('btnEventPrint');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
-const memberTableBody=document.getElementById('memberTableBody'), btnMemberAdd=document.getElementById('btnMemberAdd'), btnMemberSave=document.getElementById('btnMemberSave'), btnMemberReload=document.getElementById('btnMemberReload');
+const memberTableBody=document.getElementById('memberTableBody'), btnMemberSave=document.getElementById('btnMemberSave'), btnMemberReload=document.getElementById('btnMemberReload');
 const memberEditForm=document.getElementById('memberEditForm');
 const memberEditName=document.getElementById('memberEditName'), memberEditExt=document.getElementById('memberEditExt'), memberEditMobile=document.getElementById('memberEditMobile'), memberEditEmail=document.getElementById('memberEditEmail'), memberEditGroup=document.getElementById('memberEditGroup');
 const memberGroupOptions=document.getElementById('memberGroupOptions'), memberEditId=document.getElementById('memberEditId'), memberEditModeLabel=document.getElementById('memberEditModeLabel');
