@@ -1208,8 +1208,61 @@
   
   /* ビット設定済みセルの表示 */
   .vacation-gantt .vac-cell.on {
-    background: #333 !important;
-    color: #fff !important;
+    font-weight: 700;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-none {
+    background: #fff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-sat {
+    background: #e0f2fe !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-sun {
+    background: #fee2e2 !important;
+    color: #7f1d1d !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-holiday {
+    background: #ffe4e6 !important;
+    color: #9f1239 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-amber {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-mint {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-lavender {
+    background: #ede9fe !important;
+    color: #4c1d95 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .vacation-gantt .vac-cell.on.vac-color-slate {
+    background: #e5e7eb !important;
+    color: #111827 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
