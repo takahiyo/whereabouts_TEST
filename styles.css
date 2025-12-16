@@ -545,6 +545,71 @@
 .vac-color-option__label{font-weight:700;font-size:11px;color:#111827;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @media print{
   .vac-color-palette{display:none !important;}
+
+  .vacation-gantt .vac-day-header.vac-color-none,
+  .vacation-gantt .vac-cell.vac-color-none,
+  .vac-color-option.vac-color-none{
+    background:#fff !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-sat,
+  .vacation-gantt .vac-cell.vac-color-sat,
+  .vac-color-option.vac-color-sat{
+    background:#e0f2fe !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-sun,
+  .vacation-gantt .vac-cell.vac-color-sun,
+  .vac-color-option.vac-color-sun{
+    background:#fee2e2 !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-holiday,
+  .vacation-gantt .vac-cell.vac-color-holiday,
+  .vac-color-option.vac-color-holiday{
+    background:#ffe4e6 !important;
+    color:#b91c1c !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-amber,
+  .vacation-gantt .vac-cell.vac-color-amber,
+  .vac-color-option.vac-color-amber{
+    background:#fef3c7 !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-mint,
+  .vacation-gantt .vac-cell.vac-color-mint,
+  .vac-color-option.vac-color-mint{
+    background:#dcfce7 !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-lavender,
+  .vacation-gantt .vac-cell.vac-color-lavender,
+  .vac-color-option.vac-color-lavender{
+    background:#ede9fe !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .vacation-gantt .vac-day-header.vac-color-slate,
+  .vacation-gantt .vac-cell.vac-color-slate,
+  .vac-color-option.vac-color-slate{
+    background:#e5e7eb !important;
+    color:#0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 .vacation-gantt tbody tr.group-last-row{border-bottom:3px solid #6b7280;}
 .vacation-gantt tbody tr.group-last-row th.group-name{border-bottom:3px solid #6b7280;}
