@@ -44,6 +44,95 @@ function hideAllCandidatePanels(){
   });
 }
 
+let contactHoldTimer = null;
+let contactScrollBound = false;
+let currentContactOverlay = null;
+
+function clearContactHoldTimer(){
+  if(contactHoldTimer){
+    clearTimeout(contactHoldTimer);
+    contactHoldTimer = null;
+  }
+}
+
+function bindContactScrollClearer(){
+  if(contactScrollBound) return;
+  contactScrollBound = true;
+  window.addEventListener('scroll', clearContactHoldTimer, { passive: true, capture: true });
+}
+
+function closeContactPopup(){
+  if(currentContactOverlay){
+    currentContactOverlay.remove();
+    currentContactOverlay = null;
+  }
+  document.removeEventListener('keydown', handleContactEsc);
+}
+
+function handleContactEsc(e){
+  if(e.key === 'Escape') closeContactPopup();
+}
+
+function showContactPopup(member){
+  closeContactPopup();
+  const overlay = el('div', { class: 'contact-overlay' });
+  const dialogLabel = `${sanitizeText(member.name || '')}の連絡先`;
+  const dialog = el('div', { class: 'contact-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': dialogLabel });
+  const closeBtn = el('button', { type: 'button', class: 'contact-close', 'aria-label': '閉じる' }, ['×']);
+  const title = el('h4', { class: 'contact-title', text: dialogLabel });
+
+  const mobile = member.mobile ? String(member.mobile) : '';
+  const email = member.email ? String(member.email) : '';
+
+  const mobileRow = el('div', { class: 'contact-row' }, [
+    el('span', { class: 'contact-label', text: '携帯' }),
+    mobile
+      ? el('a', { class: 'contact-link', href: `tel:${mobile}`, text: mobile })
+      : el('span', { class: 'contact-empty', text: '未登録' })
+  ]);
+
+  const emailRow = el('div', { class: 'contact-row' }, [
+    el('span', { class: 'contact-label', text: 'メール' }),
+    email
+      ? el('a', { class: 'contact-link', href: `mailto:${encodeURIComponent(email)}`, text: email })
+      : el('span', { class: 'contact-empty', text: '未登録' })
+  ]);
+
+  const body = el('div', { class: 'contact-body' }, [mobileRow, emailRow]);
+
+  closeBtn.addEventListener('click', closeContactPopup);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeContactPopup(); });
+  document.addEventListener('keydown', handleContactEsc);
+
+  dialog.append(closeBtn, title, body);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  currentContactOverlay = overlay;
+  closeBtn.focus({ preventScroll: true });
+}
+
+function attachContactLongPress(tdName, member){
+  if(!tdName) return;
+  const startHold = ()=>{
+    clearContactHoldTimer();
+    contactHoldTimer = setTimeout(()=>{
+      contactHoldTimer = null;
+      showContactPopup(member);
+    }, 3000);
+  };
+  const cancelHold = ()=> clearContactHoldTimer();
+  const handleMouseDown = (e)=>{ if(e.button === 0) startHold(); };
+
+  tdName.addEventListener('touchstart', startHold, { passive: true });
+  tdName.addEventListener('touchend', cancelHold);
+  tdName.addEventListener('touchcancel', cancelHold);
+  tdName.addEventListener('touchmove', cancelHold);
+  tdName.addEventListener('mousedown', handleMouseDown);
+  tdName.addEventListener('mouseup', cancelHold);
+  tdName.addEventListener('mouseleave', cancelHold);
+  bindContactScrollClearer();
+}
+
 function toggleCandidatePanel(wrapper){
   if(!wrapper) return;
   const panel = wrapper.querySelector('.candidate-panel');
@@ -106,6 +195,7 @@ function buildRow(member){
   const tr=el('tr',{id:`row-${key}`}); tr.dataset.key=key; tr.dataset.rev='0';
 
   const tdName=el('td',{class:'name','data-label':'氏名'}); tdName.textContent=name;
+  attachContactLongPress(tdName, member);
 
   const tdExt=el('td',{class:'ext','data-label':'内線'},[ext]); /* 表示のみ */
 
