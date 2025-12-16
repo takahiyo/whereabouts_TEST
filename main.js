@@ -113,17 +113,12 @@ if(noticesBtn){
   noticesBtn.addEventListener('click', ()=>{
     const noticesArea = document.getElementById('noticesArea');
     if(!noticesArea) return;
-    
-    // エリアを展開してから画面をスクロール
-    const wasCollapsed = noticesArea.classList.contains('collapsed');
+
     toggleNoticesArea();
-    
-    // 折りたたまれていた場合は展開後にページトップにスクロール
-    if(wasCollapsed){
-      // 少し遅延させて、DOM更新後にスクロール
-      setTimeout(()=>{
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-    }
+
+    // 少し遅延させて、DOM更新後にページトップにスクロール
+    setTimeout(()=>{
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   });
 }
