@@ -17,11 +17,13 @@ const vacationRadioList=document.getElementById('vacationRadioList');
 const eventGanttWrap=document.getElementById('eventGanttWrap');
 const eventGantt=document.getElementById('eventGantt');
 const eventGroupJumps=document.getElementById('eventGroupJumps');
+const eventColorManualHint=document.getElementById('eventColorManualHint');
 const eventStartInput=document.getElementById('eventStart');
 const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
 const btnEventPrint=document.getElementById('btnEventPrint');
+const btnEventColorReset=document.getElementById('btnEventColorReset');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -255,6 +257,22 @@ function renderEventColorStatus(type, message, actions){
   });
 }
 
+function updateEventColorManualHint(hasManualColor){
+  const hintEl=eventColorManualHint||document.getElementById('eventColorManualHint');
+  if(!hintEl) return;
+  const targetOffice=getEventTargetOfficeId();
+  const shouldShow=!!hasManualColor && !!targetOffice && eventDateColorState.officeId===targetOffice;
+  if(shouldShow){
+    hintEl.style.display='inline-flex';
+    hintEl.textContent='🎨 手動色が適用されています（セルを右クリックでクリア、「色リセット」で全解除できます）';
+    hintEl.title='セルを右クリックで個別クリア、または「色リセット」ボタンで全ての手動色を削除できます。';
+  }else{
+    hintEl.style.display='none';
+    hintEl.textContent='';
+    hintEl.title='';
+  }
+}
+
 function showEventColorSavingStatus(){
   renderEventColorStatus('saving', '日付カラーを保存しています…');
 }
@@ -316,12 +334,18 @@ function applyManualEventColorsToGantt(){
       const cls=getEventColorClass(colorKey);
       if(cls) cell.classList.add(cls);
       cell.dataset.manualColor=colorKey;
+      const label=EVENT_COLOR_LABELS[colorKey]||'手動色';
+      cell.title=`${label}（手動設定）: 右クリックでクリア / 「色リセット」で全解除`;
     }else{
       delete cell.dataset.manualColor;
+      if(cell.title && cell.title.includes('手動')){
+        cell.removeAttribute('title');
+      }
     }
   };
   gantt.querySelectorAll('td.vac-cell').forEach(applyColorToCell);
   gantt.querySelectorAll('.vac-day-header').forEach(applyColorToCell);
+  updateEventColorManualHint(map.size>0);
 }
 
 function buildEventDateColorPayload(){
@@ -437,6 +461,36 @@ function setManualEventColorForDate(date, colorKey){
   }
   applyManualEventColorsToGantt();
   scheduleEventDateColorSave();
+  refreshAppliedEventHighlights();
+}
+
+function clearAllManualEventColors(){
+  if(!isOfficeAdmin()) return;
+  const targetOffice=getEventTargetOfficeId();
+  if(targetOffice){
+    eventDateColorState.officeId=targetOffice;
+  }
+  const currentSize=(eventDateColorState.map?.size)||0;
+  if(!currentSize){
+    toast('クリアする手動色はありません');
+    return;
+  }
+  eventDateColorState.map=new Map();
+  applyManualEventColorsToGantt();
+  scheduleEventDateColorSave();
+  toast('手動色をリセットしました');
+  refreshAppliedEventHighlights();
+}
+
+function refreshAppliedEventHighlights(){
+  const officeId=appliedEventOfficeId||getEventTargetOfficeId();
+  const sourceList=(cachedEvents.officeId===officeId && Array.isArray(cachedEvents.list)) ? cachedEvents.list : [];
+  const idSet=new Set((appliedEventIds||[]).map(id=>String(id)));
+  const visibleItems=sourceList.filter(item=>{
+    const id=String(item?.id||item?.vacationId||'');
+    return idSet.has(id) && coerceVacationVisibleFlag(item?.visible);
+  });
+  applyEventHighlightForItems(visibleItems, undefined);
 }
 
 function renderVacationRadioList(list, options){
@@ -1095,6 +1149,8 @@ function applyEventHighlightForItems(eventItems, targetDate){
   }
   applyManualEventColorsToGantt();
   const normalizedTargetDate=normalizeEventDateKey(targetDate||Date.now());
+  const manualColorForTarget=getManualEventColorForDate(normalizedTargetDate, appliedEventOfficeId||getEventTargetOfficeId());
+  const hasManualColor=!!manualColorForTarget;
   // eventItems の順序はサーバーで設定された並びを保持する想定。
   // 同日に複数のイベントが重複する場合、配列先頭（上位）を優先して色や休暇固定の適用を行う。
   const colorClasses=getEventColorClasses();
@@ -1127,8 +1183,7 @@ function applyEventHighlightForItems(eventItems, targetDate){
     const statusSelect=statusTd?.querySelector('select[name="status"]');
     tr.classList.remove('event-highlight', ...colorClasses);
     if(effect){
-      const manualColor=getManualEventColorForDate(normalizedTargetDate, appliedEventOfficeId||getEventTargetOfficeId());
-      const colorKey=manualColor || effect.vacations[0]?.color || effect.highlights[0]?.color || '';
+      const colorKey=hasManualColor ? manualColorForTarget : (effect.vacations[0]?.color || effect.highlights[0]?.color || '');
       const colorClass=getEventColorClass(colorKey);
       tr.classList.add('event-highlight');
       if(colorClass){ tr.classList.add(colorClass); }
@@ -1170,6 +1225,10 @@ function bindEventGanttColorPicker(){
       if(e.type==='click' && e.button===0){
         handleCellClick(cell);
       }
+    });
+    cell.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      setManualEventColorForDate(cell.dataset.date||'', '');
     });
   });
 }
@@ -1351,6 +1410,10 @@ if(btnEventPrint){
       }
     }, 200);
   });
+}
+
+if(btnEventColorReset){
+  btnEventColorReset.addEventListener('click', clearAllManualEventColors);
 }
 
 /* レイアウト（JS + CSS両方で冗長に制御） */
