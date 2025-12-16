@@ -525,17 +525,27 @@
 .vacation-gantt .vac-day-header.weekend-sat{background:#e0f2fe;}
 .vacation-gantt .vac-day-header.weekend-sun{background:#fee2e2;}
 .vacation-gantt .vac-day-header.holiday{background:#ffe4e6;color:#b91c1c;}
-.vacation-gantt .vac-day-header.vac-color-none,.vacation-gantt .vac-cell.vac-color-none{background:#fff;}
-.vacation-gantt .vac-day-header.vac-color-sat,.vacation-gantt .vac-cell.vac-color-sat{background:#e0f2fe;}
-.vacation-gantt .vac-day-header.vac-color-sun,.vacation-gantt .vac-cell.vac-color-sun{background:#fee2e2;}
-.vacation-gantt .vac-day-header.vac-color-holiday,.vacation-gantt .vac-cell.vac-color-holiday{background:#ffe4e6;color:#b91c1c;}
-.vacation-gantt .vac-day-header.vac-color-amber,.vacation-gantt .vac-cell.vac-color-amber{background:#fef3c7;}
-.vacation-gantt .vac-day-header.vac-color-mint,.vacation-gantt .vac-cell.vac-color-mint{background:#dcfce7;}
-.vacation-gantt .vac-day-header.vac-color-lavender,.vacation-gantt .vac-cell.vac-color-lavender{background:#ede9fe;}
-.vacation-gantt .vac-day-header.vac-color-slate,.vacation-gantt .vac-cell.vac-color-slate{background:#e5e7eb;}
+.vacation-gantt .vac-day-header.vac-color-none,.vacation-gantt .vac-cell.vac-color-none,.vac-color-option.vac-color-none{background:#fff;}
+.vacation-gantt .vac-day-header.vac-color-sat,.vacation-gantt .vac-cell.vac-color-sat,.vac-color-option.vac-color-sat{background:#e0f2fe;}
+.vacation-gantt .vac-day-header.vac-color-sun,.vacation-gantt .vac-cell.vac-color-sun,.vac-color-option.vac-color-sun{background:#fee2e2;}
+.vacation-gantt .vac-day-header.vac-color-holiday,.vacation-gantt .vac-cell.vac-color-holiday,.vac-color-option.vac-color-holiday{background:#ffe4e6;color:#b91c1c;}
+.vacation-gantt .vac-day-header.vac-color-amber,.vacation-gantt .vac-cell.vac-color-amber,.vac-color-option.vac-color-amber{background:#fef3c7;}
+.vacation-gantt .vac-day-header.vac-color-mint,.vacation-gantt .vac-cell.vac-color-mint,.vac-color-option.vac-color-mint{background:#dcfce7;}
+.vacation-gantt .vac-day-header.vac-color-lavender,.vacation-gantt .vac-cell.vac-color-lavender,.vac-color-option.vac-color-lavender{background:#ede9fe;}
+.vacation-gantt .vac-day-header.vac-color-slate,.vacation-gantt .vac-cell.vac-color-slate,.vac-color-option.vac-color-slate{background:#e5e7eb;}
 .vacation-gantt .vac-cell.on{background:#0ea5e9;color:#fff;font-weight:700;}
 .vacation-gantt .vac-cell.on.weekend-sat{background:#0284c7;color:#fff;}
 .vacation-gantt .vac-cell.on.weekend-sun,.vacation-gantt .vac-cell.on.holiday{background:#e11d48;color:#fff;}
+.vac-color-palette{position:absolute;z-index:80;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 10px 25px rgba(15,23,42,0.15);padding:10px;min-width:240px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#0f172a;}
+.vac-color-palette__title{font-weight:700;font-size:12px;line-height:1.2;color:#111827;}
+.vac-color-palette__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.vac-color-option{border:1px solid #cbd5e1;border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;min-width:0;}
+.vac-color-option:hover{box-shadow:0 6px 15px rgba(15,23,42,0.12);border-color:#93c5fd;transform:translateY(-1px);}
+.vac-color-option__dot{width:14px;height:14px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(148,163,184,0.45);}
+.vac-color-option__label{font-weight:700;font-size:11px;color:#111827;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media print{
+  .vac-color-palette{display:none !important;}
+}
 .vacation-gantt tbody tr.group-last-row{border-bottom:3px solid #6b7280;}
 .vacation-gantt tbody tr.group-last-row th.group-name{border-bottom:3px solid #6b7280;}
 .vacation-gantt tbody tr.group-last-row th.member-name{border-bottom:3px solid #6b7280;}

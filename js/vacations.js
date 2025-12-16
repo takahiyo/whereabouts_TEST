@@ -101,11 +101,113 @@
       dateSlots.forEach(date => applyColumnColor(date));
     }
 
-    function cycleDateColor(date){
-      const current = ensureDateColor(date);
-      const next = (current + 1) % COLOR_PALETTE.length;
-      dateColorMap.set(date, next);
+    let palettePopupEl = null;
+    let paletteCurrentDate = '';
+    let paletteCleanupFns = [];
+
+    function closePalettePopup(){
+      if(palettePopupEl && palettePopupEl.parentNode){
+        palettePopupEl.parentNode.removeChild(palettePopupEl);
+      }
+      palettePopupEl = null;
+      paletteCurrentDate = '';
+      paletteCleanupFns.forEach(fn => {
+        try{ fn(); }catch(err){ console.error(err); }
+      });
+      paletteCleanupFns = [];
+    }
+
+    function positionPalettePopup(anchorEl){
+      if(!palettePopupEl || !anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const popupRect = palettePopupEl.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 6;
+      let left = rect.left + window.scrollX + (rect.width / 2) - (popupRect.width / 2);
+      const minLeft = 8;
+      const maxLeft = Math.max(minLeft, window.scrollX + document.documentElement.clientWidth - popupRect.width - 8);
+      left = Math.min(Math.max(left, minLeft), maxLeft);
+      palettePopupEl.style.top = `${top}px`;
+      palettePopupEl.style.left = `${left}px`;
+    }
+
+    function handlePaletteColorSelect(date, idx){
+      if(!date) return;
+      dateColorMap.set(date, idx % COLOR_PALETTE.length);
       applyColumnColor(date);
+      closePalettePopup();
+    }
+
+    function createPalettePopup(anchorEl, date){
+      closePalettePopup();
+      paletteCurrentDate = date;
+      const popup = document.createElement('div');
+      popup.className = 'vac-color-palette';
+
+      const title = document.createElement('div');
+      title.className = 'vac-color-palette__title';
+      title.textContent = '列カラーを選択';
+      popup.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'vac-color-palette__grid';
+      COLOR_PALETTE.forEach((item, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `vac-color-option ${item.className}`;
+        btn.dataset.colorKey = item.key;
+        btn.setAttribute('aria-label', `${item.key} を選択`);
+        const mark = document.createElement('span');
+        mark.className = 'vac-color-option__dot';
+        btn.appendChild(mark);
+        const label = document.createElement('span');
+        label.className = 'vac-color-option__label';
+        label.textContent = item.key;
+        btn.appendChild(label);
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          handlePaletteColorSelect(date, idx);
+        });
+        grid.appendChild(btn);
+      });
+      popup.appendChild(grid);
+
+      document.body.appendChild(popup);
+      palettePopupEl = popup;
+
+      requestAnimationFrame(() => positionPalettePopup(anchorEl));
+
+      const handleOutside = (ev) => {
+        if(!palettePopupEl) return;
+        const target = ev.target;
+        if(palettePopupEl.contains(target) || anchorEl.contains(target)) return;
+        closePalettePopup();
+      };
+
+      const closeOnScroll = () => closePalettePopup();
+
+      ['mousedown','touchstart','pointerdown'].forEach(ev => {
+        document.addEventListener(ev, handleOutside, true);
+        paletteCleanupFns.push(() => document.removeEventListener(ev, handleOutside, true));
+      });
+      window.addEventListener('scroll', closeOnScroll, true);
+      paletteCleanupFns.push(() => window.removeEventListener('scroll', closeOnScroll, true));
+      window.addEventListener('resize', closeOnScroll, true);
+      paletteCleanupFns.push(() => window.removeEventListener('resize', closeOnScroll, true));
+    }
+
+    function handleColorCycle(e){
+      const target = e.target.closest('.vac-day-header');
+      if(!target) return;
+      const date = target.dataset.date;
+      if(!date) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if(palettePopupEl && paletteCurrentDate === date){
+        closePalettePopup();
+        return;
+      }
+      createPalettePopup(target, date);
     }
     let statusEl = null;
     let saveMode = opts.saveMode || 'vacation';
@@ -558,14 +660,6 @@
       resolveHolidays().then(set => applyHolidayColor(set));
     }
 
-    function handleColorCycle(e){
-      const target = e.target.closest('.vac-day-header');
-      if(!target) return;
-      const date = target.dataset.date;
-      if(!date) return;
-      cycleDateColor(date);
-    }
-
     function handlePointerDown(e){
       const cell = e.target.closest('.vac-cell');
       if(!cell) return;
@@ -739,7 +833,10 @@
 
     function bindTableEvents(){
       if(!tableEl) return;
-      tableEl.addEventListener('click', handleColorCycle);
+      const thead = tableEl.querySelector('thead');
+      if(thead){
+        thead.addEventListener('click', handleColorCycle);
+      }
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
       tableEl.addEventListener('pointermove', handlePointerMove, { passive:false });
@@ -767,6 +864,7 @@
 
     function rebuild(){
       if(!ganttRoot) return;
+      closePalettePopup();
       orderedMembers = getMembersOrdered();
       dateSlots = buildDateSlots();
       syncDateColorMapWithSlots();
