@@ -179,6 +179,95 @@
     border-color:#4a90e2;
   }
 
+  .contact-overlay{
+    position:fixed;
+    inset:0;
+    z-index:1900;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    background:rgba(0,0,0,.45);
+  }
+  .contact-dialog{
+    position:relative;
+    width:min(360px, 90vw);
+    max-width:420px;
+    border-radius:14px;
+    background:#fff;
+    padding:18px 16px;
+    box-shadow:0 12px 28px rgba(0,0,0,0.18);
+    border:1px solid #e5e7eb;
+  }
+  .contact-title{
+    margin:0 0 10px;
+    font-size:16px;
+    font-weight:700;
+    color:#0f172a;
+  }
+  .contact-body{display:flex;flex-direction:column;gap:10px;}
+  .contact-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#f9fafb;
+  }
+  .contact-label{font-weight:700;color:#374151;min-width:56px;}
+  .contact-link{
+    flex:1;
+    text-align:right;
+    color:#2563eb;
+    font-weight:700;
+    word-break:break-all;
+    text-decoration:none;
+    min-height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding:6px 10px;
+    border-radius:10px;
+    background:#e0edff;
+  }
+  .contact-link:hover,
+  .contact-link:focus-visible{
+    text-decoration:underline;
+    outline:2px solid #2563eb;
+    outline-offset:2px;
+  }
+  .contact-empty{
+    flex:1;
+    text-align:right;
+    color:#6b7280;
+    min-height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding:6px 10px;
+  }
+  .contact-close{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:38px;
+    height:38px;
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    background:#fff;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:700;
+    color:#374151;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 4px rgba(0,0,0,0.08);
+  }
+  .contact-close:hover{background:#f3f4f6;}
+  .contact-close:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+
   /* ステータス別の行色（在席はデフォルト） */
   #board tbody tr{ transition: background-color .15s ease; }
   #board tbody tr.st-here{ background: transparent; }
