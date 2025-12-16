@@ -23,7 +23,6 @@ const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
 const btnEventSave=document.getElementById('btnEventSave');
 const btnEventPrint=document.getElementById('btnEventPrint');
-const btnEventColorReset=document.getElementById('btnEventColorReset');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
 const setPw=document.getElementById('setPw'), setAdminPw=document.getElementById('setAdminPw'), btnSetPw=document.getElementById('btnSetPw');
@@ -264,8 +263,8 @@ function updateEventColorManualHint(hasManualColor){
   const shouldShow=!!hasManualColor && !!targetOffice && eventDateColorState.officeId===targetOffice;
   if(shouldShow){
     hintEl.style.display='inline-flex';
-    hintEl.textContent='🎨 手動色が適用されています（セルを右クリックでクリア、「色リセット」で全解除できます）';
-    hintEl.title='セルを右クリックで個別クリア、または「色リセット」ボタンで全ての手動色を削除できます。';
+    hintEl.textContent='🎨 手動色が適用されています（セルを右クリックでクリアできます）';
+    hintEl.title='セルを右クリックすると手動色を個別にクリアできます。';
   }else{
     hintEl.style.display='none';
     hintEl.textContent='';
@@ -344,7 +343,7 @@ function applyManualEventColorsToGantt(){
       if(cls) cell.classList.add(cls);
       cell.dataset.manualColor=colorKey;
       const label=EVENT_COLOR_LABELS[colorKey]||'手動色';
-      cell.title=`${label}（手動設定）: 右クリックでクリア / 「色リセット」で全解除`;
+      cell.title=`${label}（手動設定）: 右クリックでクリア`;
     }else{
       delete cell.dataset.manualColor;
       if(cell.title && cell.title.includes('手動')){
@@ -1388,10 +1387,6 @@ if(btnEventPrint){
       }
     }, 200);
   });
-}
-
-if(btnEventColorReset){
-  btnEventColorReset.addEventListener('click', clearAllManualEventColors);
 }
 
 /* レイアウト（JS + CSS両方で冗長に制御） */
