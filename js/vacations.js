@@ -483,7 +483,6 @@
       if(!cell) return;
       // 左クリック（button === 0）のみ受け付ける
       if(e.button !== 0) return;
-      e.preventDefault();
       const idx = Number(cell.dataset.memberIndex || '-1');
       if(idx < 0) return;
       const date = cell.dataset.date;
