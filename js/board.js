@@ -124,21 +124,43 @@ function resolveContactInfo(tr, fallback){
 
 function attachContactLongPress(tdName, tr, fallbackMember){
   if(!tdName) return;
-  const startHold = ()=>{
+  const HOLD_DELAY_MS = 900;
+  const MOVE_TOLERANCE_PX = 10;
+  let startTouchPoint = null;
+
+  const startHold = (touchPoint)=>{
     clearContactHoldTimer();
+    startTouchPoint = touchPoint ? { x: touchPoint.clientX, y: touchPoint.clientY } : null;
     contactHoldTimer = setTimeout(()=>{
       contactHoldTimer = null;
       const payload = resolveContactInfo(tr, fallbackMember);
       showContactPopup(payload);
-    }, 3000);
+    }, HOLD_DELAY_MS);
   };
-  const cancelHold = ()=> clearContactHoldTimer();
+  const cancelHold = ()=>{
+    startTouchPoint = null;
+    clearContactHoldTimer();
+  };
+  const handleTouchStart = (e)=>{
+    const touch = e.touches?.[0];
+    startHold(touch);
+  };
+  const handleTouchMove = (e)=>{
+    if(!startTouchPoint) return;
+    const touch = e.touches?.[0];
+    if(!touch) return cancelHold();
+    const dx = Math.abs(touch.clientX - startTouchPoint.x);
+    const dy = Math.abs(touch.clientY - startTouchPoint.y);
+    if(dx > MOVE_TOLERANCE_PX || dy > MOVE_TOLERANCE_PX){
+      cancelHold();
+    }
+  };
   const handleMouseDown = (e)=>{ if(e.button === 0) startHold(); };
 
-  tdName.addEventListener('touchstart', startHold, { passive: true });
+  tdName.addEventListener('touchstart', handleTouchStart, { passive: true });
   tdName.addEventListener('touchend', cancelHold);
   tdName.addEventListener('touchcancel', cancelHold);
-  tdName.addEventListener('touchmove', cancelHold);
+  tdName.addEventListener('touchmove', handleTouchMove);
   tdName.addEventListener('mousedown', handleMouseDown);
   tdName.addEventListener('mouseup', cancelHold);
   tdName.addEventListener('mouseleave', cancelHold);
