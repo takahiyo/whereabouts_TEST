@@ -191,8 +191,8 @@
   }
   .contact-dialog{
     position:relative;
-    width:min(360px, 90vw);
-    max-width:420px;
+    width:min(420px, 94vw);
+    max-width:560px;
     border-radius:14px;
     background:#fff;
     padding:18px 16px;
@@ -221,7 +221,9 @@
     text-align:right;
     color:#2563eb;
     font-weight:700;
-    word-break:break-all;
+    word-break:break-word;
+    line-break:anywhere;
+    overflow-wrap:anywhere;
     text-decoration:none;
     min-height:32px;
     display:flex;
@@ -430,6 +432,10 @@
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
   .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start;}
+  .admin-box-stacked{display:flex;flex-direction:column;gap:12px;}
+  .admin-subsection{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;}
+  .admin-subsection h5{margin:0;font-size:14px;color:#374151;}
+  .admin-divider{height:1px;background:#e5e7eb;margin:4px 0;}
   .admin-box{margin:0;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.03);}
   .admin-box-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
   .admin-box-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
