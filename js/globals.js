@@ -166,6 +166,10 @@ function getEventColorClass(color){
   return `event-color-${key}`;
 }
 
+function getEventColorClasses(){
+  return EVENT_COLOR_KEYS.map(key=>getEventColorClass(key)).filter(Boolean);
+}
+
 function eventSelectionKey(officeId){
   return `${storeKeyBase}:event:${officeId||'__none__'}`;
 }
@@ -848,7 +852,7 @@ function applyEventHighlightForItems(eventItems, targetDate){
   }
   // eventItems の順序はサーバーで設定された並びを保持する想定。
   // 同日に複数のイベントが重複する場合、配列先頭（上位）を優先して色や休暇固定の適用を行う。
-  const colorClasses=EVENT_COLOR_KEYS.map(key=>getEventColorClass(key)).filter(Boolean);
+  const colorClasses=getEventColorClasses();
   const effectMap=new Map();
   (eventItems||[]).forEach(item=>{
     const { memberIds } = getEventMembersForDate(item, targetDate);
@@ -895,6 +899,40 @@ function applyEventHighlightForItems(eventItems, targetDate){
     }else{
       restoreStatusField(tr, statusTd, statusSelect);
     }
+  });
+
+  bindEventGanttColorPicker();
+}
+
+function bindEventGanttColorPicker(){
+  if(CURRENT_ROLE!=='officeAdmin' && CURRENT_ROLE!=='superAdmin') return;
+  const gantt=eventGantt || document.getElementById('eventGantt');
+  if(!gantt) return;
+  const colorClasses=getEventColorClasses();
+  const handleCellClick=(cell)=>{
+    const currentKey=(cell.dataset.manualColor||'').trim();
+    const idx=EVENT_COLOR_KEYS.indexOf(currentKey);
+    const nextIdx=(idx+1)%(EVENT_COLOR_KEYS.length+1);
+    const nextKey= nextIdx===EVENT_COLOR_KEYS.length ? '' : EVENT_COLOR_KEYS[nextIdx];
+    cell.classList.remove(...colorClasses);
+    if(nextKey){
+      const cls=getEventColorClass(nextKey);
+      if(cls) cell.classList.add(cls);
+      cell.dataset.manualColor=nextKey;
+    }else{
+      delete cell.dataset.manualColor;
+    }
+  };
+
+  gantt.querySelectorAll('td.vac-cell').forEach(cell=>{
+    if(cell.dataset.manualColorBound==='1') return;
+    cell.dataset.manualColorBound='1';
+    cell.addEventListener('click', (e)=>{
+      // 既存のセル操作（ドラッグ等）と競合しないよう、単純なクリック時のみ色を循環させる
+      if(e.type==='click' && e.button===0){
+        handleCellClick(cell);
+      }
+    });
   });
 }
 
