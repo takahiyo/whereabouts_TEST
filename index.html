@@ -79,16 +79,6 @@
           </div>
 
           <div class="admin-box">
-            <div class="admin-box-header">
-              <h4>👥 メンバー編集ショートカット</h4>
-            </div>
-            <div class="admin-row">
-              <button id="btnOpenMemberModal" class="btn-secondary">メンバー編集モーダルを開く</button>
-            </div>
-            <div class="admin-note">メンバーの追加や修正は「メンバー管理」タブ、またはこのボタンからモーダルを開いて行えます。</div>
-          </div>
-
-          <div class="admin-box">
             <h4>拠点名の変更</h4>
             <div class="admin-row"><input id="renameOfficeName" placeholder="新しい拠点名" /><button id="btnRenameOffice">変更</button></div>
           </div>
@@ -107,21 +97,58 @@
       <!-- タブパネル: メンバー管理 -->
       <div id="tabMembers" class="tab-panel" data-tab="members">
         <div class="members-panel">
-          <div class="admin-box">
-            <div class="admin-box-header">
-              <h4>👥 メンバー一覧・編集</h4>
-              <div class="admin-box-actions">
-                <button id="btnMemberReload" class="btn-secondary">🔄 読み込み</button>
-                <button id="btnMemberAdd" class="btn-secondary">➕ メンバー追加</button>
-                <button id="btnMemberSave" class="btn-primary">💾 保存</button>
+            <div class="admin-box">
+              <div class="admin-box-header">
+                <h4>👥 メンバー一覧・編集</h4>
+                <div class="admin-box-actions">
+                  <button id="btnMemberReload" class="btn-secondary">🔄 読み込み</button>
+                  <button id="btnMemberAdd" class="btn-secondary">➕ メンバー追加</button>
+                  <button id="btnMemberSave" class="btn-primary">💾 保存</button>
+                </div>
               </div>
-            </div>
-            <div class="admin-note">ドラッグまたは↑↓ボタンで並び替え、編集ボタンで詳細を更新できます。</div>
-            <div class="member-table-wrap">
-              <table class="member-table">
-                <thead>
-                  <tr><th style="width:64px;">順番</th><th>グループ</th><th>氏名</th><th>内線</th><th>携帯</th><th>Email</th><th style="width:160px;">操作</th></tr>
-                </thead>
+              <div class="admin-note">ドラッグまたは↑↓ボタンで並び替え、編集ボタンで詳細を更新できます。</div>
+              <div class="member-filter-row">
+                <label for="memberFilterInput">氏名フィルター</label>
+                <div class="member-filter-controls">
+                  <input id="memberFilterInput" type="search" placeholder="在席確認表の氏名で絞り込み" aria-label="氏名フィルター" />
+                  <button id="btnMemberFilterClear" class="btn-secondary" type="button">クリア</button>
+                </div>
+              </div>
+              <form id="memberEditForm" class="member-edit-form member-inline-form">
+                <input type="hidden" id="memberEditId" />
+                <div class="member-edit-grid">
+                  <label>氏名（必須）
+                    <input id="memberEditName" type="text" required placeholder="例：山田 太郎" />
+                  </label>
+                  <label>所属グループ（必須）
+                    <input id="memberEditGroup" type="text" list="memberGroupOptions" placeholder="既存グループを選択 or 入力" />
+                    <datalist id="memberGroupOptions"></datalist>
+                  </label>
+                  <label>内線
+                    <input id="memberEditExt" type="tel" inputmode="numeric" placeholder="数字のみ" />
+                  </label>
+                  <label>携帯
+                    <input id="memberEditMobile" type="tel" inputmode="tel" placeholder="例：090-1234-5678" />
+                  </label>
+                  <label>Email
+                    <input id="memberEditEmail" type="email" placeholder="example@example.com" />
+                  </label>
+                </div>
+                <div class="member-edit-actions">
+                  <div class="member-edit-actions-left">
+                    <span id="memberEditModeLabel" class="member-edit-mode">新規追加／編集フォーム</span>
+                  </div>
+                  <div class="member-edit-actions-right">
+                    <button type="button" id="memberEditReset" class="btn-secondary">フォームをクリア</button>
+                    <button type="submit" class="btn-primary">💾 追加／更新</button>
+                  </div>
+                </div>
+              </form>
+              <div class="member-table-wrap">
+                <table class="member-table">
+                  <thead>
+                    <tr><th style="width:64px;">順番</th><th>グループ</th><th>氏名</th><th>内線</th><th>携帯</th><th>Email</th><th style="width:160px;">操作</th></tr>
+                  </thead>
                 <tbody id="memberTableBody">
                   <tr><td colspan="7" style="text-align:center;color:#6b7280;">読み込み待ち</td></tr>
                 </tbody>
@@ -249,41 +276,6 @@
       </div>
 
       </div>
-    </div>
-  </div>
-
-  <!-- メンバー編集モーダル -->
-  <div id="memberEditModal" class="admin-modal member-edit-modal" aria-modal="true" role="dialog" aria-labelledby="memberEditTitle" aria-hidden="true" tabindex="-1">
-    <div class="admin-card member-edit-card" role="document">
-      <div class="member-edit-header">
-        <h3 id="memberEditTitle">メンバーを編集</h3>
-        <button id="memberEditClose" aria-label="閉じる">閉じる</button>
-      </div>
-      <form id="memberEditForm" class="member-edit-form">
-        <input type="hidden" id="memberEditId" />
-        <div class="member-edit-grid">
-          <label>氏名 <span class="required">*</span>
-            <input id="memberEditName" type="text" required placeholder="例：山田 太郎" />
-          </label>
-          <label>所属グループ <span class="required">*</span>
-            <input id="memberEditGroup" type="text" list="memberGroupOptions" placeholder="既存グループを選択 or 入力" />
-            <datalist id="memberGroupOptions"></datalist>
-          </label>
-          <label>内線
-            <input id="memberEditExt" type="tel" inputmode="numeric" placeholder="数字のみ" />
-          </label>
-          <label>携帯
-            <input id="memberEditMobile" type="tel" inputmode="tel" placeholder="例：090-1234-5678" />
-          </label>
-          <label>Email
-            <input id="memberEditEmail" type="email" placeholder="example@example.com" />
-          </label>
-        </div>
-        <div class="member-edit-actions">
-          <button type="button" id="memberEditCancel" class="btn-secondary">キャンセル</button>
-          <button type="submit" class="btn-primary">更新</button>
-        </div>
-      </form>
     </div>
   </div>
 

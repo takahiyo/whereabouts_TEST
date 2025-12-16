@@ -240,30 +240,20 @@ if(adminModal){
 let adminMemberList=[], adminMemberData={}, adminGroupOrder=[], adminMembersLoaded=false;
 
 if(btnMemberReload){ btnMemberReload.addEventListener('click', ()=> loadAdminMembers(true)); }
-if(btnMemberAdd){ btnMemberAdd.addEventListener('click', ()=> openMemberEditModal(null)); }
+if(btnMemberAdd){ btnMemberAdd.addEventListener('click', ()=> openMemberEditor(null)); }
 if(btnMemberSave){ btnMemberSave.addEventListener('click', ()=> handleMemberSave()); }
-if(btnOpenMemberModal){
-  btnOpenMemberModal.addEventListener('click', async ()=>{
-    if(!adminMembersLoaded){ await loadAdminMembers(); }
-    openMemberEditModal(null);
-  });
-}
-if(memberEditClose){ memberEditClose.addEventListener('click', closeMemberEditModal); }
-if(memberEditCancel){ memberEditCancel.addEventListener('click', closeMemberEditModal); }
-if(memberEditModal){
-  memberEditModal.addEventListener('click', (e)=>{
-    if(e.target===memberEditModal){ closeMemberEditModal(); }
-  });
-  memberEditModal.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape' && memberEditModal.classList.contains('show')){
-      closeMemberEditModal();
-    }
-  });
-}
 if(memberEditForm){
   memberEditForm.addEventListener('submit', (e)=>{
     e.preventDefault();
     submitMemberEdit();
+  });
+}
+if(memberEditReset){ memberEditReset.addEventListener('click', ()=> openMemberEditor(null)); }
+if(memberFilterInput){ memberFilterInput.addEventListener('input', renderMemberTable); }
+if(btnMemberFilterClear){
+  btnMemberFilterClear.addEventListener('click', ()=>{
+    memberFilterInput.value='';
+    renderMemberTable();
   });
 }
 
@@ -312,6 +302,7 @@ async function loadAdminMembers(force){
     });
     normalizeMemberOrdering();
     renderMemberTable();
+    openMemberEditor(null);
     adminMembersLoaded=true;
   }catch(err){
     console.error('loadAdminMembers error',err);
@@ -336,6 +327,16 @@ function normalizeMemberOrdering(){
   });
 }
 
+function filteredMemberList(){
+  const term=(memberFilterInput?.value||'').trim().toLowerCase();
+  if(!term){ return [...adminMemberList]; }
+  const words=term.split(/\s+/).filter(Boolean);
+  return adminMemberList.filter(m=>{
+    const name=(m.name||'').toLowerCase();
+    return words.every(w=> name.includes(w));
+  });
+}
+
 function renderMemberTable(){
   if(!memberTableBody){ return; }
   memberTableBody.textContent='';
@@ -343,7 +344,12 @@ function renderMemberTable(){
     setMemberTableMessage('メンバーが登録されていません');
     return;
   }
-  adminMemberList.forEach((m,idx)=>{
+  const rows=filteredMemberList();
+  if(!rows.length){
+    setMemberTableMessage('条件に一致するメンバーが見つかりません');
+    return;
+  }
+  rows.forEach((m,idx)=>{
     const tr=document.createElement('tr');
     tr.dataset.memberId=m.id;
     const orderTd=document.createElement('td');
@@ -355,7 +361,7 @@ function renderMemberTable(){
     const emailTd=document.createElement('td'); emailTd.textContent=m.email||'';
     const actionTd=document.createElement('td'); actionTd.className='member-row-actions';
     const editBtn=document.createElement('button'); editBtn.textContent='編集'; editBtn.className='btn-secondary';
-    editBtn.addEventListener('click', ()=> openMemberEditModal(m));
+    editBtn.addEventListener('click', ()=> openMemberEditor(m));
     const delBtn=document.createElement('button'); delBtn.textContent='削除'; delBtn.className='btn-danger';
     delBtn.addEventListener('click', ()=> deleteMember(m.id));
     const upBtn=document.createElement('button'); upBtn.textContent='▲'; upBtn.title='上に移動';
@@ -406,25 +412,19 @@ function enableMemberDrag(){
   });
 }
 
-function openMemberEditModal(member){
-  if(memberEditModal){
-    memberEditModal.classList.add('show');
-    memberEditModal.setAttribute('aria-hidden','false');
-    memberEditModal.focus({ preventScroll:true });
-  }
+function openMemberEditor(member){
   if(memberEditId) memberEditId.value=member?.id||'';
   if(memberEditName) memberEditName.value=member?.name||'';
   if(memberEditExt) memberEditExt.value=member?.ext||'';
   if(memberEditMobile) memberEditMobile.value=member?.mobile||'';
   if(memberEditEmail) memberEditEmail.value=member?.email||'';
   if(memberEditGroup) memberEditGroup.value=member?.group||adminGroupOrder[0]||'';
+  if(memberEditModeLabel){
+    memberEditModeLabel.textContent = member ? `編集中：${member.name||''}` : '新規追加／編集フォーム';
+  }
   refreshMemberGroupOptions();
-}
-
-function closeMemberEditModal(){
-  if(memberEditModal){
-    memberEditModal.classList.remove('show');
-    memberEditModal.setAttribute('aria-hidden','true');
+  if(memberEditName){
+    memberEditName.focus({ preventScroll:true });
   }
 }
 
@@ -460,7 +460,7 @@ function submitMemberEdit(){
   }
   normalizeMemberOrdering();
   renderMemberTable();
-  closeMemberEditModal();
+  openMemberEditor(null);
 }
 
 function generateMemberId(){ return `member_${Date.now()}_${Math.random().toString(36).slice(2,6)}`; }
