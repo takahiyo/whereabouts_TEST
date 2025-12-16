@@ -44,7 +44,14 @@ btnImport.addEventListener('click', async ()=>{
   const text=await file.text();
   const rows=parseCSV(text);
   if(!rows.length){ toast('CSVが空です',false); return; }
-  const hdr=rows[0].map(s=>s.trim());
+  const titleMarkers=['在席管理CSV','whereabouts presence csv'];
+  const titleRowDetected = (rows[0]||[]).length===1 && titleMarkers.some(t=>{
+    const cell=(rows[0][0]||'').trim().toLowerCase();
+    return cell && (cell===t.toLowerCase() || cell.startsWith(t.toLowerCase()));
+  });
+  const headerRowIndex = titleRowDetected ? 1 : 0;
+  if(rows.length<=headerRowIndex){ toast('CSVヘッダが不正です',false); return; }
+  const hdr=rows[headerRowIndex].map(s=>s.trim());
   const modernEn=['group_index','group_title','member_order','id','name','ext','mobile','email','workHours','status','time','note'];
   const modernJa=['グループ番号','グループ名','表示順','id','氏名','内線','携帯番号','Email','業務時間','ステータス','戻り時間','備考'];
   const mustEn=['group_index','group_title','member_order','id','name','ext','workHours','status','time','note'];
@@ -80,7 +87,7 @@ btnImport.addEventListener('click', async ()=>{
     }catch{}
   }
 
-  const recs=rows.slice(1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
+  const recs=rows.slice(headerRowIndex+1).filter(r=>r.some(x=>(x||'').trim()!=='')).map(r=>{
     if(hasContactColumn){
       const [gi,gt,mi,id,name,ext,mobile,email,workHours,status,time,note]=r;
       const workHoursValue = workHours == null ? '' : String(workHours);
@@ -1325,6 +1332,7 @@ function csvProtectFormula(s){ if(s==null) return ''; const v=String(s); return 
 function toCsvRow(arr){ return arr.map(v=>{ const s=csvProtectFormula(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }
 function makeNormalizedCSV(cfg,data){
   const rows=[];
+  rows.push(toCsvRow(['在席管理CSV']));
   rows.push(toCsvRow(['グループ番号','グループ名','表示順','id','氏名','内線','携帯番号','Email','業務時間','ステータス','戻り時間','備考']));
   (cfg.groups||[]).forEach((g,gi)=>{
     (g.members||[]).forEach((m,mi)=>{

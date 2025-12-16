@@ -688,8 +688,8 @@
         
         <p style="margin:12px 0 8px 0;"><strong>対応しているCSV形式</strong></p>
         <ul style="line-height:1.8;">
-          <li><strong>最新形式（推奨）</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</code></li>
-          <li><strong>標準形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考</code>（携帯番号・Email列なし）</li>
+          <li><strong>最新形式（推奨）</strong>：<code>1行目: 在席管理CSV / 2行目: グループ番号,グループ名,表示順,id,氏名,内線,携帯番号,Email,業務時間,ステータス,戻り時間,備考</code></li>
+          <li><strong>標準形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,業務時間,ステータス,戻り時間,備考</code>（携帯番号・Email列なし、タイトル行なし）</li>
           <li><strong>旧形式</strong>：<code>グループ番号,グループ名,表示順,id,氏名,内線,ステータス,戻り時間,備考</code>（業務時間列なし。既存データから引き継ぎます）</li>
         </ul>
 
@@ -709,7 +709,7 @@
             <li>インポートすると<strong>名簿全体が置き換わります</strong>（部分更新はできません）</li>
             <li>CSVに含まれないメンバーは削除されます</li>
             <li>元に戻すにはバックアップのCSVを再インポートしてください</li>
-            <li>1行目は必ずヘッダー行にしてください</li>
+            <li>最新形式では1行目がタイトル行、2行目がヘッダー行です（標準・旧形式は1行目がヘッダー行）</li>
           </ul>
         </div>
 
@@ -936,7 +936,7 @@
         <h5>❓ よくある質問（管理者向け）</h5>
         <details style="margin:8px 0;">
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. CSVインポートで「CSVヘッダが不正です」と出る</summary>
-          <p style="margin:8px 0 8px 20px;">A. 1行目のヘッダーが正しい形式か確認してください。エクスポートしたCSVの1行目をそのまま使うのが確実です。</p>
+          <p style="margin:8px 0 8px 20px;">A. ヘッダー行（最新形式では2行目）が正しい形式か確認してください。エクスポートしたCSVのヘッダー行をそのまま使うのが確実です。</p>
         </details>
         <details style="margin:8px 0;">
           <summary style="cursor:pointer;font-weight:bold;padding:4px 0;">Q. 誤ってメンバーを削除してしまった</summary>
