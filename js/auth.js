@@ -2,6 +2,7 @@
 function logoutButtonsCleanup(){
   closeMenu(); showAdminModal(false); showManualModal(false); showEventModal(false); showToolsModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
+  try{ if(typeof stopToolsPolling==='function'){ stopToolsPolling(); } }catch{}
   // イベントバナーは削除されたため、この行はコメントアウト
   // try{ if(typeof updateEventBanner==='function'){ updateEventBanner(null); } }catch{}
   if(typeof renderVacationRadioMessage==='function'){ renderVacationRadioMessage('読み込み待ち'); }

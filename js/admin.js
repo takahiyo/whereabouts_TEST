@@ -774,8 +774,8 @@ async function loadAdminTools(force=false){
   const office=selectedOfficeId(); if(!office) return;
   if(!force && adminToolsLoaded && adminToolsOfficeId===office) return;
   try{
-    const list=await fetchTools(office);
-    const normalized=Array.isArray(list)?list:[];
+    const result=await fetchTools(office);
+    const normalized=Array.isArray(result?.list)?result.list:(Array.isArray(result)?result:[]);
     buildToolsEditor(normalized);
     if(!normalized.length){
       addToolEditorItem();
