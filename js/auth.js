@@ -1,6 +1,6 @@
 /* 認証UI + 管理UI + マニュアルUI */
 function logoutButtonsCleanup(){
-  closeMenu(); showAdminModal(false); showManualModal(false); showEventModal(false);
+  closeMenu(); showAdminModal(false); showManualModal(false); showEventModal(false); showToolsModal(false);
   board.style.display='none'; board.replaceChildren(); menuList.replaceChildren();
   // イベントバナーは削除されたため、この行はコメントアウト
   // try{ if(typeof updateEventBanner==='function'){ updateEventBanner(null); } }catch{}
@@ -38,6 +38,7 @@ function ensureAuthUI(){
   noticesBtn.style.display = 'none'; // デフォルトは非表示、お知らせがある場合にnotices.jsで表示
   adminBtn.style.display   = showAdmin ? 'inline-block' : 'none';
   logoutBtn.style.display  = loggedIn ? 'inline-block' : 'none';
+  toolsBtn.style.display   = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   eventBtn.style.display = 'none';
   if(btnEventSave) btnEventSave.style.display = loggedIn ? 'inline-block' : 'none';
@@ -46,6 +47,7 @@ function ensureAuthUI(){
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
 }
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
+function showToolsModal(yes){ toolsModal.classList.toggle('show', !!yes); }
 function showEventModal(yes){
   eventModal.classList.toggle('show', !!yes);
   if(!yes){
@@ -181,10 +183,13 @@ if(btnEventSave){
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));
+toolsBtn.addEventListener('click', ()=> showToolsModal(true));
+toolsModalClose.addEventListener('click', ()=> showToolsModal(false));
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     showAdminModal(false);
     showManualModal(false);
+    showToolsModal(false);
     showEventModal(false);
     closeMenu();
   }
@@ -199,6 +204,7 @@ function setupModalOverlayClose(modalEl, closeFn){
 
 setupModalOverlayClose(adminModal, ()=> showAdminModal(false));
 setupModalOverlayClose(manualModal, ()=> showManualModal(false));
+setupModalOverlayClose(toolsModal, ()=> showToolsModal(false));
 setupModalOverlayClose(eventModal, ()=> showEventModal(false));
 
 /* マニュアルタブ切り替え */

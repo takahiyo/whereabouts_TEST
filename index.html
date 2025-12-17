@@ -37,8 +37,9 @@
     <input id="nameFilter" class="name-filter" type="search" placeholder="氏名検索（入力と同時に絞り込み）" aria-label="氏名検索" />
     <select id="statusFilter" class="status-filter" aria-label="ステータスで絞り込み"></select>
     <button id="noticesBtn" class="notices-btn" title="お知らせ">お知らせ</button>
-    <button id="eventBtn" class="event-btn" title="イベント">📅 イベント</button>
     <button id="logoutBtn" class="logout-btn" title="ログオフ">ログオフ</button>
+    <button id="toolsBtn" class="tools-btn" title="ツール">🛠️ ツール</button>
+    <button id="eventBtn" class="event-btn" title="イベント">📅 イベント</button>
     <button id="manualBtn" class="manual-btn" title="マニュアル">マニュアル</button>
   </header>
 
@@ -343,6 +344,19 @@
         <button id="noticeModalClose" aria-label="閉じる">閉じる</button>
       </div>
       <div id="noticeModalBody" class="notice-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ツールモーダル -->
+  <div id="toolsModal" class="admin-modal tools-modal" aria-modal="true" role="dialog" aria-labelledby="toolsModalTitle">
+    <div class="admin-card tools-modal-card">
+      <div class="tools-modal-header">
+        <h3 id="toolsModalTitle">🛠️ ツール一覧</h3>
+        <button id="toolsModalClose" aria-label="閉じる">閉じる</button>
+      </div>
+      <div id="toolsList" class="tools-list">
+        <div class="tools-empty">ツール情報を読み込み中です…</div>
+      </div>
     </div>
   </div>
 
@@ -1045,6 +1059,7 @@
   <script src="js/auth.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/tools.js"></script>
   <script src="js/notices.js"></script>
   <script src="main.js"></script>
 
