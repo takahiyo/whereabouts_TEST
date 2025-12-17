@@ -461,41 +461,6 @@ function scheduleEventDateColorSave(){
   }, 800);
 }
 
-function setManualEventColorForDate(date, colorKey){
-  if(!isOfficeAdmin()) return;
-  const normalizedDate=normalizeEventDateKey(date);
-  if(!normalizedDate) return;
-  const targetOffice=getEventTargetOfficeId();
-  eventDateColorState.officeId=targetOffice||eventDateColorState.officeId||'';
-  const normalizedColor=normalizeEventColorKeyClient(colorKey);
-  if(normalizedColor){
-    eventDateColorState.map.set(normalizedDate, normalizedColor);
-  }else{
-    eventDateColorState.map.delete(normalizedDate);
-  }
-  applyManualEventColorsToGantt();
-  scheduleEventDateColorSave();
-  refreshAppliedEventHighlights();
-}
-
-function clearAllManualEventColors(){
-  if(!isOfficeAdmin()) return;
-  const targetOffice=getEventTargetOfficeId();
-  if(targetOffice){
-    eventDateColorState.officeId=targetOffice;
-  }
-  const currentSize=(eventDateColorState.map?.size)||0;
-  if(!currentSize){
-    toast('クリアする手動色はありません');
-    return;
-  }
-  eventDateColorState.map=new Map();
-  applyManualEventColorsToGantt();
-  scheduleEventDateColorSave();
-  toast('手動色をリセットしました');
-  refreshAppliedEventHighlights();
-}
-
 function refreshAppliedEventHighlights(){
   const officeId=appliedEventOfficeId||getEventTargetOfficeId();
   const sourceList=(cachedEvents.officeId===officeId && Array.isArray(cachedEvents.list)) ? cachedEvents.list : [];
@@ -971,20 +936,6 @@ function updateCachedMembersBits(officeId, id, membersBits){
   return target;
 }
 
-function parseVacationMembers(bitsStr){
-  const members=getRosterOrdering().flatMap(g => g.members || []);
-  if(!members.length) return { memberIds: [], memberNames: '' };
-  const onSet = new Set();
-  (bitsStr||'').split(';').map(s => s.trim()).filter(Boolean).forEach(part => {
-    const bits = part.includes(':') ? (part.split(':')[1] || '') : part;
-    for(let i=0;i<bits.length && i<members.length;i++){
-      if(bits[i] === '1') onSet.add(i);
-    }
-  });
-  const memberIds = members.map(m => m.id!=null?String(m.id):'').filter((_,idx)=> onSet.has(idx) );
-  return { memberIds, memberNames: summarizeVacationMembers(bitsStr) };
-}
-
 function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
   console.log('parseVacationMembersForDate called:', { targetDate, startDate, endDate, bitsStr });
 
@@ -1090,12 +1041,6 @@ function parseVacationMembersForDate(bitsStr, targetDate, startDate, endDate){
   return buildResultFromBits(bits);
 }
 
-function getVacationPeriodText(item){
-  const start=item?.startDate||item?.start||item?.from||'';
-  const end=item?.endDate||item?.end||item?.to||'';
-  if(start||end) return `${start||''}〜${end||''}`;
-  return '期間未設定';
-}
 const ROW_STATUS_CLASSES=['st-here','st-out','st-meeting','st-remote','st-trip','st-training','st-health','st-coadoc','st-home','st-off'];
 
 function getEventMembersForDate(item, targetDate){
@@ -1310,16 +1255,6 @@ async function applyEventDisplay(items){
 
   applyEventHighlightForItems(visibleItems);
   updateEventLegend(visibleItems);
-  updateEventCardStates();
-  return true;
-}
-
-async function clearEventDisplay(){
-  appliedEventIds=[];
-  appliedEventOfficeId='';
-  appliedEventTitles=[];
-  applyEventHighlightForItems([]);
-  updateEventLegend([]);
   updateEventCardStates();
   return true;
 }
