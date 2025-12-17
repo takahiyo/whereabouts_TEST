@@ -12,6 +12,7 @@ const board=document.getElementById('board'), toastEl=document.getElementById('t
 const loginEl=document.getElementById('login'), loginMsg=document.getElementById('loginMsg'), pwInput=document.getElementById('pw'), officeSel=document.getElementById('officeSel');
 const menuEl=document.getElementById('groupMenu'), menuList=document.getElementById('groupMenuList'), menuTitle=document.getElementById('groupMenuTitle'), titleBtn=document.getElementById('titleBtn');
 const noticesBtn=document.getElementById('noticesBtn'), adminBtn=document.getElementById('adminBtn'), logoutBtn=document.getElementById('logoutBtn'), adminModal=document.getElementById('adminModal'), adminClose=document.getElementById('adminClose');
+const toolsBtn=document.getElementById('toolsBtn'), toolsModal=document.getElementById('toolsModal'), toolsModalClose=document.getElementById('toolsModalClose');
 const eventBtn=document.getElementById('eventBtn'), eventModal=document.getElementById('eventModal'), eventClose=document.getElementById('eventClose');
 const vacationRadioList=document.getElementById('vacationRadioList');
 const eventGanttWrap=document.getElementById('eventGanttWrap');
@@ -36,6 +37,7 @@ const manualBtn=document.getElementById('manualBtn'), manualModal=document.getEl
 const nameFilter=document.getElementById('nameFilter'), statusFilter=document.getElementById('statusFilter');
 const noticesEditor=document.getElementById('noticesEditor'), btnAddNotice=document.getElementById('btnAddNotice'), btnLoadNotices=document.getElementById('btnLoadNotices'), btnSaveNotices=document.getElementById('btnSaveNotices');
 const noticeModal=document.getElementById('noticeModal'), noticeModalTitle=document.getElementById('noticeModalTitle'), noticeModalBody=document.getElementById('noticeModalBody'), noticeModalClose=document.getElementById('noticeModalClose');
+const toolsList=document.getElementById('toolsList');
 const vacationTitleInput=document.getElementById('vacationTitle'), vacationStartInput=document.getElementById('vacationStart'), vacationEndInput=document.getElementById('vacationEnd');
 const vacationNoticeSelect=document.getElementById('vacationNotice'), vacationOfficeSelect=document.getElementById('vacationOffice'), vacationMembersBitsInput=document.getElementById('vacationMembersBits');
 const btnCreateNoticeFromEvent=document.getElementById('btnCreateNoticeFromEvent');
