@@ -259,6 +259,13 @@ function renderEventColorStatus(type, message, actions){
 function updateEventColorManualHint(hasManualColor){
   const hintEl=eventColorManualHint||document.getElementById('eventColorManualHint');
   if(!hintEl) return;
+  const admin=isOfficeAdmin && typeof isOfficeAdmin==='function' ? isOfficeAdmin() : false;
+  if(!admin){
+    hintEl.style.display='none';
+    hintEl.textContent='';
+    hintEl.title='';
+    return;
+  }
   const targetOffice=getEventTargetOfficeId();
   const shouldShow=!!hasManualColor && !!targetOffice && eventDateColorState.officeId===targetOffice;
   if(shouldShow){

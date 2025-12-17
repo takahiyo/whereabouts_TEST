@@ -197,6 +197,8 @@
     }
 
     function handleColorCycle(e){
+      const isAdmin = typeof isOfficeAdmin === 'function' ? isOfficeAdmin() : false;
+      if(!isAdmin) return;
       const target = e.target.closest('.vac-day-header');
       if(!target) return;
       const date = target.dataset.date;
@@ -833,9 +835,13 @@
 
     function bindTableEvents(){
       if(!tableEl) return;
+      const isAdmin = typeof isOfficeAdmin === 'function' ? isOfficeAdmin() : false;
       const thead = tableEl.querySelector('thead');
       if(thead){
-        thead.addEventListener('click', handleColorCycle);
+        thead.removeEventListener('click', handleColorCycle);
+        if(isAdmin){
+          thead.addEventListener('click', handleColorCycle);
+        }
       }
       tableEl.addEventListener('pointerdown', handlePointerDown);
       tableEl.addEventListener('pointerover', handlePointerOver);
