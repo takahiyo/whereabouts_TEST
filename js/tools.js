@@ -192,18 +192,6 @@ function renderToolItems(list, container, depth){
     titleRow.appendChild(titleEl);
     item.appendChild(titleRow);
 
-    if(hasUrl){
-      const linkRow=document.createElement('div');
-      linkRow.className='tools-item-link';
-      const link=document.createElement('a');
-      link.href=tool.url;
-      link.target='_blank';
-      link.rel='noopener noreferrer';
-      link.textContent=tool.url;
-      linkRow.appendChild(link);
-      item.appendChild(linkRow);
-    }
-
     const noteRow=document.createElement('div');
     noteRow.className='tools-item-note';
     noteRow.innerHTML=linkifyToolText(tool.note || '備考：記載なし');
