@@ -3,12 +3,16 @@ if(adminOfficeSel){
   adminOfficeSel.addEventListener('change', ()=>{
     adminSelectedOfficeId=adminOfficeSel.value||'';
     adminMembersLoaded=false; adminMemberList=[]; setMemberTableMessage('読み込み待ち');
+    adminToolsLoaded=false; adminToolsOfficeId='';
     refreshVacationOfficeOptions();
     if(document.getElementById('tabMembers')?.classList.contains('active')){
       loadAdminMembers(true);
     }
     if(document.getElementById('tabEvents')?.classList.contains('active')){
       loadVacationsList();
+    }
+    if(document.getElementById('tabTools')?.classList.contains('active')){
+      loadAdminTools(true);
     }
   });
 }
@@ -210,7 +214,8 @@ if(adminModal){
         basic: adminModal.querySelector('#tabBasic'),
         members: adminModal.querySelector('#tabMembers'),
         notices: adminModal.querySelector('#tabNotices'),
-        events: adminModal.querySelector('#tabEvents')
+        events: adminModal.querySelector('#tabEvents'),
+        tools: adminModal.querySelector('#tabTools')
       };
       const panel=panelMap[targetTab];
       if(panel) panel.classList.add('active');
@@ -231,6 +236,8 @@ if(adminModal){
         }
         refreshVacationNoticeOptions();
         await loadVacationsList();
+      } else if(targetTab === 'tools'){
+        await loadAdminTools();
       }
     });
   });
@@ -238,6 +245,7 @@ if(adminModal){
 
 /* メンバー管理 */
 let adminMemberList=[], adminMemberData={}, adminGroupOrder=[], adminMembersLoaded=false;
+let adminToolsLoaded=false, adminToolsOfficeId='';
 
 if(btnMemberReload){ btnMemberReload.addEventListener('click', ()=> loadAdminMembers(true)); }
 if(btnMemberSave){ btnMemberSave.addEventListener('click', ()=> handleMemberSave()); }
@@ -724,6 +732,169 @@ function updateMoveButtons(){
     const downBtn = item.querySelector('.btn-move-down');
     if(upBtn) upBtn.disabled = (index === 0);
     if(downBtn) downBtn.disabled = (index === items.length - 1);
+  });
+}
+
+/* ツール管理UI */
+if(btnAddTool){ btnAddTool.addEventListener('click', ()=> addToolEditorItem()); }
+if(btnLoadTools){ btnLoadTools.addEventListener('click', ()=> loadAdminTools(true)); }
+if(btnSaveTools){
+  btnSaveTools.addEventListener('click', async ()=>{
+    const office=selectedOfficeId(); if(!office) return;
+    const items=toolsEditor.querySelectorAll('.tool-edit-item');
+    const tools=[];
+    items.forEach((item, idx)=>{
+      const title=(item.querySelector('.tool-edit-title').value||'').trim();
+      const url=(item.querySelector('.tool-edit-url').value||'').trim();
+      const note=(item.querySelector('.tool-edit-note').value||'').trim();
+      const toggle=item.querySelector('.tool-display-toggle');
+      const visible=toggle?toggle.checked:true;
+      if(!title && !url && !note) return;
+      let childrenRaw=[];
+      try{
+        const stored=item.dataset.children||'[]';
+        childrenRaw=JSON.parse(stored);
+      }catch{}
+      const normalizedChildren=Array.isArray(childrenRaw)?normalizeTools(childrenRaw):[];
+      const id=item.dataset.toolId || `tool_${Date.now()}_${idx}`;
+      tools.push({ id, title, url, note, visible, display: visible, children: normalizedChildren });
+    });
+
+    const success=await saveTools(tools, office);
+    if(success){
+      adminToolsLoaded=true; adminToolsOfficeId=office;
+      toast('ツールを保存しました');
+    }else{
+      toast('ツールの保存に失敗',false);
+    }
+  });
+}
+
+async function loadAdminTools(force=false){
+  const office=selectedOfficeId(); if(!office) return;
+  if(!force && adminToolsLoaded && adminToolsOfficeId===office) return;
+  try{
+    const list=await fetchTools(office);
+    const normalized=Array.isArray(list)?list:[];
+    buildToolsEditor(normalized);
+    if(!normalized.length){
+      addToolEditorItem();
+    }
+    adminToolsLoaded=true; adminToolsOfficeId=office;
+    if(force){ toast('ツールを読み込みました'); }
+  }catch(err){
+    console.error('loadAdminTools error', err);
+    toast('ツールの読み込みに失敗',false);
+  }
+}
+
+function buildToolsEditor(list){
+  if(!toolsEditor) return;
+  toolsEditor.innerHTML='';
+  const normalized = normalizeTools(list||[]);
+  if(!normalized.length){
+    addToolEditorItem();
+    return;
+  }
+  normalized.forEach((tool, idx)=>{
+    const visible=coerceToolVisibleFlag(tool?.visible ?? tool?.display ?? true);
+    addToolEditorItem(tool?.title||'', tool?.url||'', tool?.note||'', visible, tool?.children||[], tool?.id ?? idx);
+  });
+}
+
+function addToolEditorItem(title='', url='', note='', visible=true, children=null, id=null){
+  const item=document.createElement('div');
+  item.className='tool-edit-item' + (visible ? '' : ' hidden-tool');
+  item.draggable=true;
+  if(id!=null) item.dataset.toolId=String(id);
+  if(children!=null){
+    try{ item.dataset.children=JSON.stringify(children); }catch{}
+  }
+  item.innerHTML=`
+    <span class="tool-edit-handle">⋮⋮</span>
+    <div class="tool-edit-row">
+      <input type="text" class="tool-edit-title" placeholder="タイトル" value="${escapeHtml(title)}">
+      <input type="url" class="tool-edit-url" placeholder="URL" value="${escapeHtml(url)}">
+      <div class="tool-edit-controls">
+        <label class="tool-visibility-toggle"><input type="checkbox" class="tool-display-toggle" ${visible ? 'checked' : ''}> 表示する</label>
+        <button class="btn-move-up" title="上に移動">▲</button>
+        <button class="btn-move-down" title="下に移動">▼</button>
+        <button class="btn-remove-tool">削除</button>
+      </div>
+    </div>
+    <textarea class="tool-edit-note" placeholder="備考（省略可）">${escapeHtml(note)}</textarea>
+  `;
+
+  item.querySelector('.btn-remove-tool').addEventListener('click', ()=>{
+    if(confirm('このツールを削除しますか？')){
+      item.remove();
+      updateToolMoveButtons();
+    }
+  });
+
+  const displayToggle=item.querySelector('.tool-display-toggle');
+  if(displayToggle){
+    displayToggle.addEventListener('change', ()=>{
+      if(displayToggle.checked){
+        item.classList.remove('hidden-tool');
+      }else{
+        item.classList.add('hidden-tool');
+      }
+    });
+  }
+
+  item.querySelector('.btn-move-up').addEventListener('click', ()=>{
+    const prev=item.previousElementSibling;
+    if(prev){
+      toolsEditor.insertBefore(item, prev);
+      updateToolMoveButtons();
+    }
+  });
+
+  item.querySelector('.btn-move-down').addEventListener('click', ()=>{
+    const next=item.nextElementSibling;
+    if(next){
+      toolsEditor.insertBefore(next, item);
+      updateToolMoveButtons();
+    }
+  });
+
+  item.addEventListener('dragstart', (e)=>{
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+  });
+
+  item.addEventListener('dragend', ()=>{
+    item.classList.remove('dragging');
+    document.querySelectorAll('.tool-edit-item').forEach(i=> i.classList.remove('drag-over'));
+  });
+
+  item.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    e.dataTransfer.dropEffect='move';
+    const dragging=toolsEditor.querySelector('.dragging');
+    if(dragging && dragging!==item){
+      const rect=item.getBoundingClientRect();
+      const midpoint=rect.top + rect.height/2;
+      if(e.clientY < midpoint){
+        toolsEditor.insertBefore(dragging, item);
+      }else{
+        toolsEditor.insertBefore(dragging, item.nextSibling);
+      }
+    }
+  });
+
+  toolsEditor.appendChild(item);
+  updateToolMoveButtons();
+}
+
+function updateToolMoveButtons(){
+  const items=toolsEditor.querySelectorAll('.tool-edit-item');
+  items.forEach((item, index)=>{
+    const upBtn=item.querySelector('.btn-move-up');
+    const downBtn=item.querySelector('.btn-move-down');
+    if(upBtn) upBtn.disabled=(index===0);
+    if(downBtn) downBtn.disabled=(index===items.length-1);
   });
 }
 

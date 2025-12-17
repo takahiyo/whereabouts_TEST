@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
     if(!SESSION_TOKEN) return;
     startRemoteSync(true); startConfigWatch(); startNoticesPolling();
+    if(typeof fetchTools === 'function'){
+      fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
+    }
     await eventP;
     
     // 保存されているイベントを自動適用
@@ -96,6 +99,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(d&&d.data) applyState(d.data);
       if(!SESSION_TOKEN) return;
       startRemoteSync(true); startConfigWatch(); startNoticesPolling();
+      if(typeof fetchTools === 'function'){
+        fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
+      }
       await eventP;
       
       // 保存されているイベントを自動適用

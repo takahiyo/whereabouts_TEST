@@ -58,6 +58,7 @@
             <button class="tab-btn" data-tab="members">👥 メンバー管理</button>
             <button class="tab-btn" data-tab="notices">📢 お知らせ管理</button>
             <button class="tab-btn" data-tab="events">📅 イベント管理</button>
+            <button class="tab-btn" data-tab="tools">🛠️ ツール管理</button>
           </div>
         </div>
       </div>
@@ -275,6 +276,27 @@
                 </label>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブパネル4: ツール管理 -->
+      <div id="tabTools" class="tab-panel" data-tab="tools">
+        <div class="tools-manager">
+          <div class="tools-manager-toolbar">
+            <div class="tools-manager-info">
+              <p>ツールの順番はドラッグ&ドロップまたは↑↓ボタンで入れ替えられます。上にあるものから順に表示されます。</p>
+              <p>タイトルとURL、備考を入力できます。表示をOFFにしたツールは利用者画面に表示されません。</p>
+            </div>
+            <div class="tools-manager-actions">
+              <button id="btnAddTool" class="btn-primary">➕ ツールを追加</button>
+              <button id="btnLoadTools" class="btn-secondary">🔄 読み込み</button>
+              <button id="btnSaveTools" class="btn-success">💾 保存</button>
+            </div>
+          </div>
+
+          <div class="tools-manager-scroll">
+            <div id="toolsEditor" class="tools-editor"></div>
           </div>
         </div>
       </div>
