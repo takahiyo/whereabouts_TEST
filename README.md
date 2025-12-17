@@ -8,7 +8,6 @@ webapp/
 ├── config.js                     # 環境設定（エンドポイント・ポーリング間隔）
 ├── main.js                       # アプリケーション起動処理
 ├── styles.css                    # スタイル定義
-├── sw.js                         # Service Worker（キャッシュ制御）
 ├── js/
 │   ├── globals.js               # グローバル変数・要素参照・長期休暇状態管理
 │   ├── utils.js                 # ユーティリティ関数
@@ -28,6 +27,8 @@ webapp/
 ├── ADMIN_MANUAL.md              # 管理者向け詳細マニュアル
 └── README.md                    # 開発者向けドキュメント（このファイル）
 ```
+
+**補足**: `rg "serviceWorker"` を `index.html` と `main.js` を含む全体で実行し、Service Worker の登録コードが存在しないことを確認済みです（オフラインキャッシュは未使用）。
 
 ## 開発環境 → 本番環境への切り替え手順
 
@@ -106,23 +107,7 @@ connect-src 'self' https://presence-proxy.taka-hiyo.workers.dev;
 
 **注意**: `main.js` 内（24行目・72行目）でタイトルが動的に上書きされるため、実行時は拠点名が反映されます。
 
-### 4. `sw.js` の変更
-
-**ファイル**: `sw.js`  
-**行番号**: 2行目  
-**検索キーワード**: `CACHE_NAME`
-
-```javascript
-// 変更前（開発環境）
-const CACHE_NAME = 'presence-pages-cache-test-v1';
-
-// 変更後（本番環境）
-const CACHE_NAME = 'presence-pages-cache-prod-v1';
-```
-
-**目的**: キャッシュ名を変更することで、開発版と本番版のキャッシュを明確に分離します。
-
-### 5. GAS (Google Apps Script) のデプロイ
+### 4. GAS (Google Apps Script) のデプロイ
 
 #### 5-1. GAS プロジェクトへのコード配置
 1. Google Apps Script プロジェクトを作成
@@ -141,9 +126,9 @@ const CACHE_NAME = 'presence-pages-cache-prod-v1';
 - **Cloudflare Workers の環境変数** `GAS_ENDPOINT`（必須）
 - `CloudflareWorkers_worker.js` 7行目のデフォルト値（任意・フォールバック用）
 
-### 6. GitHub Pages へのデプロイ
+### 5. GitHub Pages へのデプロイ
 
-#### 6-1. リポジトリ設定
+#### 5-1. リポジトリ設定
 ```bash
 # 変更をコミット
 git add .
@@ -151,12 +136,12 @@ git commit -m "chore: 本番環境用に設定を変更"
 git push origin main
 ```
 
-#### 6-2. GitHub Pages 設定
+#### 5-2. GitHub Pages 設定
 1. GitHub リポジトリの Settings → Pages
 2. Source: `main` ブランチの `/` (root) または `/docs` を選択
 3. Save
 
-#### 6-3. カスタムドメインの設定（任意）
+#### 5-3. カスタムドメインの設定（任意）
 - Settings → Pages → Custom domain で設定
 - 必要に応じて `index.html` の CSP を追加更新
 
@@ -189,9 +174,15 @@ cp config.prod.js config.js
 - [ ] **config.js**: `REMOTE_ENDPOINT` を本番 Worker URL に変更
 - [ ] **index.html**: CSP の `connect-src` を本番 Worker URL に変更
 - [ ] **index.html**: タイトル「在席確認表【開発用】」→「在席確認表」に変更（4箇所）
-- [ ] **sw.js**: `CACHE_NAME` を `...-prod-...` に変更
 - [ ] **GitHub Pages**: デプロイ設定完了、URL確認
 - [ ] **動作確認**: 本番環境でログイン・データ更新・同期をテスト
+
+### デプロイ後のブラウザキャッシュクリア手順
+
+デプロイ後に古いキャッシュが残る場合は、以下を周知してください（Service Worker は未登録ですが、ブラウザキャッシュが残る可能性があります）。
+
+1. ブラウザでページを開いた状態で、ハードリロード（Windows: Ctrl+Shift+R / macOS: Cmd+Shift+R）を実行
+2. それでも更新されない場合は、ブラウザの設定から「閲覧データの削除（キャッシュ）」を実行
 
 ## 開発・デバッグ
 
@@ -327,11 +318,12 @@ npx http-server -p 8000
 2. Worker を再デプロイまたは再起動
 3. キャッシュをクリアしてテスト
 
-### Service Worker がキャッシュを更新しない
+### 画面更新が反映されない
 
-1. ブラウザの開発者ツールで Service Worker を Unregister
-2. `sw.js` の `CACHE_NAME` のバージョン番号を上げる（例: `v1` → `v2`）
-3. 強制リロード（Ctrl+Shift+R）
+Service Worker は導入していないため、ブラウザキャッシュが原因の可能性があります。以下を試してください。
+
+1. ハードリロード（Windows: Ctrl+Shift+R / macOS: Cmd+Shift+R）
+2. ブラウザ設定からキャッシュを削除し、再読み込み
 
 ### 「拠点またはパスワードが違います」エラー
 
