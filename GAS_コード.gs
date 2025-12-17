@@ -17,6 +17,7 @@ const CACHE_TTL_SEC  = 20;              // 20秒
 const MAX_SET_BYTES  = 120 * 1024;      // set payload サイズ制限
 const MAX_NOTICES_PER_OFFICE = 100;     // お知らせ最大件数
 const MAX_EVENT_COLOR_ENTRIES = 400;    // 日付カラーの上限件数
+const MAX_TOOLS_PER_OFFICE = 300;       // ツール最大件数
 
 const EVENT_COLOR_KEYS = ['amber','blue','green','pink','purple','teal','gray'];
 
@@ -40,6 +41,7 @@ function configKeyForOffice_(office){ return `presence-config-${office}`; }
 function noticesKeyForOffice_(office){ return `presence-notices-${office}`; }
 function vacationsKeyForOffice_(office){ return `presence-vacations-${office}`; }
 function eventColorsKeyForOffice_(office){ return `presence-event-colors-${office}`; }
+function toolsKeyForOffice_(office){ return `presence-tools-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
 const DEFAULT_OFFICES = {
@@ -186,6 +188,165 @@ function coerceNoticeVisibleFlag_(raw){
   if(raw === true || raw == null) return true;
   const s = String(raw).toLowerCase();
   return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+}
+
+function coerceToolArray_(raw){
+  if(raw == null) return [];
+  if(Array.isArray(raw)) return raw;
+  if(typeof raw === 'string'){
+    const trimmed = raw.trim();
+    if(!trimmed) return [];
+    if(trimmed[0] === '[' || trimmed[0] === '{'){
+      try{ return coerceToolArray_(JSON.parse(trimmed)); }catch(_){ /* fallthrough */ }
+    }
+    return [ trimmed ];
+  }
+  if(typeof raw === 'object'){
+    if(Array.isArray(raw.list)) return raw.list;
+    if(Array.isArray(raw.items)) return raw.items;
+    return Object.keys(raw).sort().map(k=> raw[k]).filter(v=> v != null);
+  }
+  return [];
+}
+
+function coerceToolVisibleFlag_(raw){
+  if(raw === true || raw == null) return true;
+  if(raw === false) return false;
+  const s = String(raw).trim().toLowerCase();
+  return !(s === 'false' || s === '0' || s === 'off' || s === 'no' || s === 'hide');
+}
+
+function ensureUniqueToolId_(ctx, preferred){
+  let base = (preferred == null ? '' : String(preferred)).trim();
+  if(!base){ base = 'tool_' + ctx.seq; ctx.seq += 1; }
+  let id = base;
+  let i = 1;
+  while(ctx.seen.has(id)){
+    id = base + '_' + i;
+    i += 1;
+  }
+  ctx.seen.add(id);
+  return id;
+}
+
+function normalizeToolItem_(raw, ctx, parentId){
+  if(raw == null) return null;
+  if(typeof raw === 'string'){
+    const text = raw.trim();
+    if(!text) return null;
+    const id = ensureUniqueToolId_(ctx, 'tool_' + ctx.seq);
+    return { id, title: text, url:'', note:'', visible:true, display:true, parentId: parentId||'', children: [] };
+  }
+  if(typeof raw !== 'object') return null;
+
+  const idRaw = raw.id ?? raw.toolId ?? raw.key;
+  const id = ensureUniqueToolId_(ctx, idRaw);
+  const titleSrc = raw.title ?? raw.name ?? raw.label ?? '';
+  const urlSrc = raw.url ?? raw.link ?? '';
+  const noteSrc = raw.note ?? raw.memo ?? raw.remark ?? '';
+  const visible = coerceToolVisibleFlag_(raw.visible ?? raw.display ?? raw.show ?? true);
+  const parentSrc = raw.parentId != null ? String(raw.parentId) : '';
+  const titleStr = String(titleSrc || '').trim();
+  const urlStr = String(urlSrc || '').trim();
+  const noteStr = String(noteSrc || '').trim();
+  const parent = parentSrc.trim() || parentId || '';
+  const node = {
+    id,
+    title: titleStr || urlStr || id,
+    url: urlStr,
+    note: noteStr,
+    visible,
+    display: visible,
+    parentId: parent,
+    children: []
+  };
+  const childrenRaw = coerceToolArray_(raw.children ?? raw.items ?? []);
+  childrenRaw.forEach(child => {
+    const c = normalizeToolItem_(child, ctx, id);
+    if(c){ ctx.nodes.push(c); }
+  });
+  return node;
+}
+
+function normalizeToolsArray_(raw){
+  const arr = coerceToolArray_(raw);
+  const ctx = { seq: 0, seen: new Set(), nodes: [], warnings: [] };
+
+  arr.forEach(item=>{
+    const n = normalizeToolItem_(item, ctx, '');
+    if(n){ ctx.nodes.push(n); }
+  });
+
+  const filtered = ctx.nodes.filter(n => n && (n.title || n.url || n.note));
+  const map = new Map();
+  filtered.forEach(n=>{ n.children = []; map.set(n.id, n); });
+
+  filtered.forEach(n=>{
+    let pid = n.parentId || '';
+    if(pid && (!map.has(pid) || pid === n.id)){
+      if(pid === n.id){ ctx.warnings.push(`ツール ${n.id} が自身を親にしていたためルートに移動しました`); }
+      if(!map.has(pid)){ ctx.warnings.push(`ツール ${n.id} の親 ${pid} が存在しないためルートに移動しました`); }
+      pid = '';
+    }
+    n.parentId = pid;
+  });
+
+  filtered.forEach(n=>{
+    const visited = new Set();
+    let pid = n.parentId;
+    while(pid){
+      if(visited.has(pid)){
+        ctx.warnings.push(`ツール ${n.id} の親子関係に循環が見つかったためルートに移動しました`);
+        n.parentId = '';
+        break;
+      }
+      visited.add(pid);
+      const p = map.get(pid);
+      if(!p){ n.parentId = ''; break; }
+      pid = p.parentId;
+    }
+  });
+
+  filtered.forEach(n=>{
+    if(n.parentId && map.has(n.parentId)){
+      map.get(n.parentId).children.push(n);
+    }
+  });
+
+  const roots = filtered.filter(n => !n.parentId);
+  let count = 0;
+  function prune(list){
+    const out = [];
+    list.forEach(item=>{
+      if(count >= MAX_TOOLS_PER_OFFICE){ return; }
+      count += 1;
+      if(item.children && item.children.length){
+        item.children = prune(item.children);
+      }
+      out.push(item);
+    });
+    return out;
+  }
+  const pruned = prune(roots);
+  if(count < filtered.length){
+    ctx.warnings.push(`ツールが${MAX_TOOLS_PER_OFFICE}件を超えたため、超過分を省略しました`);
+  }
+
+  return { list: pruned, warnings: ctx.warnings };
+}
+
+function filterVisibleTools_(list){
+  if(!Array.isArray(list)) return [];
+  const out = [];
+  list.forEach(item=>{
+    if(!item) return;
+    const visible = coerceToolVisibleFlag_(item.visible != null ? item.visible : (item.display != null ? item.display : true));
+    if(!visible) return;
+    const copy = Object.assign({}, item);
+    copy.children = filterVisibleTools_(item.children || []);
+    out.push(copy);
+  });
+  return out;
 }
 
 function coerceVacationVisibleFlag_(raw){
@@ -674,6 +835,72 @@ function doPost(e){
     } catch(err){
       return json_({ error:'save_failed', debug:String(err) });
     } finally{
+      try{ lock.releaseLock(); }catch(_){}
+    }
+  }
+
+  /* ===== ツールAPI ===== */
+  if(action === 'getTools'){
+    const requestedOffice = p_(e,'office','');
+    let office = tokenOffice;
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      }
+    }
+    const TOOLS_KEY = toolsKeyForOffice_(office);
+    const noCache = p_(e,'nocache','') === '1';
+    const isAdmin = roleIsOfficeAdmin_(prop, token);
+    const cacheKey = KEY_PREFIX + 'tools:' + office + (isAdmin ? ':admin' : ':user');
+
+    if(!noCache){
+      const hit = cache.get(cacheKey);
+      if(hit){
+        try{ return json_(JSON.parse(hit)); }catch(_){ /* fallthrough */ }
+      }
+    }
+
+    let stored;
+    try{ stored = JSON.parse(prop.getProperty(TOOLS_KEY) || '[]'); }
+    catch(_){ stored = []; }
+
+    const normalized = normalizeToolsArray_(stored || []);
+    const tools = isAdmin ? normalized.list : filterVisibleTools_(normalized.list);
+    const outObj = { updated: now_(), tools, warnings: normalized.warnings };
+    if(!noCache){ cache.put(cacheKey, JSON.stringify(outObj), CACHE_TTL_SEC); }
+    return json_(outObj);
+  }
+
+  if(action === 'setTools'){
+    const requestedOffice = p_(e,'office','');
+    let office = tokenOffice;
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      }else{
+        return json_({ error:'forbidden', debug:'cannot_admin_office='+requestedOffice });
+      }
+    }
+    const role = getRoleByToken_(prop, token);
+    if(!roleIsOfficeAdmin_(prop, token)) return json_({ error:'forbidden', debug:'role='+role });
+
+    const TOOLS_KEY = toolsKeyForOffice_(office);
+    const toolsParam = p_(e,'tools','[]');
+    let parsedTools;
+    try{ parsedTools = JSON.parse(toolsParam); }
+    catch(err){ return json_({ error:'bad_json', debug:String(err), param:toolsParam }); }
+
+    const lock = LockService.getScriptLock(); lock.waitLock(2000);
+    try{
+      const normalized = normalizeToolsArray_(parsedTools);
+      prop.setProperty(TOOLS_KEY, JSON.stringify(normalized.list));
+      const outObj = { updated: now_(), tools: normalized.list, warnings: normalized.warnings };
+      cache.put(KEY_PREFIX+'tools:'+office, JSON.stringify(outObj), CACHE_TTL_SEC);
+      cache.put(KEY_PREFIX+'tools:'+office+':admin', JSON.stringify(outObj), CACHE_TTL_SEC);
+      return json_(Object.assign({ ok:true }, outObj));
+    }catch(err){
+      return json_({ error:'save_failed', debug:String(err) });
+    }finally{
       try{ lock.releaseLock(); }catch(_){}
     }
   }

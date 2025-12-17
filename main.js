@@ -34,7 +34,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         CURRENT_ROLE=me.role||CURRENT_ROLE; CURRENT_OFFICE_ID=nextOfficeId; CURRENT_OFFICE_NAME=me.officeName||CURRENT_OFFICE_NAME;
         if(nextOfficeId!==prevOfficeId){ adminSelectedOfficeId=''; }
         saveSessionMeta(); ensureAuthUI(); applyRoleToManual();
-        if(nextOfficeId!==prevOfficeId){ eventP=loadEvents(nextOfficeId, false); }
+        if(nextOfficeId!==prevOfficeId){
+          eventP=loadEvents(nextOfficeId, false);
+          if(typeof fetchTools === 'function'){
+            fetchTools(nextOfficeId).catch(()=>{});
+          }
+          if(typeof startToolsPolling === 'function'){
+            startToolsPolling(nextOfficeId);
+          }
+        }
       }
     }catch{}
 
@@ -67,6 +75,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     startRemoteSync(true); startConfigWatch(); startNoticesPolling();
     if(typeof fetchTools === 'function'){
       fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
+    }
+    if(typeof startToolsPolling === 'function'){
+      startToolsPolling(CURRENT_OFFICE_ID);
     }
     await eventP;
     
@@ -101,6 +112,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       startRemoteSync(true); startConfigWatch(); startNoticesPolling();
       if(typeof fetchTools === 'function'){
         fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
+      }
+      if(typeof startToolsPolling === 'function'){
+        startToolsPolling(CURRENT_OFFICE_ID);
       }
       await eventP;
       
