@@ -14,6 +14,7 @@ async function logout(){
     if(tokenRenewTimer){ clearTimeout(tokenRenewTimer); tokenRenewTimer=null; }
     if(configWatchTimer){ clearInterval(configWatchTimer); configWatchTimer=null; }
     if(remotePullTimer){ clearInterval(remotePullTimer); remotePullTimer=null; }
+    if(eventSyncTimer){ clearInterval(eventSyncTimer); eventSyncTimer=null; }
     if(ro){ try{ ro.disconnect(); }catch{} }
     stopNoticesPolling();
   }catch{}
