@@ -40,7 +40,13 @@ function configuredOfficesFallback(){
 }
 async function refreshPublicOfficeSelect(selectedId){
   setSelectMessage(officeSel,'読込中…');
+  const loginBtn=document.getElementById('btnLogin');
+  officeSel.disabled=false;
+  if(pwInput) pwInput.disabled=false;
+  if(loginBtn) loginBtn.disabled=false;
+  if(loginMsg) loginMsg.textContent='';
   let offices=[];
+  let apiFailed=false;
   try{
     const res=await apiPost({ action:'publicListOffices' });
     if(res&&Array.isArray(res.offices)){
@@ -48,11 +54,23 @@ async function refreshPublicOfficeSelect(selectedId){
     }
   }catch(err){
     console.error('publicListOffices failed',err);
+    apiFailed=true;
   }
   if(offices.length===0){
     offices=configuredOfficesFallback();
-        // 管理者用拠点を常に追加する
-    normalizeOfficeEntry(offices,'admin','Administrator');
+  }
+  if(offices.length===0){
+    officeSel.textContent='';
+    setSelectMessage(officeSel, apiFailed ? '取得できませんでした。再読込してください' : '拠点が設定されていません');
+    officeSel.disabled=true;
+    if(pwInput){ pwInput.value=''; pwInput.disabled=true; }
+    if(loginBtn) loginBtn.disabled=true;
+    if(loginMsg){
+      loginMsg.textContent=apiFailed
+        ? '拠点一覧の取得に失敗しました。管理者にお問い合わせください。'
+        : '公開拠点がまだ設定されていません。管理者にお問い合わせください。';
+    }
+    return;
   }
   officeSel.textContent='';
   let found=false;

@@ -126,6 +126,23 @@ connect-src 'self' https://presence-proxy.taka-hiyo.workers.dev;
 - **Cloudflare Workers の環境変数** `GAS_ENDPOINT`（必須）
 - `CloudflareWorkers_worker.js` 7行目のデフォルト値（任意・フォールバック用）
 
+#### 5-4. 拠点一覧 (Script Properties) の初期化
+新規デプロイ直後は Script Properties に拠点一覧が未設定のため、ログイン画面に拠点が表示されません。運用する拠点のみを登録するため、初回に Apps Script で `setOffices_` を実行してください。
+
+1. Apps Script エディタで `GAS_コード.gs` を開く
+2. 上部の「実行」ドロップダウンから `setOffices_` を選択し、初回実行を許可する
+3. 実行ダイアログの引数に以下のようなオブジェクトを設定して再実行
+
+```javascript
+// 例: 本番で使う拠点だけを登録する
+setOffices_({
+  tokyo: { name: '東京', password: '***', adminPassword: '***' },
+  nagoya:{ name: '名古屋', password: '***', adminPassword: '***' }
+});
+```
+
+> 既に Script Properties に拠点が存在する場合は `getOffices_()` を実行して内容を確認し、必要な場合のみ `setOffices_` で上書きしてください。
+
 ### 5. GitHub Pages へのデプロイ
 
 #### 5-1. リポジトリ設定

@@ -44,11 +44,7 @@ function eventColorsKeyForOffice_(office){ return `presence-event-colors-${offic
 function toolsKeyForOffice_(office){ return `presence-tools-${office}`; }
 
 /* ===== 拠点一覧（初期値） ===== */
-const DEFAULT_OFFICES = {
-  admin: { name: 'Administrator', adminPassword: '任意のPW' },
-  dev:  { name: '開発用', password: 'dev',  adminPassword: 'dev'  },
-  prod: { name: '稼働用', password: 'prod', adminPassword: 'prod' }
-};
+const DEFAULT_OFFICES = {};
 function getOffices_(){
   const prop = PropertiesService.getScriptProperties();
   const v = prop.getProperty(OFFICES_KEY);
@@ -1160,7 +1156,6 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
-
 
 
 
