@@ -1,5 +1,18 @@
 /* ユーティリティ */
-function toast(msg,ok=true){ toastEl.style.background=ok?'#334155':'#c53030'; toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000); }
+function toast(msg,ok=true){
+  if(!toastEl) return;
+  if(toastEl._toastTimer){ clearTimeout(toastEl._toastTimer); }
+  toastEl.textContent='';
+  const panel=document.createElement('div');
+  panel.className='toast-panel';
+  panel.textContent=msg;
+  toastEl.appendChild(panel);
+  toastEl.classList.remove('toast--error','toast--success');
+  toastEl.classList.add(ok?'toast--success':'toast--error','show');
+  toastEl._toastTimer=setTimeout(()=>{
+    toastEl.classList.remove('show');
+  }, 2400);
+}
 function diagAdd(line){
   diag.classList.add('show');
   const div=document.createElement('div');

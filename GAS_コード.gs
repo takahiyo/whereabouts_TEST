@@ -1082,6 +1082,61 @@ function doPost(e){
     }
   }
 
+  if(action === 'setVacationBits'){
+    const requestedOffice = p_(e,'office', '');
+    let office = tokenOffice;
+    if(requestedOffice && requestedOffice !== tokenOffice){
+      if(canAdminOffice_(prop, token, requestedOffice)){
+        office = requestedOffice;
+      } else {
+        return json_({ error:'forbidden' });
+      }
+    }
+
+    const dataParam = p_(e,'data','{}');
+    let payload;
+    try{
+      payload = JSON.parse(dataParam);
+    }catch(err){
+      return json_({ error:'bad_json', debug:String(err) });
+    }
+
+    const id = String(payload.id || payload.vacationId || '').trim();
+    if(!id) return json_({ error:'bad_request' });
+
+    const VACATIONS_KEY = vacationsKeyForOffice_(office);
+    const lock = LockService.getScriptLock(); lock.waitLock(2000);
+    try{
+      const stored = prop.getProperty(VACATIONS_KEY);
+      let vacations = [];
+      if(stored){
+        try{
+          const parsed = JSON.parse(stored);
+          const raw = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.vacations) ? parsed.vacations : []);
+          vacations = raw.map(v => normalizeVacationItem_(v, office)).filter(v => v);
+        }catch(_){
+          vacations = [];
+        }
+      }
+
+      const idx = vacations.findIndex(v => String(v.id || '') === id);
+      if(idx < 0){
+        return json_({ error:'not_found' });
+      }
+
+      const membersBits = String(payload.membersBits || payload.bits || '').trim();
+      const updatedItem = normalizeVacationItem_({ ...vacations[idx], membersBits, updated: now_() }, office);
+      vacations[idx] = updatedItem;
+
+      prop.setProperty(VACATIONS_KEY, JSON.stringify(vacations));
+      return json_({ ok:true, id, vacation: updatedItem, updated: updatedItem.updated, vacations });
+    }catch(err){
+      return json_({ error:'save_failed', debug:String(err) });
+    }finally{
+      try{ lock.releaseLock(); }catch(_){ }
+    }
+  }
+
   if(action === 'deleteVacation'){
     const requestedOffice = p_(e,'office', '');
     let office = tokenOffice;
@@ -1156,7 +1211,6 @@ function doGet(e){
   return ContentService.createTextOutput('unsupported');
 
 }
-
 
 
 

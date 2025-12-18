@@ -22,7 +22,6 @@ const eventColorManualHint=document.getElementById('eventColorManualHint');
 const eventStartInput=document.getElementById('eventStart');
 const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
-const btnEventSave=document.getElementById('btnEventSave');
 const btnEventPrint=document.getElementById('btnEventPrint');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
@@ -893,7 +892,7 @@ function getEventGanttController(){
     groupJumpContainer: eventGroupJumps,
     scrollContainer: eventGantt,
     groupJumpMode: 'select',
-    saveMode: 'event-modal',
+    saveMode: 'event-auto',
     onDateColorSelect: handleDateColorSelect
   });
   if(eventGanttController && typeof eventGanttController.init==='function'){
@@ -1316,7 +1315,9 @@ async function saveEventFromModal(){
   if(!item){ toast('イベントの情報を取得できませんでした', false); return false; }
   const ctrl=getEventGanttController();
   const membersBits=ctrl?ctrl.getBitsString():(eventBitsInput?.value||'');
-  const payload={
+  const id=item.id||item.vacationId||selectedId;
+  const bitsPayload={ id, membersBits };
+  const adminPayload={
     office: officeId,
     title: item.title||'',
     start: item.startDate||item.start||item.from||'',
@@ -1328,23 +1329,36 @@ async function saveEventFromModal(){
     isVacation: item.isVacation!==false,
     color: item.color||''
   };
-  const id=item.id||item.vacationId||selectedId;
-  if('visible' in item) payload.visible=item.visible;
-  if(id) payload.id=id;
+  if('visible' in item) adminPayload.visible=item.visible;
+  if(id) adminPayload.id=id;
   try{
-    const res=await adminSetVacation(officeId,payload);
+    let res=null;
+    if(typeof saveVacationBits==='function'){
+      res=await saveVacationBits(officeId, bitsPayload);
+      if(res?.error==='forbidden' && typeof adminSetVacation==='function' && isOfficeAdmin()){
+        res=await adminSetVacation(officeId, adminPayload);
+      }
+    }else if(typeof adminSetVacation==='function'){
+      res=await adminSetVacation(officeId, adminPayload);
+    }
     if(res && res.ok!==false){
-      toast('イベントを保存しました');
+      toast('イベントを自動保存しました');
       updateCachedMembersBits(officeId, id, membersBits);
-      await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
-      await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      if(Array.isArray(res.vacations)){
+        cachedEvents={ officeId, list: res.vacations };
+        await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+        updateEventButtonVisibility(officeId, res.vacations);
+      }else{
+        await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+        await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      }
       return true;
     }
     throw new Error(res&&res.error?String(res.error):'save_failed');
   }catch(err){
     console.error('saveEventFromModal error', err);
     toast('イベントの保存に失敗しました', false);
-    return false;
+    throw err;
   }
 }
 

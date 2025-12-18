@@ -305,8 +305,47 @@
   .login{position:fixed; inset:0; background:#fff; display:flex; align-items:center; justify-content:center; z-index:2200}
   .login .card{background:#fff; border-radius:8px; padding:20px; min-width:300px; max-width:90vw; text-align:center}
 
-  .toast{position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:8px 12px;border-radius:4px;font-size:12px;opacity:0;transition:.25s;z-index:2000}
-  .toast.show{opacity:1}
+  .toast{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    padding:20px 16px 0;
+    opacity:0;
+    transform:translateY(-12px);
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:2500;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateY(0); }
+  .toast-panel{
+    width:min(960px, calc(100% - 32px));
+    max-width:960px;
+    background:#0f172a;
+    color:#e2e8f0;
+    border-radius:10px;
+    padding:16px 18px;
+    font-size:16px;
+    line-height:1.6;
+    box-shadow:0 12px 30px rgba(0,0,0,0.18);
+    pointer-events:auto;
+    text-align:center;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+    text-wrap:balance;
+    border:1px solid rgba(226,232,240,0.28);
+  }
+  .toast.toast--error .toast-panel{
+    background:#7f1d1d;
+    color:#fee2e2;
+    border-color:rgba(254,226,226,0.35);
+  }
+  .toast.toast--success .toast-panel{
+    background:#0f172a;
+    color:#e2e8f0;
+  }
 
   @media (max-width: 720px){
     colgroup, thead{ display:none; }
