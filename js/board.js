@@ -510,6 +510,7 @@ function wireEvents(){
     const key = tr.dataset.key;
 
     if(t.name === 'status'){
+      t.dataset.editing = '1';
       const timeSel = tr.querySelector('select[name="time"]');
       const noteInp = tr.querySelector('input[name="note"]');
       toggleTimeEnable(t, timeSel);
@@ -527,6 +528,7 @@ function wireEvents(){
     }
 
     if(t.name === 'time'){
+      t.dataset.editing = '1';
       ensureTimePrompt(tr);
       debounceRowPush(key);
       return;
