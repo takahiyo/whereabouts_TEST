@@ -179,7 +179,6 @@ const EVENT_COLOR_LEGACY_FALLBACKS={
   gray:'slate',
   grey:'slate'
 };
-
 const PALETTE_TO_EVENT_COLOR_MAP={
   none:'',
   saturday:'blue',
