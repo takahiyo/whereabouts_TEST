@@ -492,14 +492,24 @@ async function loadEventDateColors(officeId, options={}){
   const targetOfficeId=officeId||getEventTargetOfficeId();
   const opts=options||{};
   const silent=opts.silent===true;
+  const forceReload=opts.force===true;
   if(!targetOfficeId || !SESSION_TOKEN){
     resetEventDateColorState();
     return new Map();
   }
-  if(eventDateColorState.officeId===targetOfficeId && eventDateColorState.loaded){
+  const hasLoadedCurrentOffice=eventDateColorState.officeId===targetOfficeId && eventDateColorState.loaded;
+  if(hasLoadedCurrentOffice && !forceReload){
     applyManualEventColorsToGantt();
     return eventDateColorState.map||new Map();
   }
+  const mapsAreEqual=(a,b)=>{
+    if(!(a instanceof Map) || !(b instanceof Map)) return false;
+    if(a.size!==b.size) return false;
+    for(const [key,val] of a.entries()){
+      if(!b.has(key) || b.get(key)!==val) return false;
+    }
+    return true;
+  };
   try{
     const res=await apiPost({ action:'getEventColorMap', token:SESSION_TOKEN, office:targetOfficeId, nocache:'1' });
     if(res?.error==='unauthorized'){
@@ -515,6 +525,7 @@ async function loadEventDateColors(officeId, options={}){
       const normalizedColor=paletteKey || normalizeEventDateColorValue(colors[date]);
       if(normalizedColor){ map.set(normalizedDate, normalizedColor); }
     });
+    const shouldApply = !hasLoadedCurrentOffice || forceReload || !mapsAreEqual(eventDateColorState.map, map);
     eventDateColorState={
       ...eventDateColorState,
       officeId: targetOfficeId,
@@ -522,8 +533,10 @@ async function loadEventDateColors(officeId, options={}){
       lastSaved: new Map(map),
       loaded: true
     };
-    applyManualEventColorsToGantt();
-    applyEventDateColorsToController(map);
+    if(shouldApply){
+      applyManualEventColorsToGantt();
+      applyEventDateColorsToController(map);
+    }
     return map;
   }catch(err){
     console.error('loadEventDateColors error', err);
@@ -549,6 +562,7 @@ async function flushEventDateColorSave(){
     if(res && res.ok!==false){
       eventDateColorState.lastSaved=new Map(eventDateColorState.map||[]);
       showEventColorSavedStatus();
+      toast('日付カラーを保存しました');
     }else{
       throw new Error(res&&res.error?String(res.error):'save_failed');
     }
@@ -971,12 +985,30 @@ async function refreshEventDataSilent(officeId){
       const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
       const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
       const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : undefined);
-      return { ...item, isVacation };
+      return {
+        ...item,
+        office: item?.office || targetOfficeId,
+        visible: coerceVacationVisibleFlag(item?.visible),
+        isVacation,
+        color: item?.color || 'amber'
+      };
     });
-    cachedEvents={ officeId: targetOfficeId, list: normalizedList };
+    const filteredList=(isOfficeAdmin() ? normalizedList : normalizedList.filter(item=>item.visible===true));
+    cachedEvents={ officeId: targetOfficeId, list: filteredList };
     const savedIds=loadSavedEventIds(targetOfficeId);
     if(Array.isArray(savedIds) && savedIds.length){
       selectedEventIds=savedIds;
+    }
+    const visibleItems=filteredList.filter(item=>item.visible===true);
+    if(eventModal && eventModal.classList.contains('show')){
+      renderVacationRadioList(filteredList, {
+        selectedIds: selectedEventIds,
+        onSelectChange: (ids)=>{
+          selectedEventIds=ids;
+          saveEventIds(targetOfficeId, ids);
+        },
+        onFocus: handleEventSelection
+      });
     }
     updateEventButtonVisibility(targetOfficeId, normalizedList);
     const firstSelected=selectedEventIds?.[0]||'';
@@ -984,8 +1016,8 @@ async function refreshEventDataSilent(officeId){
       const selectedItem=findCachedEvent(targetOfficeId, firstSelected);
       if(selectedItem) updateEventDetail(selectedItem, targetOfficeId);
     }
-    await applyEventDisplay(selectedEventIds && selectedEventIds.length ? selectedEventIds : undefined);
-    return normalizedList;
+    await applyEventDisplay(selectedEventIds && selectedEventIds.length ? selectedEventIds : visibleItems);
+    return filteredList;
   }catch(err){
     console.error('refreshEventDataSilent error', err);
     return [];
@@ -1463,7 +1495,8 @@ function startEventSync(immediate=false){
     const officeId=getEventTargetOfficeId();
     if(!officeId) return;
     await refreshEventDataSilent(officeId);
-    await loadEventDateColors(officeId, { silent:true });
+    const forceReloadColors = !(typeof isOfficeAdmin==='function' && isOfficeAdmin());
+    await loadEventDateColors(officeId, { silent:true, force: forceReloadColors });
   };
   if(immediate){ runSync().catch(err=> console.error('eventSync (immediate) failed', err)); }
   eventSyncTimer=setInterval(()=>{

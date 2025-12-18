@@ -307,14 +307,14 @@
 
   .toast{
     position:fixed;
-    top:0;
+    bottom:0;
     left:0;
     right:0;
     display:flex;
     justify-content:center;
-    padding:20px 16px 0;
+    padding:0 16px calc(20px + env(safe-area-inset-bottom, 0px));
     opacity:0;
-    transform:translateY(-12px);
+    transform:translateY(12px);
     transition:opacity .2s ease, transform .2s ease;
     z-index:2500;
     pointer-events:none;
