@@ -252,7 +252,9 @@ async function pushRowDelta(key){
   }finally{
     PENDING_ROWS.delete(key);
     if(tr){
-      tr.querySelectorAll('input[name="note"],input[name="workHours"]').forEach(inp=>{ if(inp && inp.dataset) delete inp.dataset.editing; });
+      tr.querySelectorAll('input[name="note"],input[name="workHours"],select[name="status"],select[name="time"]').forEach(inp=>{
+        if(inp && inp.dataset) delete inp.dataset.editing;
+      });
     }
   }
 
