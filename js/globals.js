@@ -179,6 +179,11 @@ const EVENT_COLOR_LEGACY_FALLBACKS={
   gray:'slate',
   grey:'slate'
 };
+const EVENT_COLOR_TRANSPORT_FALLBACKS={
+  sunday:'pink',
+  holiday:'pink',
+  slate:'gray'
+};
 const PALETTE_TO_EVENT_COLOR_MAP={
   none:'',
   saturday:'blue',
@@ -233,16 +238,18 @@ function normalizeEventColorKeyClient(raw){
 }
 
 function toTransportEventColorKey(raw){
-  const normalizedColor=normalizeEventColorKeyClient(raw);
-  if(normalizedColor){
-    return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedColor] || normalizedColor;
+  const normalizedEvent=normalizeEventColorKeyClient(raw);
+  if(normalizedEvent){
+    return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedEvent] || normalizedEvent;
   }
   const paletteKey=normalizePaletteKey(raw);
   if(paletteKey){
     const eventColor=paletteKeyToEventColor(paletteKey);
-    const normalizedEvent=normalizeEventColorKeyClient(eventColor);
-    if(normalizedEvent) return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedEvent] || normalizedEvent;
-    return EVENT_COLOR_TRANSPORT_FALLBACKS[paletteKey] || paletteKey;
+    const normalizedFromPalette=normalizeEventColorKeyClient(eventColor);
+    if(normalizedFromPalette){
+      return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedFromPalette] || normalizedFromPalette;
+    }
+    return eventColor || paletteKey;
   }
   return '';
 }
