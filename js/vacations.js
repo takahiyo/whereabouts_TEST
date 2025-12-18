@@ -12,6 +12,21 @@
     { key: 'lavender', className: 'vac-color-lavender' },
     { key: 'slate', className: 'vac-color-slate' }
   ];
+  const PALETTE_EVENT_COLOR_MAP = {
+    amber: 'amber',
+    mint: 'green',
+    lavender: 'purple',
+    slate: 'gray'
+  };
+  const EVENT_COLOR_TO_PALETTE_MAP = {
+    amber: 'amber',
+    blue: 'saturday',
+    green: 'mint',
+    pink: 'holiday',
+    purple: 'lavender',
+    teal: 'mint',
+    gray: 'slate'
+  };
 
   const FALLBACK_DAYS = 7;
 
@@ -130,11 +145,48 @@
       palettePopupEl.style.left = `${left}px`;
     }
 
+    function paletteKeyFromIndex(idx){
+      const normalizedIdx = Math.max(0, idx % COLOR_PALETTE.length);
+      return COLOR_PALETTE[normalizedIdx]?.key || '';
+    }
+
+    function paletteIndexFromKey(key){
+      const normalized = (key || '').toString().trim().toLowerCase();
+      return COLOR_PALETTE.findIndex(c => c.key === normalized);
+    }
+
+    function toEventColorKeyFromPalette(key){
+      const normalized = (key || '').toString().trim().toLowerCase();
+      return PALETTE_EVENT_COLOR_MAP[normalized] || '';
+    }
+
+    function paletteKeyFromEventColor(key){
+      const normalized = (key || '').toString().trim().toLowerCase();
+      return EVENT_COLOR_TO_PALETTE_MAP[normalized] || '';
+    }
+
     function handlePaletteColorSelect(date, idx){
-      if(!date) return;
-      dateColorMap.set(date, idx % COLOR_PALETTE.length);
-      applyColumnColor(date);
+      if(!date) return null;
+      const normalizedDate = normalizeDateStr(date) || date;
+      const paletteKey = paletteKeyFromIndex(idx);
+      const normalizedIdx = Math.max(0, idx % COLOR_PALETTE.length);
+      dateColorMap.set(normalizedDate, normalizedIdx);
+      applyColumnColor(normalizedDate);
+      const result = {
+        date: normalizedDate,
+        paletteIndex: normalizedIdx,
+        paletteKey,
+        eventColor: toEventColorKeyFromPalette(paletteKey)
+      };
+      if(typeof opts.onDateColorSelect === 'function'){
+        try{
+          opts.onDateColorSelect({ ...result });
+        }catch(err){
+          console.error('onDateColorSelect error', err);
+        }
+      }
       closePalettePopup();
+      return result;
     }
 
     function createPalettePopup(anchorEl, date){
@@ -194,6 +246,31 @@
       paletteCleanupFns.push(() => window.removeEventListener('scroll', closeOnScroll, true));
       window.addEventListener('resize', closeOnScroll, true);
       paletteCleanupFns.push(() => window.removeEventListener('resize', closeOnScroll, true));
+    }
+
+    function applyExternalDateColors(colorMap){
+      if(!colorMap){
+        syncDateColorMapWithSlots();
+        applyAllColumnColors();
+        return;
+      }
+      const entries = colorMap instanceof Map ? Array.from(colorMap.entries()) : Object.entries(colorMap);
+      dateColorMap.clear();
+      syncDateColorMapWithSlots();
+      let changed = entries.length === 0;
+      entries.forEach(([rawDate, eventColor]) => {
+        const date = normalizeDateStr(rawDate);
+        if(!date) return;
+        const paletteKey = paletteKeyFromEventColor(eventColor);
+        if(!paletteKey) return;
+        const idx = paletteIndexFromKey(paletteKey);
+        if(idx < 0) return;
+        dateColorMap.set(date, idx % COLOR_PALETTE.length);
+        changed = true;
+      });
+      if(changed){
+        applyAllColumnColors();
+      }
     }
 
     function handleColorCycle(e){
@@ -952,6 +1029,7 @@
       setRangeAndBits,
       getBitsString,
       applyBitsToCells,
+      applyDateColorMap: applyExternalDateColors,
       setSaveMode: (mode)=>{ saveMode = mode || 'vacation'; }
     };
   }

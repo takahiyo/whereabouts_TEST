@@ -165,6 +165,13 @@ const EVENT_COLOR_LABELS={
   gray:'グレー'
 };
 
+const PALETTE_TO_EVENT_COLOR_MAP={
+  amber:'amber',
+  mint:'green',
+  lavender:'purple',
+  slate:'gray'
+};
+
 function getEventColorClass(color){
   const key=(color||'').toString().trim().toLowerCase();
   if(!key) return '';
@@ -282,6 +289,20 @@ function updateEventColorManualHint(hasManualColor){
   }
 }
 
+function paletteKeyToEventColor(key){
+  const normalized=(key||'').toString().trim().toLowerCase();
+  return PALETTE_TO_EVENT_COLOR_MAP[normalized] || '';
+}
+
+function applyEventDateColorsToController(colorMap){
+  if(!eventGanttController || typeof eventGanttController.applyDateColorMap!=='function') return;
+  try{
+    eventGanttController.applyDateColorMap(colorMap || new Map());
+  }catch(err){
+    console.error('applyDateColorMap error', err);
+  }
+}
+
 function showEventColorSavingStatus(){
   renderEventColorStatus('saving', '日付カラーを保存しています…');
 }
@@ -300,6 +321,7 @@ function rollbackEventDateColors(){
   const lastSaved=eventDateColorState.lastSaved instanceof Map ? eventDateColorState.lastSaved : new Map();
   eventDateColorState.map=new Map(lastSaved);
   applyManualEventColorsToGantt();
+  applyEventDateColorsToController(eventDateColorState.map);
   toast('保存前の状態に戻しました', false);
 }
 
@@ -327,6 +349,35 @@ function resetEventDateColorState(){
     statusEl.dataset.state='';
   }
   applyManualEventColorsToGantt();
+  applyEventDateColorsToController(new Map());
+}
+
+function updateEventDateColorState(date, colorKey, officeId){
+  const targetOffice=officeId||getEventTargetOfficeId();
+  const normalizedDate=normalizeEventDateKey(date);
+  if(!targetOffice || !normalizedDate) return;
+  const normalizedColor=normalizeEventColorKeyClient(colorKey);
+  const statusEl=eventDateColorState.statusEl||ensureEventColorStatusEl();
+  if(eventDateColorState.autoSaveTimer){
+    clearTimeout(eventDateColorState.autoSaveTimer);
+    eventDateColorState.autoSaveTimer=null;
+  }
+  if(eventDateColorState.officeId && eventDateColorState.officeId!==targetOffice){
+    eventDateColorState={ officeId:targetOffice, map:new Map(), lastSaved:new Map(), autoSaveTimer:null, saveInFlight:false, queued:false, statusEl, loaded:false };
+  }else if(!eventDateColorState.officeId){
+    eventDateColorState={ ...eventDateColorState, officeId:targetOffice, statusEl };
+  }
+  const map=eventDateColorState.map instanceof Map ? eventDateColorState.map : new Map();
+  if(normalizedColor){
+    map.set(normalizedDate, normalizedColor);
+  }else{
+    map.delete(normalizedDate);
+  }
+  eventDateColorState.map=map;
+  eventDateColorState.loaded=true;
+  applyManualEventColorsToGantt();
+  applyEventDateColorsToController(map);
+  scheduleEventDateColorSave();
 }
 
 function applyManualEventColorsToGantt(){
@@ -413,10 +464,12 @@ async function loadEventDateColors(officeId){
       loaded: true
     };
     applyManualEventColorsToGantt();
+    applyEventDateColorsToController(map);
     return map;
   }catch(err){
     console.error('loadEventDateColors error', err);
     resetEventDateColorState();
+    toast('日付カラーの読み込みに失敗しました', false);
     return new Map();
   }
 }
@@ -773,6 +826,12 @@ function getEventGanttController(){
   if(typeof createVacationGantt !== 'function' || !eventGantt){
     return null;
   }
+  const handleDateColorSelect=(selection)=>{
+    if(!selection) return selection;
+    const colorKey=normalizeEventColorKeyClient(selection.eventColor||paletteKeyToEventColor(selection.paletteKey));
+    updateEventDateColorState(selection.date||'', colorKey, getEventTargetOfficeId());
+    return selection;
+  };
   eventGanttController = createVacationGantt({
     rootEl: eventGantt,
     startInput: eventStartInput,
@@ -783,11 +842,15 @@ function getEventGanttController(){
     groupJumpContainer: eventGroupJumps,
     scrollContainer: eventGantt,
     groupJumpMode: 'select',
-    saveMode: 'event-modal'
+    saveMode: 'event-modal',
+    onDateColorSelect: handleDateColorSelect
   });
   if(eventGanttController && typeof eventGanttController.init==='function'){
     eventGanttController.init();
   }
+  applyManualEventColorsToGantt();
+  applyEventDateColorsToController(eventDateColorState.map||new Map());
+  loadEventDateColors(getEventTargetOfficeId()).catch(err=> console.error('initial loadEventDateColors failed', err));
   return eventGanttController;
 }
 
