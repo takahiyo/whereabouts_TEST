@@ -13,6 +13,10 @@
     { key: 'slate', className: 'vac-color-slate' }
   ];
   const PALETTE_EVENT_COLOR_MAP = {
+    none: '',
+    saturday: 'blue',
+    sunday: 'pink',
+    holiday: 'pink',
     amber: 'amber',
     mint: 'green',
     lavender: 'purple',
@@ -20,10 +24,14 @@
   };
   const EVENT_COLOR_TO_PALETTE_MAP = {
     amber: 'amber',
+    none: 'none',
     blue: 'saturday',
     green: 'mint',
     pink: 'holiday',
     purple: 'lavender',
+    sunday: 'sunday',
+    saturday: 'saturday',
+    holiday: 'holiday',
     teal: 'mint',
     gray: 'slate'
   };
@@ -157,12 +165,14 @@
 
     function toEventColorKeyFromPalette(key){
       const normalized = (key || '').toString().trim().toLowerCase();
-      return PALETTE_EVENT_COLOR_MAP[normalized] || '';
+      return PALETTE_EVENT_COLOR_MAP[normalized] ?? '';
     }
 
     function paletteKeyFromEventColor(key){
       const normalized = (key || '').toString().trim().toLowerCase();
-      return EVENT_COLOR_TO_PALETTE_MAP[normalized] || '';
+      if(EVENT_COLOR_TO_PALETTE_MAP[normalized]) return EVENT_COLOR_TO_PALETTE_MAP[normalized];
+      const paletteIdx = paletteIndexFromKey(normalized);
+      return paletteIdx >= 0 ? paletteKeyFromIndex(paletteIdx) : '';
     }
 
     function handlePaletteColorSelect(date, idx){
@@ -255,16 +265,29 @@
         return;
       }
       const entries = colorMap instanceof Map ? Array.from(colorMap.entries()) : Object.entries(colorMap);
+      const previous = new Map(dateColorMap);
       dateColorMap.clear();
       syncDateColorMapWithSlots();
-      let changed = entries.length === 0;
-      entries.forEach(([rawDate, eventColor]) => {
+      let changed = true;
+      entries.forEach(([rawDate, colorValue]) => {
         const date = normalizeDateStr(rawDate);
         if(!date) return;
-        const paletteKey = paletteKeyFromEventColor(eventColor);
-        if(!paletteKey) return;
+        const paletteKey = paletteKeyFromEventColor(colorValue);
+        if(!paletteKey){
+          if(previous.has(date)){
+            dateColorMap.set(date, previous.get(date));
+            changed = true;
+          }
+          return;
+        }
         const idx = paletteIndexFromKey(paletteKey);
-        if(idx < 0) return;
+        if(idx < 0){
+          if(previous.has(date)){
+            dateColorMap.set(date, previous.get(date));
+            changed = true;
+          }
+          return;
+        }
         dateColorMap.set(date, idx % COLOR_PALETTE.length);
         changed = true;
       });
