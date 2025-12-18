@@ -233,6 +233,21 @@ function normalizeEventColorKeyClient(raw){
   return EVENT_COLOR_KEYS.includes(key)?key:'';
 }
 
+function toTransportEventColorKey(raw){
+  const normalizedColor=normalizeEventColorKeyClient(raw);
+  if(normalizedColor){
+    return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedColor] || normalizedColor;
+  }
+  const paletteKey=normalizePaletteKey(raw);
+  if(paletteKey){
+    const eventColor=paletteKeyToEventColor(paletteKey);
+    const normalizedEvent=normalizeEventColorKeyClient(eventColor);
+    if(normalizedEvent) return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedEvent] || normalizedEvent;
+    return EVENT_COLOR_TRANSPORT_FALLBACKS[paletteKey] || paletteKey;
+  }
+  return '';
+}
+
 function eventSelectionKey(officeId){
   return `${storeKeyBase}:event:${officeId||'__none__'}`;
 }
@@ -483,9 +498,7 @@ function applyManualEventColorsToGantt(){
 function buildEventDateColorPayload(){
   const payload={};
   (eventDateColorState.map||new Map()).forEach((color,date)=>{
-    const eventKey=normalizeEventColorKeyClient(color);
-    const paletteKey=normalizePaletteKey(color);
-    const value=eventKey || paletteKey;
+    const value=toTransportEventColorKey(color);
     if(date && value){ payload[date]=value; }
   });
   return payload;
