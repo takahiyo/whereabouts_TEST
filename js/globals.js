@@ -233,10 +233,17 @@ function normalizeEventColorKeyClient(raw){
 }
 
 function toTransportEventColorKey(raw){
-  const normalizedEvent=normalizeEventColorKeyClient(raw);
-  const paletteKey=paletteKeyFromEventColorKey(normalizedEvent||raw) || normalizePaletteKey(raw);
-  if(paletteKey) return paletteKey;
-  if(normalizedEvent) return normalizedEvent;
+  const normalizedColor=normalizeEventColorKeyClient(raw);
+  if(normalizedColor){
+    return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedColor] || normalizedColor;
+  }
+  const paletteKey=normalizePaletteKey(raw);
+  if(paletteKey){
+    const eventColor=paletteKeyToEventColor(paletteKey);
+    const normalizedEvent=normalizeEventColorKeyClient(eventColor);
+    if(normalizedEvent) return EVENT_COLOR_TRANSPORT_FALLBACKS[normalizedEvent] || normalizedEvent;
+    return EVENT_COLOR_TRANSPORT_FALLBACKS[paletteKey] || paletteKey;
+  }
   return '';
 }
 
