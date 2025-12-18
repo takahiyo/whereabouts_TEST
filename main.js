@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     scheduleRenew(Number(res.exp)||TOKEN_DEFAULT_TTL);
     if(!SESSION_TOKEN) return;
-    startRemoteSync(true); startConfigWatch(); startNoticesPolling();
+    startRemoteSync(true); startConfigWatch(); startNoticesPolling(); startEventSync(true);
     if(typeof fetchTools === 'function'){
       fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
     }
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       }
       if(d&&d.data) applyState(d.data);
       if(!SESSION_TOKEN) return;
-      startRemoteSync(true); startConfigWatch(); startNoticesPolling();
+      startRemoteSync(true); startConfigWatch(); startNoticesPolling(); startEventSync(true);
       if(typeof fetchTools === 'function'){
         fetchTools(CURRENT_OFFICE_ID).catch(()=>{});
       }

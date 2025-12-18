@@ -397,7 +397,7 @@
     }
 
     function isEventModalSaveMode(){
-      return saveMode === 'event-modal';
+      return saveMode === 'event-modal' || saveMode === 'event-auto';
     }
 
     async function invokeSaveHandler(){

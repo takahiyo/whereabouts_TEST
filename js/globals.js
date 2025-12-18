@@ -22,7 +22,6 @@ const eventColorManualHint=document.getElementById('eventColorManualHint');
 const eventStartInput=document.getElementById('eventStart');
 const eventEndInput=document.getElementById('eventEnd');
 const eventBitsInput=document.getElementById('eventBits');
-const btnEventSave=document.getElementById('btnEventSave');
 const btnEventPrint=document.getElementById('btnEventPrint');
 const btnExport=document.getElementById('btnExport'), csvFile=document.getElementById('csvFile'), btnImport=document.getElementById('btnImport');
 const renameOfficeName=document.getElementById('renameOfficeName'), btnRenameOffice=document.getElementById('btnRenameOffice');
@@ -49,8 +48,8 @@ const btnVacationSave=document.getElementById('btnVacationSave'), btnVacationDel
 
 /* 状態 */
 let GROUPS=[], CONFIG_UPDATED=0, MENUS=null, STATUSES=[], requiresTimeSet=new Set(), clearOnSet=new Set(), statusClassMap=new Map();
-let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null;
-let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false;
+let tokenRenewTimer=null, ro=null, remotePullTimer=null, configWatchTimer=null, eventSyncTimer=null;
+let resumeRemoteSyncOnVisible=false, resumeConfigWatchOnVisible=false, resumeEventSyncOnVisible=false;
 let storeKeyBase="presence-board-v4";
 const PENDING_ROWS = new Set();
 let adminSelectedOfficeId='';
@@ -64,6 +63,7 @@ let eventGanttController=null;
 let eventSelectedId='';
 let selectedEventIds=[];
 let eventDateColorState={ officeId:'', map:new Map(), lastSaved:new Map(), autoSaveTimer:null, saveInFlight:false, queued:false, statusEl:null, loaded:false };
+const EVENT_SYNC_INTERVAL_MS = Math.max(typeof REMOTE_POLL_MS==='number'?REMOTE_POLL_MS:10000, 15000);
 
 /* 認証状態 */
 let SESSION_TOKEN=""; let CURRENT_OFFICE_NAME=""; let CURRENT_OFFICE_ID=""; let CURRENT_ROLE="user";
@@ -72,10 +72,13 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){
     resumeRemoteSyncOnVisible = remotePullTimer != null;
     resumeConfigWatchOnVisible = configWatchTimer != null;
+    resumeEventSyncOnVisible = eventSyncTimer != null;
     clearInterval(remotePullTimer);
     clearInterval(configWatchTimer);
+    clearInterval(eventSyncTimer);
     remotePullTimer = null;
     configWatchTimer = null;
+    eventSyncTimer = null;
   }else{
     if(resumeRemoteSyncOnVisible && SESSION_TOKEN){
       startRemoteSync(true);
@@ -83,8 +86,12 @@ document.addEventListener('visibilitychange', ()=>{
     if(resumeConfigWatchOnVisible && SESSION_TOKEN){
       startConfigWatch();
     }
+    if(resumeEventSyncOnVisible && SESSION_TOKEN){
+      startEventSync(true);
+    }
     resumeRemoteSyncOnVisible = false;
     resumeConfigWatchOnVisible = false;
+    resumeEventSyncOnVisible = false;
   }
 });
 function isOfficeAdmin(){ return CURRENT_ROLE==='officeAdmin' || CURRENT_ROLE==='superAdmin'; }
@@ -481,8 +488,10 @@ function getManualEventColorForDate(date, officeId){
   return eventDateColorState.map.get(normalized)||'';
 }
 
-async function loadEventDateColors(officeId){
+async function loadEventDateColors(officeId, options={}){
   const targetOfficeId=officeId||getEventTargetOfficeId();
+  const opts=options||{};
+  const silent=opts.silent===true;
   if(!targetOfficeId || !SESSION_TOKEN){
     resetEventDateColorState();
     return new Map();
@@ -519,7 +528,7 @@ async function loadEventDateColors(officeId){
   }catch(err){
     console.error('loadEventDateColors error', err);
     resetEventDateColorState();
-    toast('日付カラーの読み込みに失敗しました', false);
+    if(!silent) toast('日付カラーの読み込みに失敗しました', false);
     return new Map();
   }
 }
@@ -893,7 +902,7 @@ function getEventGanttController(){
     groupJumpContainer: eventGroupJumps,
     scrollContainer: eventGantt,
     groupJumpMode: 'select',
-    saveMode: 'event-modal',
+    saveMode: 'event-auto',
     onDateColorSelect: handleDateColorSelect
   });
   if(eventGanttController && typeof eventGanttController.init==='function'){
@@ -943,6 +952,44 @@ function updateEventButtonVisibility(officeId, list){
   const hasVisible=loggedIn && Array.isArray(sourceList)
     && sourceList.some(item=> coerceVacationVisibleFlag(item?.visible) && (!targetOfficeId || String(item.office||targetOfficeId)===targetOfficeId));
   eventBtn.style.display=hasVisible?'inline-block':'none';
+}
+
+async function refreshEventDataSilent(officeId){
+  const targetOfficeId=officeId||getEventTargetOfficeId();
+  if(!SESSION_TOKEN || !targetOfficeId) return [];
+  try{
+    const res=await apiPost({ action:'getVacation', token:SESSION_TOKEN, office:targetOfficeId, nocache:'1' });
+    if(res?.error==='unauthorized'){
+      await logout();
+      return [];
+    }
+    const list=Array.isArray(res?.vacations)?res.vacations:(Array.isArray(res?.items)?res.items:[]);
+    const prevList=(cachedEvents.officeId===targetOfficeId && Array.isArray(cachedEvents.list))?cachedEvents.list:[];
+    const normalizedList=list.map(item=>{
+      const idStr=String(item?.id||item?.vacationId||'');
+      const prev=prevList.find(v=> String(v?.id||v?.vacationId||'') === idStr);
+      const hasIsVacation=item && Object.prototype.hasOwnProperty.call(item,'isVacation');
+      const fallbackHasFlag=prev && Object.prototype.hasOwnProperty.call(prev,'isVacation');
+      const isVacation=hasIsVacation ? item.isVacation : (fallbackHasFlag ? prev.isVacation : undefined);
+      return { ...item, isVacation };
+    });
+    cachedEvents={ officeId: targetOfficeId, list: normalizedList };
+    const savedIds=loadSavedEventIds(targetOfficeId);
+    if(Array.isArray(savedIds) && savedIds.length){
+      selectedEventIds=savedIds;
+    }
+    updateEventButtonVisibility(targetOfficeId, normalizedList);
+    const firstSelected=selectedEventIds?.[0]||'';
+    if(firstSelected){
+      const selectedItem=findCachedEvent(targetOfficeId, firstSelected);
+      if(selectedItem) updateEventDetail(selectedItem, targetOfficeId);
+    }
+    await applyEventDisplay(selectedEventIds && selectedEventIds.length ? selectedEventIds : undefined);
+    return normalizedList;
+  }catch(err){
+    console.error('refreshEventDataSilent error', err);
+    return [];
+  }
 }
 
 async function loadEvents(officeId, showToastOnSuccess=false, options={}){
@@ -1316,7 +1363,9 @@ async function saveEventFromModal(){
   if(!item){ toast('イベントの情報を取得できませんでした', false); return false; }
   const ctrl=getEventGanttController();
   const membersBits=ctrl?ctrl.getBitsString():(eventBitsInput?.value||'');
-  const payload={
+  const id=item.id||item.vacationId||selectedId;
+  const bitsPayload={ id, membersBits };
+  const adminPayload={
     office: officeId,
     title: item.title||'',
     start: item.startDate||item.start||item.from||'',
@@ -1328,23 +1377,36 @@ async function saveEventFromModal(){
     isVacation: item.isVacation!==false,
     color: item.color||''
   };
-  const id=item.id||item.vacationId||selectedId;
-  if('visible' in item) payload.visible=item.visible;
-  if(id) payload.id=id;
+  if('visible' in item) adminPayload.visible=item.visible;
+  if(id) adminPayload.id=id;
   try{
-    const res=await adminSetVacation(officeId,payload);
+    let res=null;
+    if(typeof saveVacationBits==='function'){
+      res=await saveVacationBits(officeId, bitsPayload);
+      if(res?.error==='forbidden' && typeof adminSetVacation==='function' && isOfficeAdmin()){
+        res=await adminSetVacation(officeId, adminPayload);
+      }
+    }else if(typeof adminSetVacation==='function'){
+      res=await adminSetVacation(officeId, adminPayload);
+    }
     if(res && res.ok!==false){
-      toast('イベントを保存しました');
+      toast('イベントを自動保存しました');
       updateCachedMembersBits(officeId, id, membersBits);
-      await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
-      await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      if(Array.isArray(res.vacations)){
+        cachedEvents={ officeId, list: res.vacations };
+        await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+        updateEventButtonVisibility(officeId, res.vacations);
+      }else{
+        await applyEventDisplay(selectedEventIds.length?selectedEventIds:[id]);
+        await loadEvents(officeId, false, { visibleOnly:true, onSelect: handleEventSelection });
+      }
       return true;
     }
     throw new Error(res&&res.error?String(res.error):'save_failed');
   }catch(err){
     console.error('saveEventFromModal error', err);
     toast('イベントの保存に失敗しました', false);
-    return false;
+    throw err;
   }
 }
 
@@ -1392,6 +1454,21 @@ async function autoApplySavedEvent(){
   }catch(err){
     console.error('Auto-apply failed:', err);
   }
+}
+
+function startEventSync(immediate=false){
+  if(eventSyncTimer){ clearInterval(eventSyncTimer); eventSyncTimer=null; }
+  if(!SESSION_TOKEN) return;
+  const runSync=async()=>{
+    const officeId=getEventTargetOfficeId();
+    if(!officeId) return;
+    await refreshEventDataSilent(officeId);
+    await loadEventDateColors(officeId, { silent:true });
+  };
+  if(immediate){ runSync().catch(err=> console.error('eventSync (immediate) failed', err)); }
+  eventSyncTimer=setInterval(()=>{
+    runSync().catch(err=> console.error('eventSync failed', err));
+  }, EVENT_SYNC_INTERVAL_MS);
 }
 
 /* イベントカレンダー印刷 */
