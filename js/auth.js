@@ -42,7 +42,6 @@ function ensureAuthUI(){
   toolsBtn.style.display   = loggedIn ? 'inline-block' : 'none';
   manualBtn.style.display  = loggedIn ? 'inline-block' : 'none';
   eventBtn.style.display = 'none';
-  if(btnEventSave) btnEventSave.style.display = loggedIn ? 'inline-block' : 'none';
   updateEventButtonVisibility();
   nameFilter.style.display = loggedIn ? 'inline-block' : 'none';
   statusFilter.style.display = loggedIn ? 'inline-block' : 'none';
@@ -170,17 +169,11 @@ eventBtn.addEventListener('click', async ()=>{
   if(!Array.isArray(list) || list.length===0){ toast('表示対象なし'); return; }
   const ctrl=getEventGanttController();
   if(ctrl?.setSaveMode){
-    ctrl.setSaveMode('event-modal');
+    ctrl.setSaveMode('event-auto');
   }
   showEventModal(true);
 });
 eventClose.addEventListener('click', ()=> showEventModal(false));
-
-if(btnEventSave){
-  btnEventSave.addEventListener('click', async ()=>{
-    await saveEventFromModal();
-  });
-}
 
 manualBtn.addEventListener('click', ()=>{ applyRoleToManual(); showManualModal(true); });
 manualClose.addEventListener('click', ()=> showManualModal(false));

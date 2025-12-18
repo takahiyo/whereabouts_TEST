@@ -1501,6 +1501,7 @@ async function adminRenameOffice(office,name){ return await apiPost({ action:'re
 async function adminSetOfficePassword(office,pw,apw){ const q={ action:'setOfficePassword', id:office, token:SESSION_TOKEN }; if(pw) q.password=pw; if(apw) q.adminPassword=apw; return await apiPost(q); }
 async function adminGetVacation(office){ return await apiPost({ action:'getVacation', token:SESSION_TOKEN, office, nocache:'1' }); }
 async function adminSetVacation(office,payload){ const q={ action:'setVacation', token:SESSION_TOKEN, office, data:JSON.stringify(payload) }; return await apiPost(q); }
+async function saveVacationBits(office,payload){ const q={ action:'setVacationBits', token:SESSION_TOKEN, office, data:JSON.stringify(payload) }; return await apiPost(q); }
 async function adminDeleteVacation(office,id){ return await apiPost({ action:'deleteVacation', token:SESSION_TOKEN, office, id }); }
 
 /* CSVパーサ */
