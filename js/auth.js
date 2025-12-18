@@ -50,11 +50,17 @@ function ensureAuthUI(){
 function showAdminModal(yes){ adminModal.classList.toggle('show', !!yes); }
 function showToolsModal(yes){ toolsModal.classList.toggle('show', !!yes); }
 function showEventModal(yes){
-  eventModal.classList.toggle('show', !!yes);
-  if(!yes){
-    eventModal.classList.remove('print-mode');
+  const shouldShow=!!yes;
+  eventModal.classList.toggle('show', shouldShow);
+  if(shouldShow){
+    eventModal.removeAttribute('aria-hidden');
     eventModal.style.removeProperty('display');
     eventModal.style.removeProperty('visibility');
+  }else{
+    eventModal.setAttribute('aria-hidden','true');
+    eventModal.classList.remove('print-mode');
+    eventModal.style.display='none';
+    eventModal.style.visibility='hidden';
   }
 }
 async function applyRoleToAdminPanel(){
