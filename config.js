@@ -9,7 +9,4 @@ const CONFIG_POLL_MS = 30000;
 const TOKEN_DEFAULT_TTL = 3600000;
 
 // publicListOffices が利用できない環境で使用する拠点一覧（id, name）
-const PUBLIC_OFFICE_FALLBACKS = [
-  { id: 'dev',  name: '開発用' },
-  { id: 'prod', name: '稼働用' }
-];
+const PUBLIC_OFFICE_FALLBACKS = [];
