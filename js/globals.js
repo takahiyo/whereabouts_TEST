@@ -166,11 +166,29 @@ const EVENT_COLOR_LABELS={
 };
 
 const PALETTE_TO_EVENT_COLOR_MAP={
+  none:'',
+  saturday:'blue',
+  sunday:'pink',
+  holiday:'pink',
   amber:'amber',
   mint:'green',
   lavender:'purple',
   slate:'gray'
 };
+const EVENT_COLOR_TO_PALETTE_MAP={
+  amber:'amber',
+  blue:'saturday',
+  green:'mint',
+  pink:'holiday',
+  purple:'lavender',
+  teal:'mint',
+  gray:'slate',
+  none:'none',
+  saturday:'saturday',
+  sunday:'sunday',
+  holiday:'holiday'
+};
+const PALETTE_KEYS=['none','saturday','sunday','holiday','amber','mint','lavender','slate'];
 
 function getEventColorClass(color){
   const key=(color||'').toString().trim().toLowerCase();
@@ -291,7 +309,25 @@ function updateEventColorManualHint(hasManualColor){
 
 function paletteKeyToEventColor(key){
   const normalized=(key||'').toString().trim().toLowerCase();
-  return PALETTE_TO_EVENT_COLOR_MAP[normalized] || '';
+  return PALETTE_TO_EVENT_COLOR_MAP[normalized] ?? '';
+}
+
+function paletteKeyFromEventColorKey(key){
+  const normalized=(key||'').toString().trim().toLowerCase();
+  if(EVENT_COLOR_TO_PALETTE_MAP[normalized]) return EVENT_COLOR_TO_PALETTE_MAP[normalized];
+  if(PALETTE_KEYS.includes(normalized)) return normalized;
+  return '';
+}
+
+function normalizePaletteKey(raw){
+  const normalized=(raw||'').toString().trim().toLowerCase();
+  return PALETTE_KEYS.includes(normalized)?normalized:'';
+}
+
+function normalizeEventDateColorValue(raw){
+  const normalizedColor=normalizeEventColorKeyClient(raw);
+  if(normalizedColor) return normalizedColor;
+  return normalizePaletteKey(raw);
 }
 
 function applyEventDateColorsToController(colorMap){
@@ -356,7 +392,16 @@ function updateEventDateColorState(date, colorKey, officeId){
   const targetOffice=officeId||getEventTargetOfficeId();
   const normalizedDate=normalizeEventDateKey(date);
   if(!targetOffice || !normalizedDate) return;
-  const normalizedColor=normalizeEventColorKeyClient(colorKey);
+  if(colorKey===null){
+    const mapToClear=eventDateColorState.map instanceof Map ? eventDateColorState.map : new Map();
+    mapToClear.delete(normalizedDate);
+    eventDateColorState.map=mapToClear;
+    applyManualEventColorsToGantt();
+    applyEventDateColorsToController(mapToClear);
+    scheduleEventDateColorSave();
+    return;
+  }
+  const normalizedColor=normalizeEventDateColorValue(colorKey);
   const statusEl=eventDateColorState.statusEl||ensureEventColorStatusEl();
   if(eventDateColorState.autoSaveTimer){
     clearTimeout(eventDateColorState.autoSaveTimer);
@@ -368,11 +413,10 @@ function updateEventDateColorState(date, colorKey, officeId){
     eventDateColorState={ ...eventDateColorState, officeId:targetOffice, statusEl };
   }
   const map=eventDateColorState.map instanceof Map ? eventDateColorState.map : new Map();
-  if(normalizedColor){
-    map.set(normalizedDate, normalizedColor);
-  }else{
-    map.delete(normalizedDate);
+  if(!normalizedColor){
+    return;
   }
+  map.set(normalizedDate, normalizedColor);
   eventDateColorState.map=map;
   eventDateColorState.loaded=true;
   applyManualEventColorsToGantt();
@@ -398,12 +442,14 @@ function applyManualEventColorsToGantt(){
   const applyColorToDayHeader=(cell)=>{
     cell.classList.remove(...colorClasses);
     const date=normalizeEventDateKey(cell.dataset.date||'');
-    const colorKey=map.get(date)||'';
-    if(colorKey){
-      const cls=getEventColorClass(colorKey);
+    const storedColorKey=map.get(date)||'';
+    const paletteColor=paletteKeyFromEventColorKey(storedColorKey);
+    const eventColorKey=normalizeEventColorKeyClient(storedColorKey)||paletteKeyToEventColor(paletteColor);
+    if(eventColorKey){
+      const cls=getEventColorClass(eventColorKey);
       if(cls) cell.classList.add(cls);
-      cell.dataset.manualColor=colorKey;
-      const label=EVENT_COLOR_LABELS[colorKey]||'手動色';
+      cell.dataset.manualColor=storedColorKey;
+      const label=EVENT_COLOR_LABELS[eventColorKey]||'手動色';
       cell.title=`${label}（手動設定）: 右クリックでクリア`;
     }else{
       delete cell.dataset.manualColor;
@@ -419,8 +465,10 @@ function applyManualEventColorsToGantt(){
 function buildEventDateColorPayload(){
   const payload={};
   (eventDateColorState.map||new Map()).forEach((color,date)=>{
-    const key=normalizeEventColorKeyClient(color);
-    if(date && key){ payload[date]=key; }
+    const eventKey=normalizeEventColorKeyClient(color);
+    const paletteKey=normalizePaletteKey(color);
+    const value=eventKey || paletteKey;
+    if(date && value){ payload[date]=value; }
   });
   return payload;
 }
@@ -453,8 +501,10 @@ async function loadEventDateColors(officeId){
     const colors=(res&&typeof res.colors==='object')?res.colors:{};
     Object.keys(colors||{}).forEach(date=>{
       const normalizedDate=normalizeEventDateKey(date);
-      const key=normalizeEventColorKeyClient(colors[date]);
-      if(normalizedDate && key){ map.set(normalizedDate, key); }
+      if(!normalizedDate) return;
+      const paletteKey=paletteKeyFromEventColorKey(colors[date]);
+      const normalizedColor=paletteKey || normalizeEventDateColorValue(colors[date]);
+      if(normalizedColor){ map.set(normalizedDate, normalizedColor); }
     });
     eventDateColorState={
       ...eventDateColorState,
@@ -828,8 +878,9 @@ function getEventGanttController(){
   }
   const handleDateColorSelect=(selection)=>{
     if(!selection) return selection;
-    const colorKey=normalizeEventColorKeyClient(selection.eventColor||paletteKeyToEventColor(selection.paletteKey));
-    updateEventDateColorState(selection.date||'', colorKey, getEventTargetOfficeId());
+    const resolvedColor=selection.eventColor||paletteKeyToEventColor(selection.paletteKey)||selection.paletteKey;
+    const colorKey=normalizeEventDateColorValue(resolvedColor);
+    updateEventDateColorState(selection.date||'', colorKey||selection.paletteKey||'', getEventTargetOfficeId());
     return selection;
   };
   eventGanttController = createVacationGantt({
@@ -1208,7 +1259,8 @@ function applyEventHighlightForItems(eventItems, targetDate){
     const statusSelect=statusTd?.querySelector('select[name="status"]');
     tr.classList.remove('event-highlight', ...colorClasses);
     if(effect){
-      const colorKey=hasManualColor ? manualColorForTarget : (effect.vacations[0]?.color || effect.highlights[0]?.color || '');
+      const manualColorKey=hasManualColor ? (normalizeEventColorKeyClient(manualColorForTarget)||paletteKeyToEventColor(manualColorForTarget)||manualColorForTarget) : '';
+      const colorKey=hasManualColor ? manualColorKey : (effect.vacations[0]?.color || effect.highlights[0]?.color || '');
       const colorClass=getEventColorClass(colorKey);
       tr.classList.add('event-highlight');
       if(colorClass){ tr.classList.add(colorClass); }
