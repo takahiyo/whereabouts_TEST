@@ -179,11 +179,6 @@ const EVENT_COLOR_LEGACY_FALLBACKS={
   gray:'slate',
   grey:'slate'
 };
-const EVENT_COLOR_TRANSPORT_FALLBACKS={
-  sunday:'pink',
-  holiday:'pink',
-  slate:'gray'
-};
 
 const PALETTE_TO_EVENT_COLOR_MAP={
   none:'',
