@@ -15,25 +15,26 @@
   const PALETTE_EVENT_COLOR_MAP = {
     none: '',
     saturday: 'blue',
-    sunday: 'pink',
-    holiday: 'pink',
+    sunday: 'sunday',
+    holiday: 'holiday',
     amber: 'amber',
     mint: 'green',
     lavender: 'purple',
-    slate: 'gray'
+    slate: 'slate'
   };
   const EVENT_COLOR_TO_PALETTE_MAP = {
     amber: 'amber',
     none: 'none',
     blue: 'saturday',
     green: 'mint',
-    pink: 'holiday',
     purple: 'lavender',
     sunday: 'sunday',
     saturday: 'saturday',
     holiday: 'holiday',
     teal: 'mint',
-    gray: 'slate'
+    pink: 'sunday',
+    gray: 'slate',
+    slate: 'slate'
   };
 
   const FALLBACK_DAYS = 7;
