@@ -161,7 +161,7 @@ function renderVacationRadioMessage(message){
   vacationRadioList.appendChild(div);
 }
 
-const EVENT_COLOR_KEYS=['amber','blue','green','pink','purple','teal','gray'];
+const EVENT_COLOR_KEYS=['amber','blue','green','pink','purple','teal','gray','sunday','holiday','slate'];
 const EVENT_COLOR_LABELS={
   amber:'サニー',
   blue:'ブルー',
@@ -169,31 +169,41 @@ const EVENT_COLOR_LABELS={
   pink:'ピンク',
   purple:'パープル',
   teal:'ティール',
-  gray:'グレー'
+  gray:'グレー',
+  sunday:'日曜',
+  holiday:'祝日',
+  slate:'スレート'
+};
+const EVENT_COLOR_LEGACY_FALLBACKS={
+  pink:'sunday',
+  gray:'slate',
+  grey:'slate'
 };
 
 const PALETTE_TO_EVENT_COLOR_MAP={
   none:'',
   saturday:'blue',
-  sunday:'pink',
-  holiday:'pink',
+  sunday:'sunday',
+  holiday:'holiday',
   amber:'amber',
   mint:'green',
   lavender:'purple',
-  slate:'gray'
+  slate:'slate'
 };
 const EVENT_COLOR_TO_PALETTE_MAP={
   amber:'amber',
   blue:'saturday',
   green:'mint',
-  pink:'holiday',
   purple:'lavender',
   teal:'mint',
-  gray:'slate',
-  none:'none',
-  saturday:'saturday',
   sunday:'sunday',
-  holiday:'holiday'
+  holiday:'holiday',
+  slate:'slate',
+  pink:'sunday',
+  gray:'slate',
+  grey:'slate',
+  none:'none',
+  saturday:'saturday'
 };
 const PALETTE_KEYS=['none','saturday','sunday','holiday','amber','mint','lavender','slate'];
 
@@ -219,6 +229,7 @@ function normalizeEventDateKey(date){
 
 function normalizeEventColorKeyClient(raw){
   const key=(raw||'').toString().trim().toLowerCase();
+  if(EVENT_COLOR_LEGACY_FALLBACKS[key]) return EVENT_COLOR_LEGACY_FALLBACKS[key];
   return EVENT_COLOR_KEYS.includes(key)?key:'';
 }
 
