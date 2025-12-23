@@ -503,7 +503,7 @@ function wireEvents(){
   });
 
   // 変更（ステータス/時間）
-  board.addEventListener('change', (e)=>{
+  const handleStatusTimeChange = (e)=>{
     const t = e.target;
     if(!t) return;
     const tr = t.closest('tr'); if(!tr) return;
@@ -532,6 +532,14 @@ function wireEvents(){
       ensureTimePrompt(tr);
       debounceRowPush(key);
       return;
+    }
+  };
+
+  board.addEventListener('change', handleStatusTimeChange);
+  // Edge（特にタッチ操作）で change イベントが拾えないケースへのフォールバック
+  board.addEventListener('input', (e)=>{
+    if(e.target?.name === 'status' || e.target?.name === 'time'){
+      handleStatusTimeChange(e);
     }
   });
 }
